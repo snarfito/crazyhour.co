@@ -8,6 +8,10 @@ const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // is skipped, and `createServiceClient` throws immediately on an
 // empty/undefined key regardless of whether any test actually runs.
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
+// Unique per-file prefix so this file's fixture rows can never collide with
+// another integration-test file's rows in the shared "categories" table when
+// files run in parallel (see categorias/actions.test.ts for its own prefix).
+const TEST_PREFIX = "zzfase2prod_";
 
 vi.mock("@/lib/supabase/dal", () => ({
   verifySession: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
@@ -33,11 +37,18 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
   let categoryId: string;
 
   beforeEach(async () => {
-    await admin.from("products").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await admin.from("categories").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    const { data: prefixedCategories } = await admin
+      .from("categories")
+      .select("id")
+      .like("slug", `${TEST_PREFIX}%`);
+    const categoryIds = (prefixedCategories ?? []).map((c) => c.id);
+    if (categoryIds.length > 0) {
+      await admin.from("products").delete().in("category_id", categoryIds);
+    }
+    await admin.from("categories").delete().like("slug", `${TEST_PREFIX}%`);
     const { data } = await admin
       .from("categories")
-      .insert({ name: "Piñatas", slug: "pinatas", sort_order: 1 })
+      .insert({ name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 })
       .select()
       .single();
     categoryId = data!.id;
@@ -47,15 +58,15 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
     const { createProduct } = await import("./actions");
     const formData = new FormData();
     formData.set("category_id", categoryId);
-    formData.set("name", "Piñata estrella");
+    formData.set("name", `${TEST_PREFIX}Piñata estrella`);
     formData.set("description", "Piñata artesanal grande");
     formData.set("price_cop", "45000");
     formData.set("sku", "PIN-001");
 
     await createProduct(formData);
 
-    const { data } = await admin.from("products").select("*").single();
-    expect(data?.name).toBe("Piñata estrella");
+    const { data } = await admin.from("products").select("*").eq("category_id", categoryId).single();
+    expect(data?.name).toBe(`${TEST_PREFIX}Piñata estrella`);
     expect(data?.category_id).toBe(categoryId);
     expect(data?.price_cop).toBe(45000);
     expect(data?.is_active).toBe(true);
@@ -65,23 +76,27 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
     const { createProduct, updateProduct } = await import("./actions");
     const create = new FormData();
     create.set("category_id", categoryId);
-    create.set("name", "Globo");
+    create.set("name", `${TEST_PREFIX}Globo`);
     create.set("description", "Globo metálico");
     create.set("price_cop", "5000");
     create.set("sku", "GLO-001");
     await createProduct(create);
-    const { data: created } = await admin.from("products").select("id").single();
+    const { data: created } = await admin
+      .from("products")
+      .select("id")
+      .eq("category_id", categoryId)
+      .single();
 
     const update = new FormData();
     update.set("category_id", categoryId);
-    update.set("name", "Globo metálico grande");
+    update.set("name", `${TEST_PREFIX}Globo metálico grande`);
     update.set("description", "Globo metálico 24 pulgadas");
     update.set("price_cop", "7000");
     update.set("sku", "GLO-001");
     await updateProduct(created!.id, update);
 
     const { data: updated } = await admin.from("products").select("*").eq("id", created!.id).single();
-    expect(updated?.name).toBe("Globo metálico grande");
+    expect(updated?.name).toBe(`${TEST_PREFIX}Globo metálico grande`);
     expect(updated?.price_cop).toBe(7000);
   });
 
@@ -89,12 +104,16 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
     const { createProduct, toggleProductActive } = await import("./actions");
     const create = new FormData();
     create.set("category_id", categoryId);
-    create.set("name", "Kit decoración");
+    create.set("name", `${TEST_PREFIX}Kit decoración`);
     create.set("description", "Kit completo");
     create.set("price_cop", "30000");
     create.set("sku", "KIT-001");
     await createProduct(create);
-    const { data: created } = await admin.from("products").select("id, is_active").single();
+    const { data: created } = await admin
+      .from("products")
+      .select("id, is_active")
+      .eq("category_id", categoryId)
+      .single();
     expect(created?.is_active).toBe(true);
 
     await toggleProductActive(created!.id, false);
@@ -107,16 +126,20 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
     const { createProduct, deleteProduct } = await import("./actions");
     const create = new FormData();
     create.set("category_id", categoryId);
-    create.set("name", "Producto a borrar");
+    create.set("name", `${TEST_PREFIX}Producto a borrar`);
     create.set("description", "x");
     create.set("price_cop", "1000");
     create.set("sku", "DEL-001");
     await createProduct(create);
-    const { data: created } = await admin.from("products").select("id").single();
+    const { data: created } = await admin
+      .from("products")
+      .select("id")
+      .eq("category_id", categoryId)
+      .single();
 
     await deleteProduct(created!.id);
 
-    const { data: remaining } = await admin.from("products").select("*");
+    const { data: remaining } = await admin.from("products").select("*").eq("category_id", categoryId);
     expect(remaining).toHaveLength(0);
   });
 });
