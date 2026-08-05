@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vites
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
-const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY!;
+// Falls back to a placeholder when unset so `describe.skipIf` below can skip
+// cleanly: the describe callback (including `createServiceClient(...)` at
+// its top) still runs during Vitest's collection phase even when the suite
+// is skipped, and `createServiceClient` throws immediately on an
+// empty/undefined key regardless of whether any test actually runs.
+const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
 
 // verifySession() normally redirects unauthenticated users — for these
 // tests we mock it to simulate an authenticated admin, since exercising
@@ -25,7 +30,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-describe("category actions (against local Supabase)", () => {
+describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
   beforeEach(async () => {
