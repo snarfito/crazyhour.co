@@ -62,3 +62,21 @@ create table order_items (
 );
 
 create index order_items_order_id_idx on order_items(order_id);
+
+-- Row Level Security: public catalog is publicly readable, orders are service-role only.
+-- Admin writes to categories/products/product_images go through the service role key
+-- (used server-side in the admin panel, Fase 1) — no public write policies needed yet.
+
+alter table categories enable row level security;
+alter table products enable row level security;
+alter table product_images enable row level security;
+alter table orders enable row level security;
+alter table order_items enable row level security;
+
+create policy "Public can read categories" on categories for select using (true);
+create policy "Public can read active products" on products for select using (is_active = true);
+create policy "Public can read product images" on product_images for select using (true);
+
+-- orders and order_items: no public policies at all (default-deny).
+-- The storefront checkout flow and the admin panel both write through
+-- server-side code using SUPABASE_SERVICE_ROLE_KEY, which bypasses RLS entirely.
