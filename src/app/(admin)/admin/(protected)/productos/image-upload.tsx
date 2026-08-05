@@ -62,19 +62,31 @@ export function ImageUpload({
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="flex flex-col gap-4">
         {images.map((img) => (
-          <div key={img.id} className="rounded-md border border-border p-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img.original_url} alt="Foto original" className="h-24 w-full rounded object-cover" />
-            {img.enhanced_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={img.enhanced_url}
-                alt="Foto mejorada"
-                className="mt-2 h-24 w-full rounded object-cover"
-              />
-            )}
+          <div key={img.id} className="rounded-md border border-border p-3">
+            <div className={img.enhanced_url ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
+              <div>
+                <p className="mb-1 text-xs font-medium text-muted-foreground">Original</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.original_url}
+                  alt="Foto original"
+                  className="h-64 w-full rounded border border-border bg-white object-contain"
+                />
+              </div>
+              {img.enhanced_url && (
+                <div>
+                  <p className="mb-1 text-xs font-medium text-brand-green">Mejorada</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.enhanced_url}
+                    alt="Foto mejorada"
+                    className="h-64 w-full rounded border border-border bg-white object-contain"
+                  />
+                </div>
+              )}
+            </div>
             <div className="mt-2">
               <EnhanceButton imageId={img.id} />
             </div>
