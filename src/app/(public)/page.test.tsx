@@ -3,17 +3,38 @@ import { render, screen } from "@testing-library/react";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
-const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY!;
+// Falls back to a placeholder when unset so `describe.skipIf` below can skip
+// cleanly: the describe callback (including `createServiceClient(...)` at
+// its top) still runs during Vitest's collection phase even when the suite
+// is skipped, and `createServiceClient` throws immediately on an
+// empty/undefined key regardless of whether any test actually runs.
+const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
 const TEST_PREFIX = "zzfase2home_";
 
+// The "no categories" case below can't be exercised by seeding the real
+// `categories` table and asserting it's empty: every other DB-integration
+// test in this suite only ever touches rows matching its own prefix (see
+// productos/actions.test.ts and categorias/actions.test.ts), and files run
+// concurrently (fileParallelism is on), so `categories` is routinely
+// non-empty for reasons unrelated to this test. `forceEmpty` lets that one
+// test swap in a client that returns an empty result set without touching
+// Postgres, while the "renders a category card" test still exercises the
+// real query/ordering/wiring against local Supabase.
+let forceEmpty = false;
+const emptyClient = {
+  from: () => ({ select: () => ({ order: async () => ({ data: [], error: null }) }) }),
+};
+
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
+  createClient: async () =>
+    forceEmpty ? emptyClient : createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
 }));
 
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
   beforeEach(async () => {
+    forceEmpty = false;
     await admin.from("categories").delete().like("slug", `${TEST_PREFIX}%`);
   });
 
@@ -35,6 +56,8 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => 
   });
 
   it("shows the empty state when there are no categories", async () => {
+    forceEmpty = true;
+
     const HomePage = (await import("./page")).default;
     const ui = await HomePage();
     render(ui);
