@@ -1,6 +1,17 @@
 import "server-only";
 import { GoogleGenAI } from "@google/genai";
 
+const TIMEOUT_MS = 60_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("Gemini no respondió a tiempo. Intenta de nuevo.")), ms)
+    ),
+  ]);
+}
+
 export async function enhanceImage({
   imageBytes,
   mimeType,
@@ -12,14 +23,17 @@ export async function enhanceImage({
 }): Promise<{ imageBytes: Buffer; mimeType: string }> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-image",
-    contents: [
-      { inlineData: { data: imageBytes.toString("base64"), mimeType } },
-      { text: prompt },
-    ],
-    config: { responseModalities: ["IMAGE", "TEXT"] },
-  });
+  const response = await withTimeout(
+    ai.models.generateContent({
+      model: "gemini-2.5-flash-image",
+      contents: [
+        { inlineData: { data: imageBytes.toString("base64"), mimeType } },
+        { text: prompt },
+      ],
+      config: { responseModalities: ["IMAGE", "TEXT"] },
+    }),
+    TIMEOUT_MS
+  );
 
   const imagePart = response.candidates?.[0]?.content?.parts?.find(
     (p: { inlineData?: { mimeType?: string } }) => p.inlineData?.mimeType?.startsWith("image/")

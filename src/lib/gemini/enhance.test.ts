@@ -66,4 +66,28 @@ describe("enhanceImage", () => {
       enhanceImage({ imageBytes: Buffer.from("x"), mimeType: "image/jpeg", prompt: "p" })
     ).rejects.toThrow("Gemini no retornó ninguna imagen");
   });
+
+  it("rejects with a clear error when Gemini hangs past the 60s timeout", async () => {
+    vi.useFakeTimers();
+    try {
+      mockGenerateContent.mockImplementation(() => new Promise(() => {}));
+      const { enhanceImage } = await import("./enhance");
+
+      const resultPromise = enhanceImage({
+        imageBytes: Buffer.from("x"),
+        mimeType: "image/jpeg",
+        prompt: "p",
+      });
+      // Attach a rejection handler immediately so Vitest doesn't flag an
+      // unhandled rejection while fake timers advance below.
+      const assertion = expect(resultPromise).rejects.toThrow(
+        "Gemini no respondió a tiempo. Intenta de nuevo."
+      );
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
