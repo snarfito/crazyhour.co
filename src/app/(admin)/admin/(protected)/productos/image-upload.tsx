@@ -1,7 +1,99 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { EnhanceButton } from "./enhance-button";
+
 type ProductImage = { id: string; original_url: string; enhanced_url: string | null };
 
-export function ImageUpload(_props: { productId: string; images: ProductImage[] }) {
-  return null; // replaced in Task 9
+export function ImageUpload({
+  productId,
+  images,
+}: {
+  productId: string;
+  images: ProductImage[];
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { data: inserted, error: insertError } = await supabase
+      .from("product_images")
+      .insert({ product_id: productId, original_url: "" })
+      .select()
+      .single();
+
+    if (insertError || !inserted) {
+      setUploading(false);
+      setError("No se pudo registrar la imagen. Intenta de nuevo.");
+      return;
+    }
+
+    const ext = file.name.split(".").pop();
+    const path = `products/${productId}/${inserted.id}-original.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("catalog-images")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      setUploading(false);
+      setError("No se pudo subir la imagen. Intenta de nuevo.");
+      return;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("catalog-images").getPublicUrl(path);
+
+    await supabase.from("product_images").update({ original_url: publicUrl }).eq("id", inserted.id);
+
+    setUploading(false);
+    router.refresh();
+  }
+
+  return (
+    <div className="mt-2">
+      <div className="grid grid-cols-3 gap-4">
+        {images.map((img) => (
+          <div key={img.id} className="rounded-md border border-border p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={img.original_url} alt="Foto original" className="h-24 w-full rounded object-cover" />
+            {img.enhanced_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={img.enhanced_url}
+                alt="Foto mejorada"
+                className="mt-2 h-24 w-full rounded object-cover"
+              />
+            )}
+            <div className="mt-2">
+              <EnhanceButton imageId={img.id} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <label htmlFor="product-image-input" className="mt-3 inline-block cursor-pointer text-sm text-primary hover:underline">
+        {uploading ? "Subiendo..." : "Subir foto"}
+      </label>
+      <input
+        id="product-image-input"
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={handleUpload}
+        disabled={uploading}
+      />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
 }
