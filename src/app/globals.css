@@ -128,3 +128,58 @@
     @apply font-sans;
   }
 }
+
+/* Crazy Hour — public site theme (dark, medium blue) */
+.theme-dark {
+  --background: #1c4170;
+  --foreground: #ffffff;
+  --card: #2a4d80;
+  --card-foreground: #ffffff;
+  --popover: #2a4d80;
+  --popover-foreground: #ffffff;
+  --primary: #4fb3f0;
+  --primary-foreground: #0a1e33;
+  --secondary: #3f6bab;
+  --secondary-foreground: #ffffff;
+  --muted: #2a4d80;
+  --muted-foreground: #c7d6ea;
+  --accent: #3f6bab;
+  --accent-foreground: #ffffff;
+  --destructive: #e8280a;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.16);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: #4fb3f0;
+}
+
+/* Crazy Hour — admin panel theme (light) */
+.theme-light {
+  --background: #f5f9fc;
+  --foreground: #16232e;
+  --card: #fefefe;
+  --card-foreground: #16232e;
+  --popover: #fefefe;
+  --popover-foreground: #16232e;
+  --primary: #0090d8;
+  --primary-foreground: #ffffff;
+  --secondary: #e4f4fc;
+  --secondary-foreground: #16232e;
+  --muted: #f5f9fc;
+  --muted-foreground: #4c5c68;
+  --accent: #e4f4fc;
+  --accent-foreground: #0090d8;
+  --destructive: #e8280a;
+  --destructive-foreground: #ffffff;
+  --border: #dce6ec;
+  --input: #dce6ec;
+  --ring: #0090d8;
+}
+
+/* Crazy Hour brand accents — available in both themes via bg-brand-*/text-brand-* */
+@theme inline {
+  --color-brand-orange: #fc6000;
+  --color-brand-yellow: #ffc400;
+  --color-brand-red: #e8280a;
+  --color-brand-green: #7cb800;
+  --color-brand-whatsapp: #25d366;
+}
