@@ -17,7 +17,7 @@ export function CategoryCard({
       <CatalogImage
         src={coverImageUrl}
         alt={name}
-        label=""
+        label={name}
         seed={id}
         className="aspect-square"
       />

@@ -12,8 +12,9 @@ describe("CategoryGrid", () => {
         ]}
       />
     );
-    expect(screen.getByText("Piñatas")).toBeInTheDocument();
-    expect(screen.getByText("Globos")).toBeInTheDocument();
+    // When categories have no cover images, each name appears twice: in the placeholder and in the paragraph
+    expect(screen.getAllByText("Piñatas")).toHaveLength(2);
+    expect(screen.getAllByText("Globos")).toHaveLength(2);
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 });
