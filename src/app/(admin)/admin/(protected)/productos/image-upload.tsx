@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { EnhanceButton } from "./enhance-button";
+import { createProductImagePlaceholder, setProductImageUrl, deleteProductImage } from "./actions";
 
 type ProductImage = { id: string; original_url: string; enhanced_url: string | null };
 
@@ -26,13 +27,10 @@ export function ImageUpload({
     setError(null);
 
     const supabase = createClient();
-    const { data: inserted, error: insertError } = await supabase
-      .from("product_images")
-      .insert({ product_id: productId, original_url: "" })
-      .select()
-      .single();
-
-    if (insertError || !inserted) {
+    let inserted: { id: string };
+    try {
+      inserted = await createProductImagePlaceholder(productId);
+    } catch {
       setUploading(false);
       setError("No se pudo registrar la imagen. Intenta de nuevo.");
       return;
@@ -46,6 +44,7 @@ export function ImageUpload({
       .upload(path, file, { upsert: true });
 
     if (uploadError) {
+      await deleteProductImage(inserted.id);
       setUploading(false);
       setError("No se pudo subir la imagen. Intenta de nuevo.");
       return;
@@ -55,7 +54,7 @@ export function ImageUpload({
       data: { publicUrl },
     } = supabase.storage.from("catalog-images").getPublicUrl(path);
 
-    await supabase.from("product_images").update({ original_url: publicUrl }).eq("id", inserted.id);
+    await setProductImageUrl(inserted.id, publicUrl);
 
     setUploading(false);
     router.refresh();

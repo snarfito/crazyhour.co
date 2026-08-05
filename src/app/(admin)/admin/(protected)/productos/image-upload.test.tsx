@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ImageUpload } from "./image-upload";
@@ -14,22 +14,25 @@ const mockUpload = vi.fn().mockResolvedValue({ error: null });
 const mockGetPublicUrl = vi.fn().mockReturnValue({
   data: { publicUrl: "https://pqyunubwmchftefnqgvi.supabase.co/storage/v1/object/public/catalog-images/products/p-1/img-1-original.jpg" },
 });
-const mockInsert = vi.fn().mockReturnValue({
-  select: () => ({ single: () => Promise.resolve({ data: { id: "img-1" }, error: null }) }),
-});
-// handleUpload also calls supabase.from("product_images").update(...).eq(...)
-// after the upload succeeds, to persist the public URL — without this, the
-// insert-only mock leaves that call undefined and produces an unhandled
-// promise rejection during the test run (Vitest still reports the assertions
-// as passing, but flags it). Same pattern cover-upload.test.tsx (Task 6)
-// uses for its update-only case.
-const mockUpdateEq = vi.fn().mockResolvedValue({ error: null });
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     storage: { from: () => ({ upload: mockUpload, getPublicUrl: mockGetPublicUrl }) },
-    from: () => ({ insert: mockInsert, update: () => ({ eq: mockUpdateEq }) }),
   }),
+}));
+
+// The DB writes (insert placeholder / persist URL / delete on failure) now
+// go through Server Actions instead of direct browser-side Supabase calls
+// (Fix 3: the orphaned-row bug — a failed Storage upload used to leave a
+// permanent unrenderable product_images row behind).
+const mockCreateProductImagePlaceholder = vi.fn().mockResolvedValue({ id: "img-1" });
+const mockSetProductImageUrl = vi.fn().mockResolvedValue(undefined);
+const mockDeleteProductImage = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("./actions", () => ({
+  createProductImagePlaceholder: (...args: unknown[]) => mockCreateProductImagePlaceholder(...args),
+  setProductImageUrl: (...args: unknown[]) => mockSetProductImageUrl(...args),
+  deleteProductImage: (...args: unknown[]) => mockDeleteProductImage(...args),
 }));
 
 // Same pattern as categorias/cover-upload.test.tsx: ImageUpload calls
@@ -43,6 +46,13 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("ImageUpload", () => {
+  beforeEach(() => {
+    mockUpload.mockReset().mockResolvedValue({ error: null });
+    mockCreateProductImagePlaceholder.mockReset().mockResolvedValue({ id: "img-1" });
+    mockSetProductImageUrl.mockReset().mockResolvedValue(undefined);
+    mockDeleteProductImage.mockReset().mockResolvedValue(undefined);
+  });
+
   it("uploads a new photo and shows it in the list", async () => {
     render(<ImageUpload productId="p-1" images={[]} />);
     const file = new File(["fake-bytes"], "foto.jpg", { type: "image/jpeg" });
@@ -81,5 +91,20 @@ describe("ImageUpload", () => {
       "src",
       "https://example.com/a-enhanced.png"
     );
+  });
+
+  it("deletes the placeholder row when the Storage upload fails", async () => {
+    mockUpload.mockResolvedValue({ error: { message: "Storage is down" } });
+
+    render(<ImageUpload productId="p-1" images={[]} />);
+    const file = new File(["fake-bytes"], "foto.jpg", { type: "image/jpeg" });
+    const input = screen.getByLabelText(/subir foto/i);
+
+    await userEvent.upload(input, file);
+
+    expect(mockCreateProductImagePlaceholder).toHaveBeenCalledWith("p-1");
+    expect(mockDeleteProductImage).toHaveBeenCalledWith("img-1");
+    expect(mockSetProductImageUrl).not.toHaveBeenCalled();
+    expect(await screen.findByText(/no se pudo subir la imagen/i)).toBeInTheDocument();
   });
 });

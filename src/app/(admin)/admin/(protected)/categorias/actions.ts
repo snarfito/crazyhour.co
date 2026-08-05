@@ -66,3 +66,16 @@ export async function deleteCategory(id: string) {
 
   revalidatePath("/admin/categorias");
 }
+
+export async function setCategoryCoverImage(categoryId: string, url: string) {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("categories")
+    .update({ cover_image_url: url })
+    .eq("id", categoryId);
+  if (error) throw error;
+
+  revalidatePath("/admin/categorias");
+}

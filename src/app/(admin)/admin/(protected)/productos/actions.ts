@@ -59,3 +59,40 @@ export async function deleteProduct(id: string) {
 
   revalidatePath("/admin/productos");
 }
+
+export async function createProductImagePlaceholder(productId: string): Promise<{ id: string }> {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .insert({ product_id: productId, original_url: "" })
+    .select()
+    .single();
+  if (error || !data) throw error ?? new Error("No se pudo registrar la imagen.");
+
+  return { id: data.id };
+}
+
+export async function setProductImageUrl(imageId: string, url: string) {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("product_images")
+    .update({ original_url: url })
+    .eq("id", imageId);
+  if (error) throw error;
+
+  revalidatePath("/admin/productos");
+}
+
+export async function deleteProductImage(imageId: string) {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("product_images").delete().eq("id", imageId);
+  if (error) throw error;
+
+  revalidatePath("/admin/productos");
+}

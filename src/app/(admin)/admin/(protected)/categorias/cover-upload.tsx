@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { setCategoryCoverImage } from "./actions";
 
 export function CoverUpload({
   categoryId,
@@ -41,7 +42,12 @@ export function CoverUpload({
       data: { publicUrl },
     } = supabase.storage.from("catalog-images").getPublicUrl(path);
 
-    await supabase.from("categories").update({ cover_image_url: publicUrl }).eq("id", categoryId);
+    try {
+      await setCategoryCoverImage(categoryId, publicUrl);
+    } catch {
+      setError("No se pudo guardar la portada. Intenta de nuevo.");
+      return;
+    }
 
     router.refresh();
   }
