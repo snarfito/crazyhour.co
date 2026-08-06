@@ -9,7 +9,16 @@ const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // is skipped, and `createServiceClient` throws immediately on an
 // empty/undefined key regardless of whether any test actually runs.
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
-const TEST_PREFIX = "zzfase2prodpage_";
+// Deliberately NOT "zzfase2prodpage_" — that literally starts with
+// productos/actions.test.ts's own prefix ("zzfase2prod"), and SQL LIKE's "_"
+// wildcard made an unescaped `${TEST_PREFIX}%` pattern from either file
+// match the other's rows under parallel runs (real cross-file data loss —
+// see categorias/actions.test.ts for the full diagnosis). "pgprod"
+// (page+prod, swapped) shares no literal-string root with "prod" or "cat".
+const TEST_PREFIX = "zzfase2pgprod_";
+// Still escaped defensively — see categorias/actions.test.ts for why "_" in
+// a LIKE pattern needs escaping in general, independent of this rename.
+const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
 
 const mockNotFound = vi.fn(() => {
   throw new Error("NOT_FOUND");
@@ -28,10 +37,10 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
   let categoryId: string;
 
   beforeEach(async () => {
-    const { data: cats } = await admin.from("categories").select("id").like("slug", `${TEST_PREFIX}%`);
+    const { data: cats } = await admin.from("categories").select("id").like("slug", TEST_PREFIX_LIKE);
     const ids = (cats ?? []).map((c) => c.id);
     if (ids.length > 0) await admin.from("products").delete().in("category_id", ids);
-    await admin.from("categories").delete().like("slug", `${TEST_PREFIX}%`);
+    await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
     mockNotFound.mockClear();
 
     const { data: category } = await admin

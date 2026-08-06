@@ -13,6 +13,17 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 // another integration-test file's rows in the shared "categories" table when
 // files run in parallel (see productos/actions.test.ts for its own prefix).
 const TEST_PREFIX = "zzfase2cat_";
+// Every row this file creates goes through the real createCategory() action,
+// which runs the name through slugify() — and slugify() strips the "_" (it's
+// not in slugify's [a-z0-9\s-] allowlist). So the slugs actually stored in
+// the DB never contain TEST_PREFIX's trailing underscore (e.g. "zzfase2cat_Hora
+// Loca" → "zzfase2cathora-loca", not "zzfase2cat_hora-loca"). The cleanup
+// pattern has to match that real, post-slugify shape — matching the literal
+// TEST_PREFIX (with its underscore) would silently match nothing and leave
+// every run's rows behind for the next run to collide with ("Ya existe una
+// categoría con el slug..."). slugify() itself is also LIKE-pattern-safe
+// here: it only ever emits [a-z0-9-], none of which are SQL LIKE wildcards.
+const TEST_PREFIX_LIKE = `${slugify(TEST_PREFIX)}%`;
 
 // verifySession() normally redirects unauthenticated users — for these
 // tests we mock it to simulate an authenticated admin, since exercising
@@ -39,7 +50,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
   beforeEach(async () => {
-    await admin.from("categories").delete().like("slug", `${TEST_PREFIX}%`);
+    await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
   });
 
   it("createCategory inserts a row with an auto-generated slug", async () => {
@@ -53,7 +64,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { data } = await admin
       .from("categories")
       .select("*")
-      .like("slug", `${TEST_PREFIX}%`)
+      .like("slug", TEST_PREFIX_LIKE)
       .single();
     expect(data?.name).toBe(`${TEST_PREFIX}Hora Loca`);
     // slugify() strips non-alphanumeric characters, including the "_" in
@@ -88,7 +99,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { data: created } = await admin
       .from("categories")
       .select("id")
-      .like("slug", `${TEST_PREFIX}%`)
+      .like("slug", TEST_PREFIX_LIKE)
       .single();
 
     const update = new FormData();
@@ -115,7 +126,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { data: created } = await admin
       .from("categories")
       .select("id")
-      .like("slug", `${TEST_PREFIX}%`)
+      .like("slug", TEST_PREFIX_LIKE)
       .single();
 
     await deleteCategory(created!.id);
@@ -123,7 +134,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { data: remaining } = await admin
       .from("categories")
       .select("*")
-      .like("slug", `${TEST_PREFIX}%`);
+      .like("slug", TEST_PREFIX_LIKE);
     expect(remaining).toHaveLength(0);
   });
 });

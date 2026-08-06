@@ -12,6 +12,13 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 // another integration-test file's rows in the shared "categories" table when
 // files run in parallel (see categorias/actions.test.ts for its own prefix).
 const TEST_PREFIX = "zzfase2prod_";
+// SQL LIKE treats "_" as a single-character wildcard, not a literal
+// underscore — so the naive pattern `${TEST_PREFIX}%` ("zzfase2prod_%")
+// also matches unrelated prefixes like "zzfase2prodpage_..." (the product
+// page test's own prefix). Escaping every underscore in TEST_PREFIX makes
+// the LIKE pattern match only this file's literal prefix (see
+// categorias/actions.test.ts for the full explanation of this bug).
+const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
 
 vi.mock("@/lib/supabase/dal", () => ({
   verifySession: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
@@ -40,12 +47,12 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
     const { data: prefixedCategories } = await admin
       .from("categories")
       .select("id")
-      .like("slug", `${TEST_PREFIX}%`);
+      .like("slug", TEST_PREFIX_LIKE);
     const categoryIds = (prefixedCategories ?? []).map((c) => c.id);
     if (categoryIds.length > 0) {
       await admin.from("products").delete().in("category_id", categoryIds);
     }
-    await admin.from("categories").delete().like("slug", `${TEST_PREFIX}%`);
+    await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
     const { data } = await admin
       .from("categories")
       .insert({ name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 })
