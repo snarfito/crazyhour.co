@@ -203,7 +203,7 @@
 }
 
 .animate-stagger-in {
-  animation: stagger-in 320ms ease-out both;
+  animation: stagger-in 320ms ease-out backwards;
   animation-delay: var(--stagger-delay, 0ms);
 }
 
@@ -212,5 +212,11 @@
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

@@ -6,11 +6,13 @@ export function CatalogImage({
   seed,
   label,
   className,
+  sizes = "(max-width: 768px) 50vw, 25vw",
 }: {
   src: string | null;
   seed: string;
   label: string;
   className?: string;
+  sizes?: string;
 }) {
   return (
     <div className={`relative overflow-hidden ${className ?? ""}`}>
@@ -19,7 +21,7 @@ export function CatalogImage({
           src={src}
           alt=""
           fill
-          sizes="(max-width: 768px) 50vw, 25vw"
+          sizes={sizes}
           className="object-cover"
         />
       ) : (
@@ -29,7 +31,7 @@ export function CatalogImage({
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/70 to-transparent"
       />
-      <p className="absolute inset-x-0 bottom-0 p-2 font-heading text-sm font-bold text-white sm:text-base">
+      <p className="absolute inset-x-0 bottom-0 line-clamp-2 p-2 font-heading text-sm font-bold text-white sm:text-base">
         {label}
       </p>
     </div>
