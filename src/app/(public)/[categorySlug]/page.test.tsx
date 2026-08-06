@@ -9,12 +9,15 @@ const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // is skipped, and `createServiceClient` throws immediately on an
 // empty/undefined key regardless of whether any test actually runs.
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
-// Deliberately NOT "zzfase2catpage_" — that literally starts with
-// categorias/actions.test.ts's own prefix ("zzfase2cat"), and SQL LIKE's "_"
-// wildcard made an unescaped `${TEST_PREFIX}%` pattern from either file
-// match the other's rows under parallel runs (real cross-file data loss,
-// diagnosed via `... like 'zzfase2cat\_%'` against local Postgres). "pgcat"
-// (page+cat, swapped) shares no literal-string root with "cat" or "prod".
+// Deliberately NOT "zzfase2catpage_" — categorias/actions.test.ts's rows go
+// through slugify(), which strips "_", so its cleanup pattern there ended
+// up unbounded ("zzfase2cat%", no delimiter) and matched this file's rows
+// too under parallel runs (real cross-file data loss, one-directional: this
+// file's own pattern never matched categorias' rows). Renaming to "pgcat"
+// (page+cat, swapped) breaks that literal-prefix relationship regardless of
+// how categorias' own pattern is built — see categorias/actions.test.ts for
+// the full diagnosis and its own fix (switched to a "-" prefix, which
+// survives slugify() unchanged and needs no escaping).
 const TEST_PREFIX = "zzfase2pgcat_";
 // Still escaped defensively — see categorias/actions.test.ts for why "_" in
 // a LIKE pattern needs escaping in general, independent of this rename.

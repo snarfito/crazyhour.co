@@ -12,18 +12,24 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 // Unique per-file prefix so this file's fixture rows can never collide with
 // another integration-test file's rows in the shared "categories" table when
 // files run in parallel (see productos/actions.test.ts for its own prefix).
-const TEST_PREFIX = "zzfase2cat_";
-// Every row this file creates goes through the real createCategory() action,
-// which runs the name through slugify() — and slugify() strips the "_" (it's
-// not in slugify's [a-z0-9\s-] allowlist). So the slugs actually stored in
-// the DB never contain TEST_PREFIX's trailing underscore (e.g. "zzfase2cat_Hora
-// Loca" → "zzfase2cathora-loca", not "zzfase2cat_hora-loca"). The cleanup
-// pattern has to match that real, post-slugify shape — matching the literal
-// TEST_PREFIX (with its underscore) would silently match nothing and leave
-// every run's rows behind for the next run to collide with ("Ya existe una
-// categoría con el slug..."). slugify() itself is also LIKE-pattern-safe
-// here: it only ever emits [a-z0-9-], none of which are SQL LIKE wildcards.
-const TEST_PREFIX_LIKE = `${slugify(TEST_PREFIX)}%`;
+// A hyphen, not an underscore: most of this file's rows go through the real
+// createCategory() action, which runs the name through slugify() —
+// slugify() strips "_" (not in its [a-z0-9\s-] allowlist) but keeps "-", so
+// a hyphen survives slugify() unchanged and needs no LIKE-escaping. (The
+// updateCategory test below sets its slug directly rather than through
+// slugify() — a hyphen behaves identically either way, so no special case
+// is needed the way an underscore would have required one.)
+const TEST_PREFIX = "zzfase2cat-";
+const TEST_PREFIX_SLUG = slugify(TEST_PREFIX);
+// Guard against TEST_PREFIX ever being changed to something slugify()
+// reduces to "" (e.g. only symbols/whitespace) — an empty prefix turns the
+// pattern below into a bare "%", and beforeEach's delete().like("slug", "%")
+// would silently wipe the entire categories table, including every other
+// parallel test file's in-flight fixtures.
+if (!TEST_PREFIX_SLUG) {
+  throw new Error("TEST_PREFIX_SLUG is empty — refusing to build a LIKE pattern that would match every row");
+}
+const TEST_PREFIX_LIKE = `${TEST_PREFIX_SLUG}%`;
 
 // verifySession() normally redirects unauthenticated users — for these
 // tests we mock it to simulate an authenticated admin, since exercising
@@ -67,12 +73,9 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
       .like("slug", TEST_PREFIX_LIKE)
       .single();
     expect(data?.name).toBe(`${TEST_PREFIX}Hora Loca`);
-    // slugify() strips non-alphanumeric characters, including the "_" in
-    // TEST_PREFIX — so the prefix survives in the slug output but without
-    // its underscore (e.g. "zzfase2cathora-loca", not "zzfase2cat_hora-loca").
     // Asserting via the real slugify() (rather than hand-writing the
-    // expected string) keeps this test correct if that stripping behavior
-    // ever changes.
+    // expected string) keeps this test correct if slugify()'s stripping
+    // behavior ever changes.
     expect(data?.slug).toBe(slugify(`${TEST_PREFIX}Hora Loca`));
   });
 

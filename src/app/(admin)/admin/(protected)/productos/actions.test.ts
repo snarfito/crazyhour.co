@@ -14,10 +14,11 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 const TEST_PREFIX = "zzfase2prod_";
 // SQL LIKE treats "_" as a single-character wildcard, not a literal
 // underscore — so the naive pattern `${TEST_PREFIX}%` ("zzfase2prod_%")
-// also matches unrelated prefixes like "zzfase2prodpage_..." (the product
-// page test's own prefix). Escaping every underscore in TEST_PREFIX makes
-// the LIKE pattern match only this file's literal prefix (see
-// categorias/actions.test.ts for the full explanation of this bug).
+// would also match any other prefix sharing this literal text plus one
+// extra character before its own underscore. Escaping every underscore in
+// TEST_PREFIX makes the LIKE pattern match only this file's literal prefix
+// (see categorias/actions.test.ts for the full explanation of this bug —
+// that file hit the failure mode this escaping prevents here).
 const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
 
 vi.mock("@/lib/supabase/dal", () => ({

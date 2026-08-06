@@ -9,15 +9,15 @@ const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // is skipped, and `createServiceClient` throws immediately on an
 // empty/undefined key regardless of whether any test actually runs.
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
-// Deliberately NOT "zzfase2prodpage_" — that literally starts with
-// productos/actions.test.ts's own prefix ("zzfase2prod"), and SQL LIKE's "_"
-// wildcard made an unescaped `${TEST_PREFIX}%` pattern from either file
-// match the other's rows under parallel runs (real cross-file data loss —
-// see categorias/actions.test.ts for the full diagnosis). "pgprod"
-// (page+prod, swapped) shares no literal-string root with "prod" or "cat".
+// Named "pgprod" (page+prod, swapped) rather than "prodpage" purely as
+// defensive hygiene against future prefix additions that might share a
+// literal-string root — productos/actions.test.ts's own escaped pattern
+// (`zzfase2prod\_%`) already keeps its delimiter, so it was never actually
+// at risk of matching "zzfase2prodpage_..." rows either way (see
+// categorias/actions.test.ts for the LIKE-wildcard bug this file's own
+// escaping below guards against, and for the one prefix pair — categorias
+// vs. the category-page test — where a rename actually was required).
 const TEST_PREFIX = "zzfase2pgprod_";
-// Still escaped defensively — see categorias/actions.test.ts for why "_" in
-// a LIKE pattern needs escaping in general, independent of this rename.
 const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
 
 const mockNotFound = vi.fn(() => {
