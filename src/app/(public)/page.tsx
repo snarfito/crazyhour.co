@@ -22,7 +22,7 @@ export default async function HomePage() {
   return (
     <>
       <Hero />
-      <div className="p-4">
+      <div id="catalogo" className="p-4">
         <CategoryGrid categories={categories} />
       </div>
     </>

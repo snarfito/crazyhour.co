@@ -4,22 +4,20 @@ import { Hero } from "./hero";
 
 describe("Hero", () => {
   it("renders the headline, both CTAs, the emblem, and the verified data line", () => {
-    render(<Hero />);
+    const { container } = render(<Hero />);
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ver catálogo/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ver catálogo/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /pedir por whatsapp/i })).toBeInTheDocument();
-    expect(screen.getByAltText("Crazy Hour")).toHaveAttribute(
-      "src",
-      expect.stringContaining("logo-emblema.jpeg")
-    );
+    const emblemImg = container.querySelector('img[src*="logo-emblema"]');
+    expect(emblemImg).toHaveAttribute("alt", "");
     expect(screen.getByText(/catálogo renovado cada 15 días/i)).toBeInTheDocument();
   });
 
-  it("both CTAs are inert (no href, no onClick wiring beyond default button behavior)", () => {
+  it("the catalog CTA anchors to the grid and the WhatsApp CTA is inert", () => {
     render(<Hero />);
-    const catalogCta = screen.getByRole("button", { name: /ver catálogo/i });
+    const catalogCta = screen.getByRole("link", { name: /ver catálogo/i });
     const whatsappCta = screen.getByRole("button", { name: /pedir por whatsapp/i });
-    expect(catalogCta).toHaveAttribute("type", "button");
+    expect(catalogCta).toHaveAttribute("href", "#catalogo");
     expect(whatsappCta).toHaveAttribute("type", "button");
   });
 });

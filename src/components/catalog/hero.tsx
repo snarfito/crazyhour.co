@@ -17,12 +17,12 @@ export function Hero() {
             Piñatería y artículos de fiesta. Elige por imagen, no por menú.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">
-            <button
-              type="button"
+            <a
+              href="#catalogo"
               className="rounded-lg bg-primary px-6 py-3 font-heading text-sm font-extrabold text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]"
             >
               Ver catálogo →
-            </button>
+            </a>
             <button
               type="button"
               className="rounded-lg bg-brand-whatsapp px-6 py-3 font-heading text-sm font-extrabold text-white transition-transform duration-150 ease-out active:scale-[0.97]"
@@ -37,10 +37,10 @@ export function Hero() {
         <div className="group relative h-48 w-48 shrink-0 sm:h-64 sm:w-64">
           <Image
             src="/logo-emblema.jpeg"
-            alt="Crazy Hour"
+            alt=""
             fill
             sizes="256px"
-            className="rounded-full object-cover shadow-lg transition-transform duration-700 ease-out group-hover:rotate-180"
+            className="rounded-full object-cover shadow-lg ring-2 ring-primary/40 transition-transform duration-400 ease-out group-hover:rotate-360"
           />
         </div>
       </div>
