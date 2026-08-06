@@ -1,9 +1,25 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatCOP } from "@/lib/format";
 import { ImageGallery } from "./image-gallery";
 import { Button } from "@/components/ui/button";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("products")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
+  return { title: data ? `${data.name} — Crazy Hour` : "Crazy Hour" };
+}
 
 export default async function ProductPage({
   params,
@@ -21,12 +37,10 @@ export default async function ProductPage({
 
   if (!product || !product.is_active) notFound();
 
-  const images = (product.product_images ?? []).map(
-    (img: { original_url: string; enhanced_url: string | null }) => ({
-      url: img.enhanced_url ?? img.original_url,
-      alt: product.name,
-    })
-  );
+  const images = (product.product_images ?? [])
+    .map((img: { original_url: string; enhanced_url: string | null }) => img.enhanced_url || img.original_url)
+    .filter((url: string): url is string => Boolean(url))
+    .map((url: string) => ({ url, alt: product.name }));
 
   const categorySlug = (
     product.categories as unknown as { slug: string } | null

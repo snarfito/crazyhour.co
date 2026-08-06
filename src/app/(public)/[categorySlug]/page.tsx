@@ -1,7 +1,23 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { EmptyState } from "@/components/catalog/empty-state";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ categorySlug: string }>;
+}): Promise<Metadata> {
+  const { categorySlug } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("categories")
+    .select("name")
+    .eq("slug", categorySlug)
+    .maybeSingle();
+  return { title: data ? `${data.name} — Crazy Hour` : "Crazy Hour" };
+}
 
 export default async function CategoryPage({
   params,
@@ -28,8 +44,8 @@ export default async function CategoryPage({
 
   const items = (products ?? []).map((p) => {
     const images = (p.product_images ?? []) as { original_url: string; enhanced_url: string | null }[];
-    const first = images[0];
-    const imageUrl = first ? first.enhanced_url ?? first.original_url : null;
+    const first = images.find((img) => img.enhanced_url || img.original_url);
+    const imageUrl = first ? first.enhanced_url || first.original_url : null;
     return { id: p.id, name: p.name, price_cop: p.price_cop, imageUrl };
   });
 
