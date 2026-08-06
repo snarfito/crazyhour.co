@@ -11,4 +11,8 @@ vi.mock("next/font/google", () => ({
     variable: config.variable,
     className: "manrope",
   })),
+  Caveat: vi.fn((config) => ({
+    variable: config.variable,
+    className: "caveat",
+  })),
 }));

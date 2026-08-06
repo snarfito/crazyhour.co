@@ -1,4 +1,4 @@
-import { Nunito, Manrope } from "next/font/google";
+import { Nunito, Manrope, Caveat } from "next/font/google";
 
 export const fontHeading = Nunito({
   subsets: ["latin"],
@@ -11,5 +11,12 @@ export const fontBody = Manrope({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-manrope",
+  display: "swap",
+});
+
+export const fontAccent = Caveat({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-caveat",
   display: "swap",
 });

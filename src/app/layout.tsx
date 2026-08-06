@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fontHeading, fontBody } from "@/lib/fonts";
+import { fontHeading, fontBody, fontAccent } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${fontHeading.variable} ${fontBody.variable} h-full antialiased`}
+      className={`${fontHeading.variable} ${fontBody.variable} ${fontAccent.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body">{children}</body>
     </html>
