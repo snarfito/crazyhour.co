@@ -16,7 +16,7 @@ export function ImageGallery({
   if (images.length === 0) {
     return (
       <div className="aspect-square w-full overflow-hidden rounded-lg">
-        <BrandPlaceholder label={productName} seed={productName} />
+        <BrandPlaceholder seed={productName} />
       </div>
     );
   }

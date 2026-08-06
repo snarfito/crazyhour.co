@@ -12,9 +12,9 @@ describe("ProductGrid", () => {
         ]}
       />
     );
-    // Each product name appears twice per card (placeholder + card text)
-    expect(screen.getAllByText("Piñata estrella")).toHaveLength(2);
-    expect(screen.getAllByText("Set de globos")).toHaveLength(2);
+    // Each product name appears once in the card text; placeholders are now purely decorative (text moved to CatalogImage overlay in Task 3)
+    expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
+    expect(screen.getByText("Set de globos")).toBeInTheDocument();
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 });

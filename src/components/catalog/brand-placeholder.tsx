@@ -1,16 +1,17 @@
-// Each accent pairs its background with a foreground that passes WCAG
-// contrast against it — bg-brand-yellow (#FFC400) and bg-brand-green
-// (#7CB800) fail contrast with white text, so they use the admin panel's
-// dark-ink token (#16232E, see globals.css .theme-light --foreground)
-// instead.
+import { PartyPopper, Gift, Sparkles, Star } from "lucide-react";
+
+// Each entry pairs a two-stop brand-color gradient with a decorative icon.
+// Purely visual — the accessible name for the tile comes from CatalogImage's
+// overlay text (Task 3), so the icon is aria-hidden and contrast rules that
+// applied to the old text-based placeholder no longer apply here.
 const ACCENTS = [
-  { bg: "bg-brand-orange", fg: "text-white" },
-  { bg: "bg-brand-yellow", fg: "text-[#16232E]" },
-  { bg: "bg-brand-red", fg: "text-white" },
-  { bg: "bg-brand-green", fg: "text-[#16232E]" },
+  { from: "from-brand-orange", to: "to-brand-yellow", Icon: PartyPopper },
+  { from: "from-brand-yellow", to: "to-brand-red", Icon: Gift },
+  { from: "from-brand-red", to: "to-brand-green", Icon: Sparkles },
+  { from: "from-brand-green", to: "to-brand-orange", Icon: Star },
 ];
 
-function pickAccent(seed: string): { bg: string; fg: string } {
+function pickAccent(seed: string) {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
@@ -18,13 +19,11 @@ function pickAccent(seed: string): { bg: string; fg: string } {
   return ACCENTS[hash % ACCENTS.length];
 }
 
-export function BrandPlaceholder({ label, seed }: { label: string; seed: string }) {
-  const { bg, fg } = pickAccent(seed);
+export function BrandPlaceholder({ seed }: { seed: string }) {
+  const { from, to, Icon } = pickAccent(seed);
   return (
-    <div
-      className={`${bg} flex h-full w-full items-center justify-center p-4 text-center`}
-    >
-      <span className={`font-heading text-lg font-extrabold ${fg}`}>{label}</span>
+    <div className={`bg-linear-to-br ${from} ${to} flex h-full w-full items-center justify-center`}>
+      <Icon aria-hidden="true" className="h-10 w-10 text-white drop-shadow-md" />
     </div>
   );
 }

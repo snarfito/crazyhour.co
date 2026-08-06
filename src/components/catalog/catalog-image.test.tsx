@@ -14,8 +14,8 @@ describe("CatalogImage", () => {
   });
 
   it("renders the brand placeholder when src is null", () => {
-    render(<CatalogImage src={null} alt="Piñata estrella" label="Piñata estrella" seed="p1" />);
+    const { container } = render(<CatalogImage src={null} alt="Piñata estrella" label="Piñata estrella" seed="p1" />);
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
-    expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
+    expect(container.querySelector("svg")).toBeInTheDocument();
   });
 });

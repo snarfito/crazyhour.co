@@ -17,7 +17,7 @@ export function CatalogImage({
   if (!src) {
     return (
       <div className={className}>
-        <BrandPlaceholder label={label} seed={seed} />
+        <BrandPlaceholder seed={seed} />
       </div>
     );
   }

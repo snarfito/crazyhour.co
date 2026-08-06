@@ -7,7 +7,7 @@ describe("CategoryCard", () => {
     render(<CategoryCard id="c1" name="Piñatas" slug="pinatas" coverImageUrl={null} />);
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/pinatas");
-    // When there's no cover image, the name appears twice: in the placeholder label and in the paragraph below
-    expect(screen.getAllByText("Piñatas")).toHaveLength(2);
+    // The name appears once in the card text; the placeholder is now purely decorative (text moved to CatalogImage overlay in Task 3)
+    expect(screen.getByText("Piñatas")).toBeInTheDocument();
   });
 });

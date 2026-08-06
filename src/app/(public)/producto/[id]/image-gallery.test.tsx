@@ -5,8 +5,8 @@ import { ImageGallery } from "./image-gallery";
 
 describe("ImageGallery", () => {
   it("shows the first image as the main image and a brand placeholder if there are none", () => {
-    render(<ImageGallery images={[]} productName="Piñata estrella" />);
-    expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
+    const { container } = render(<ImageGallery images={[]} productName="Piñata estrella" />);
+    expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
   it("shows the first image as main and switches on thumbnail click", async () => {

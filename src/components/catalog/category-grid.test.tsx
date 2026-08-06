@@ -12,9 +12,9 @@ describe("CategoryGrid", () => {
         ]}
       />
     );
-    // When categories have no cover images, each name appears twice: in the placeholder and in the paragraph
-    expect(screen.getAllByText("Piñatas")).toHaveLength(2);
-    expect(screen.getAllByText("Globos")).toHaveLength(2);
+    // Each name appears once in the card text; placeholders are now purely decorative (text moved to CatalogImage overlay in Task 3)
+    expect(screen.getByText("Piñatas")).toBeInTheDocument();
+    expect(screen.getByText("Globos")).toBeInTheDocument();
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 });
