@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { Hero } from "@/components/catalog/hero";
 import { CategoryGrid } from "@/components/catalog/category-grid";
 import { EmptyState } from "@/components/catalog/empty-state";
 
@@ -10,12 +11,20 @@ export default async function HomePage() {
     .order("sort_order");
 
   if (!categories || categories.length === 0) {
-    return <EmptyState message="Estamos armando el catálogo — vuelve pronto." />;
+    return (
+      <>
+        <Hero />
+        <EmptyState message="Estamos armando el catálogo — vuelve pronto." />
+      </>
+    );
   }
 
   return (
-    <div className="p-4">
-      <CategoryGrid categories={categories} />
-    </div>
+    <>
+      <Hero />
+      <div className="p-4">
+        <CategoryGrid categories={categories} />
+      </div>
+    </>
   );
 }
