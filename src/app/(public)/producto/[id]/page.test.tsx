@@ -64,11 +64,10 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
       })
       .select()
       .single();
-    // Give the product a real image so ImageGallery renders it instead of
-    // falling back to BrandPlaceholder — the placeholder renders the
-    // product name as visible text too, which would collide with the <h1>
-    // below under getByText's exact-match (see Task 9's category page test,
-    // which avoids the same collision the same way).
+    // Give the product a real image — otherwise the empty product_images
+    // array falls back to no images, which is a different code path than
+    // what this test is checking. See [categorySlug]/page.test.tsx for the
+    // equivalent category-page seeding pattern (see Task 6).
     await admin.from("product_images").insert({
       product_id: product!.id,
       original_url: "https://example.com/original.jpg",
