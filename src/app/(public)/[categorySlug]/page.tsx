@@ -19,6 +19,8 @@ export async function generateMetadata({
   return { title: data ? `${data.name} — Crazy Hour` : "Crazy Hour" };
 }
 
+const NEW_PRODUCT_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
+
 export default async function CategoryPage({
   params,
 }: {
@@ -37,16 +39,18 @@ export default async function CategoryPage({
 
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, price_cop, product_images(original_url, enhanced_url)")
+    .select("id, name, price_cop, created_at, product_images(original_url, enhanced_url)")
     .eq("category_id", category.id)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
+  const now = Date.now();
   const items = (products ?? []).map((p) => {
     const images = (p.product_images ?? []) as { original_url: string; enhanced_url: string | null }[];
     const first = images.find((img) => img.enhanced_url || img.original_url);
     const imageUrl = first ? first.enhanced_url || first.original_url : null;
-    return { id: p.id, name: p.name, price_cop: p.price_cop, imageUrl };
+    const isNew = now - new Date(p.created_at).getTime() < NEW_PRODUCT_WINDOW_MS;
+    return { id: p.id, name: p.name, price_cop: p.price_cop, imageUrl, isNew };
   });
 
   return (

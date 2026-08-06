@@ -4,11 +4,6 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
-// Falls back to a placeholder when unset so `describe.skipIf` below can skip
-// cleanly: the describe callback (including `createServiceClient(...)` at
-// its top) still runs during Vitest's collection phase even when the suite
-// is skipped, and `createServiceClient` throws immediately on an
-// empty/undefined key regardless of whether any test actually runs.
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
 // Deliberately NOT "zzfase2catpage_" — categorias/actions.test.ts's rows go
 // through slugify(), which strips "_", so its cleanup pattern there ended
@@ -85,10 +80,41 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
 
     expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
     expect(screen.queryByText("Producto inactivo")).not.toBeInTheDocument();
-    expect(screen.getByAltText("Piñata estrella")).toHaveAttribute(
-      "src",
-      expect.stringContaining("enhanced.jpg")
-    );
+    expect(screen.getByAltText("")).toHaveAttribute("src", expect.stringContaining("enhanced.jpg"));
+  });
+
+  it("shows the nuevo badge only for products created in the last 15 days", async () => {
+    const { data: category } = await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 })
+      .select()
+      .single();
+
+    const now = new Date();
+    const twentyDaysAgo = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString();
+
+    await admin.from("products").insert({
+      category_id: category!.id,
+      name: "Producto reciente",
+      description: "x",
+      price_cop: 10000,
+      is_active: true,
+      created_at: now.toISOString(),
+    });
+    await admin.from("products").insert({
+      category_id: category!.id,
+      name: "Producto antiguo",
+      description: "x",
+      price_cop: 10000,
+      is_active: true,
+      created_at: twentyDaysAgo,
+    });
+
+    const CategoryPage = (await import("./page")).default;
+    const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}pinatas` }) });
+    render(ui);
+
+    expect(screen.getAllByText("¡nuevo!")).toHaveLength(1);
   });
 
   it("shows the empty state when the category has no active products", async () => {
