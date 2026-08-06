@@ -6,21 +6,23 @@ export function CategoryCard({
   name,
   slug,
   coverImageUrl,
+  wide,
+  index,
 }: {
   id: string;
   name: string;
   slug: string;
   coverImageUrl: string | null;
+  wide: boolean;
+  index: number;
 }) {
   return (
-    <Link href={`/${slug}`} className="block overflow-hidden rounded-lg border border-border">
-      <CatalogImage
-        src={coverImageUrl}
-        label={name}
-        seed={id}
-        className="aspect-square"
-      />
-      <p className="p-2 text-center font-heading text-sm font-bold">{name}</p>
+    <Link
+      href={`/${slug}`}
+      style={{ "--stagger-delay": `${index * 40}ms` } as React.CSSProperties}
+      className={`animate-stagger-in block overflow-hidden rounded-2xl border border-border transition-transform duration-200 ease-out hover:-translate-y-1 ${wide ? "col-span-2" : ""}`}
+    >
+      <CatalogImage src={coverImageUrl} seed={id} label={name} className="h-full w-full" />
     </Link>
   );
 }
