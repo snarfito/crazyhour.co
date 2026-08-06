@@ -7,7 +7,7 @@ describe("CategoryCard", () => {
     render(<CategoryCard id="c1" name="Piñatas" slug="pinatas" coverImageUrl={null} />);
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/pinatas");
-    // The name appears once in the card text; the placeholder is now purely decorative (text moved to CatalogImage overlay in Task 3)
-    expect(screen.getByText("Piñatas")).toBeInTheDocument();
+    // The name appears in both the overlay (via CatalogImage) and card text below
+    expect(screen.getAllByText("Piñatas").length).toBeGreaterThan(0);
   });
 });

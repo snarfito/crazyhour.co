@@ -15,7 +15,7 @@ export function ProductCard({
 }) {
   return (
     <Link href={`/producto/${id}`} className="block overflow-hidden rounded-lg border border-border">
-      <CatalogImage src={imageUrl} alt={name} label={name} seed={id} className="aspect-square" />
+      <CatalogImage src={imageUrl} label={name} seed={id} className="aspect-square" />
       <div className="p-2">
         <p className="line-clamp-2 text-sm font-medium">{name}</p>
         <p className="mt-1 font-heading text-sm font-bold">{formatCOP(priceCop)}</p>

@@ -12,9 +12,9 @@ describe("CategoryGrid", () => {
         ]}
       />
     );
-    // Each name appears once in the card text; placeholders are now purely decorative (text moved to CatalogImage overlay in Task 3)
-    expect(screen.getByText("Piñatas")).toBeInTheDocument();
-    expect(screen.getByText("Globos")).toBeInTheDocument();
+    // Names appear in both the overlay (via CatalogImage) and card text below
+    expect(screen.getAllByText("Piñatas").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Globos").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 });

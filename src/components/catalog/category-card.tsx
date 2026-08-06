@@ -16,7 +16,6 @@ export function CategoryCard({
     <Link href={`/${slug}`} className="block overflow-hidden rounded-lg border border-border">
       <CatalogImage
         src={coverImageUrl}
-        alt={name}
         label={name}
         seed={id}
         className="aspect-square"
