@@ -53,7 +53,7 @@ export default async function ProductPage({
           ← Volver a la categoría
         </Link>
       )}
-      <div className="mt-3 grid gap-6 md:grid-cols-2">
+      <div className="animate-stagger-in mt-3 grid gap-6 md:grid-cols-2">
         <ImageGallery images={images} productName={product.name} />
         <div>
           <h1 className="font-heading text-2xl font-extrabold">{product.name}</h1>
