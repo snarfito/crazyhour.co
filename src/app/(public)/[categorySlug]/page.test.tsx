@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // Falls back to a placeholder when unset so `describe.skipIf` below can skip
@@ -19,9 +20,9 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 // the full diagnosis and its own fix (switched to a "-" prefix, which
 // survives slugify() unchanged and needs no escaping).
 const TEST_PREFIX = "zzfase2pgcat_";
-// Still escaped defensively — see categorias/actions.test.ts for why "_" in
+// Still escaped defensively — see src/test/db-prefix.ts for why "_" in
 // a LIKE pattern needs escaping in general, independent of this rename.
-const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
+const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
 const mockNotFound = vi.fn(() => {
   throw new Error("NOT_FOUND");
@@ -84,6 +85,10 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
 
     expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
     expect(screen.queryByText("Producto inactivo")).not.toBeInTheDocument();
+    expect(screen.getByAltText("Piñata estrella")).toHaveAttribute(
+      "src",
+      expect.stringContaining("enhanced.jpg")
+    );
   });
 
   it("shows the empty state when the category has no active products", async () => {

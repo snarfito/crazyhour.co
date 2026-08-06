@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { slugify } from "@/lib/slug";
+import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // Falls back to a placeholder when unset so `describe.skipIf` below can skip
@@ -21,15 +22,9 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 // is needed the way an underscore would have required one.)
 const TEST_PREFIX = "zzfase2cat-";
 const TEST_PREFIX_SLUG = slugify(TEST_PREFIX);
-// Guard against TEST_PREFIX ever being changed to something slugify()
-// reduces to "" (e.g. only symbols/whitespace) — an empty prefix turns the
-// pattern below into a bare "%", and beforeEach's delete().like("slug", "%")
-// would silently wipe the entire categories table, including every other
-// parallel test file's in-flight fixtures.
-if (!TEST_PREFIX_SLUG) {
-  throw new Error("TEST_PREFIX_SLUG is empty — refusing to build a LIKE pattern that would match every row");
-}
-const TEST_PREFIX_LIKE = `${TEST_PREFIX_SLUG}%`;
+// The empty-prefix guard against slugify() reducing TEST_PREFIX to ""
+// lives inside likePattern() now — see src/test/db-prefix.ts.
+const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX_SLUG);
 
 // verifySession() normally redirects unauthenticated users — for these
 // tests we mock it to simulate an authenticated admin, since exercising

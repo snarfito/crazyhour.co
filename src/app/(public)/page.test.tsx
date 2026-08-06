@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // Falls back to a placeholder when unset so `describe.skipIf` below can skip
@@ -10,13 +11,9 @@ const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // empty/undefined key regardless of whether any test actually runs.
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
 const TEST_PREFIX = "zzfase2home_";
-// SQL LIKE treats "_" as a single-character wildcard, not a literal
-// underscore — the naive pattern `${TEST_PREFIX}%` would also match any
-// other prefix sharing this literal text plus one extra character before
-// its own underscore (this bit categorias/productos vs. their "…page_"
-// siblings — see categorias/actions.test.ts for the full story). Escaping
-// keeps this file's cleanup scoped to its own rows only.
-const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
+// See src/test/db-prefix.ts for why LIKE-escaping is required here (and
+// for the full explanation of the bug categorias/actions.test.ts hit).
+const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
 // The "no categories" case below can't be exercised by seeding the real
 // `categories` table and asserting it's empty: every other DB-integration

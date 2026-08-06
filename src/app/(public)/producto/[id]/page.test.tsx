@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // Falls back to a placeholder when unset so `describe.skipIf` below can skip
@@ -18,7 +19,7 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 // escaping below guards against, and for the one prefix pair — categorias
 // vs. the category-page test — where a rename actually was required).
 const TEST_PREFIX = "zzfase2pgprod_";
-const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
+const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
 const mockNotFound = vi.fn(() => {
   throw new Error("NOT_FOUND");

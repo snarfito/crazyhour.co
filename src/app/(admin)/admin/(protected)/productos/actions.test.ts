@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // Falls back to a placeholder when unset so `describe.skipIf` below can skip
@@ -12,14 +13,9 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 // another integration-test file's rows in the shared "categories" table when
 // files run in parallel (see categorias/actions.test.ts for its own prefix).
 const TEST_PREFIX = "zzfase2prod_";
-// SQL LIKE treats "_" as a single-character wildcard, not a literal
-// underscore — so the naive pattern `${TEST_PREFIX}%` ("zzfase2prod_%")
-// would also match any other prefix sharing this literal text plus one
-// extra character before its own underscore. Escaping every underscore in
-// TEST_PREFIX makes the LIKE pattern match only this file's literal prefix
-// (see categorias/actions.test.ts for the full explanation of this bug —
-// that file hit the failure mode this escaping prevents here).
-const TEST_PREFIX_LIKE = `${TEST_PREFIX.replace(/_/g, "\\_")}%`;
+// See src/test/db-prefix.ts for why LIKE-escaping is required here (and
+// for the full explanation of the bug categorias/actions.test.ts hit).
+const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
 vi.mock("@/lib/supabase/dal", () => ({
   verifySession: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
