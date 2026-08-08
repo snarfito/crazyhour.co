@@ -2,7 +2,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { verifyWebhookSignature, type WompiWebhookPayload } from "@/lib/wompi";
 
 export async function POST(request: Request) {
-  const payload = (await request.json()) as WompiWebhookPayload;
+  let payload: WompiWebhookPayload;
+  try {
+    payload = (await request.json()) as WompiWebhookPayload;
+  } catch {
+    return new Response("Invalid payload", { status: 401 });
+  }
 
   if (!verifyWebhookSignature(payload)) {
     return new Response("Invalid signature", { status: 401 });
