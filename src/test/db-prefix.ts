@@ -17,6 +17,7 @@ export const REGISTERED_PREFIXES = [
   "zzfase2home_",
   "zzfase2pgcat_",
   "zzfase2pgprod_",
+  "zzfase3checkout_",
 ] as const;
 
 export function likePattern(prefix: string): string {
