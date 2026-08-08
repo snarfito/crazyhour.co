@@ -86,4 +86,12 @@ describe("verifyWebhookSignature", () => {
 
     expect(verifyWebhookSignature(buildValidPayload())).toBe(false);
   });
+
+  it("returns false (not a throw) for a malformed payload", async () => {
+    const { verifyWebhookSignature } = await import("./wompi");
+    const malformed = { event: "transaction.updated", data: {}, timestamp: 1700000000 };
+
+    expect(() => verifyWebhookSignature(malformed as any)).not.toThrow();
+    expect(verifyWebhookSignature(malformed as any)).toBe(false);
+  });
 });

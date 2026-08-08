@@ -43,10 +43,14 @@ export function verifyWebhookSignature(payload: WompiWebhookPayload): boolean {
   const secret = process.env.WOMPI_EVENTS_SECRET;
   if (!secret) return false;
 
-  const concatenatedValues = payload.signature.properties.map((path) => getByPath(payload.data, path)).join("");
-  const expected = createHash("sha256")
-    .update(`${concatenatedValues}${payload.timestamp}${secret}`)
-    .digest("hex");
+  try {
+    const concatenatedValues = payload.signature.properties.map((path) => getByPath(payload.data, path)).join("");
+    const expected = createHash("sha256")
+      .update(`${concatenatedValues}${payload.timestamp}${secret}`)
+      .digest("hex");
 
-  return expected.toLowerCase() === payload.signature.checksum.toLowerCase();
+    return expected.toLowerCase() === payload.signature.checksum.toLowerCase();
+  } catch {
+    return false;
+  }
 }
