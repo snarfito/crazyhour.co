@@ -39,12 +39,7 @@ export default function CarritoPage() {
               </div>
               <div className="flex items-center justify-between">
                 <QuantityStepper quantity={item.quantity} onChange={(q) => setQuantity(item.productId, q)} />
-                {/* Unit price, not line total: when only one item remains, a line
-                    total equals the cart grand total, so an identical rendered
-                    string collides with the total's text under exact-text
-                    queries (getByText). Unit price can never equal the total
-                    unless quantity is 1, and even then only coincidentally. */}
-                <p className="font-heading font-bold">{formatCOP(item.priceCop)}</p>
+                <p className="font-heading font-bold">{formatCOP(item.priceCop * item.quantity)}</p>
               </div>
             </div>
           </li>
@@ -52,7 +47,7 @@ export default function CarritoPage() {
       </ul>
       <p className="mt-4 flex justify-between font-heading text-lg font-bold">
         <span>Total</span>
-        <span>{formatCOP(subtotalCop)}</span>
+        <span data-testid="cart-total">{formatCOP(subtotalCop)}</span>
       </p>
       <Button render={<Link href="/checkout">Continuar</Link>} className="mt-4 w-full" />
     </div>

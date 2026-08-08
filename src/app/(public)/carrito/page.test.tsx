@@ -37,13 +37,17 @@ describe("CarritoPage", () => {
 
     expect(await screen.findByText("Piñata estrella")).toBeInTheDocument();
     expect(screen.getByText("Globo metálico")).toBeInTheDocument();
-    expect(screen.getByText("$ 95.000")).toBeInTheDocument(); // total: 2*45000 + 1*5000
+    // total: 2*45000 + 1*5000. Scoped to the dedicated total element — a
+    // per-line total can render the same formatted string (e.g. after the
+    // removal below, the sole remaining line's total equals the grand
+    // total), so an unscoped getByText on the number would be ambiguous.
+    expect(screen.getByTestId("cart-total")).toHaveTextContent("$ 95.000");
 
     const removeButtons = screen.getAllByText("Quitar");
     await user.click(removeButtons[1]); // remove Globo metálico
 
     expect(screen.queryByText("Globo metálico")).not.toBeInTheDocument();
-    expect(screen.getByText("$ 90.000")).toBeInTheDocument();
+    expect(screen.getByTestId("cart-total")).toHaveTextContent("$ 90.000");
   });
 
   it("Continuar links to /checkout", async () => {
