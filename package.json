@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "NODE_OPTIONS=--no-experimental-webstorage vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
