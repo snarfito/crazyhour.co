@@ -36,13 +36,13 @@ export default function CheckoutPage() {
             <span>
               {item.quantity}x <span>{item.name}</span>
             </span>
-            <span>{formatCOP(item.priceCop)}</span>
+            <span>{formatCOP(item.priceCop * item.quantity)}</span>
           </li>
         ))}
       </ul>
       <p className="mt-2 flex justify-between font-heading font-bold">
         <span>Total</span>
-        <span>{formatCOP(subtotalCop)}</span>
+        <span data-testid="checkout-total">{formatCOP(subtotalCop)}</span>
       </p>
       <div className="mt-6 flex flex-col gap-4">
         <div>

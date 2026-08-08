@@ -35,7 +35,10 @@ describe("CheckoutPage", () => {
     );
 
     expect(await screen.findByText("Piñata estrella")).toBeInTheDocument();
-    expect(screen.getByText("$ 90.000")).toBeInTheDocument();
+    // Scoped to the dedicated total element — the line total and the grand
+    // total render the same formatted string for this single-item, qty-2
+    // cart (2*45000 == subtotal), so an unscoped getByText would be ambiguous.
+    expect(screen.getByTestId("checkout-total")).toHaveTextContent("$ 90.000");
     expect(screen.getByText("Pagar con Wompi")).toBeInTheDocument();
     expect(screen.getByText("Pedir por WhatsApp")).toBeInTheDocument();
   });
