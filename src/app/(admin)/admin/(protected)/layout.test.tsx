@@ -22,6 +22,8 @@ describe("protected admin layout", () => {
     expect(screen.getByText("admin@crazyhour.co")).toBeInTheDocument();
     expect(screen.getByText("Categorías")).toBeInTheDocument();
     expect(screen.getByText("Productos")).toBeInTheDocument();
+    expect(screen.getByText("Pedidos")).toBeInTheDocument();
+    expect(screen.getByText("Ajustes")).toBeInTheDocument();
     expect(screen.getByText("contenido")).toBeInTheDocument();
   });
 });
