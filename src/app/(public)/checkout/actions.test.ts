@@ -93,6 +93,42 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
       expect(orders).toHaveLength(0);
     });
+
+    it("rejects a non-positive quantity without creating an order", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const zeroResult = await createWompiOrder(
+        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        [{ productId: activeProductId, quantity: 0 }]
+      );
+      expect(zeroResult.ok).toBe(false);
+      if (zeroResult.ok) return;
+      expect(zeroResult.invalidProductIds).toEqual([activeProductId]);
+
+      const negativeResult = await createWompiOrder(
+        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        [{ productId: activeProductId, quantity: -1 }]
+      );
+      expect(negativeResult.ok).toBe(false);
+      if (negativeResult.ok) return;
+      expect(negativeResult.invalidProductIds).toEqual([activeProductId]);
+
+      const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
+      expect(orders).toHaveLength(0);
+    });
+
+    it("rejects an empty cart without creating an order", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder({ name: `${TEST_PREFIX}Ana`, phone: "3000000000" }, []);
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.invalidProductIds).toEqual([]);
+
+      const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
+      expect(orders).toHaveLength(0);
+    });
   });
 
   describe("createWhatsAppOrder", () => {

@@ -17,6 +17,13 @@ async function validateAndPriceItems(
   | { ok: true; items: { productId: string; name: string; quantity: number; unitPriceCop: number }[]; totalCop: number }
   | { ok: false; invalidProductIds: string[] }
 > {
+  if (cartItems.length === 0) return { ok: false, invalidProductIds: [] };
+
+  const badQuantityIds = cartItems
+    .filter((i) => !Number.isInteger(i.quantity) || i.quantity <= 0)
+    .map((i) => i.productId);
+  if (badQuantityIds.length > 0) return { ok: false, invalidProductIds: badQuantityIds };
+
   const supabase = createServiceClient();
   const ids = cartItems.map((i) => i.productId);
   const { data: products, error } = await supabase.from("products").select("id, name, price_cop, is_active").in("id", ids);
