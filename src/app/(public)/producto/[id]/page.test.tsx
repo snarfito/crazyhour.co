@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { likePattern } from "@/test/db-prefix";
+import { CartProvider } from "@/components/cart/cart-context";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 // Falls back to a placeholder when unset so `describe.skipIf` below can skip
@@ -76,7 +77,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
 
     const ProductPage = (await import("./page")).default;
     const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
-    render(ui);
+    render(<CartProvider>{ui}</CartProvider>);
 
     expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
     expect(screen.getByText("$ 45.000")).toBeInTheDocument();

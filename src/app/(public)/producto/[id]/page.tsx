@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatCOP } from "@/lib/format";
 import { ImageGallery } from "./image-gallery";
-import { Button } from "@/components/ui/button";
+import { AddToCart } from "./add-to-cart";
 
 export async function generateMetadata({
   params,
@@ -61,9 +61,12 @@ export default async function ProductPage({
           {product.description && (
             <p className="mt-4 text-muted-foreground">{product.description}</p>
           )}
-          <Button type="button" className="mt-6 w-full">
-            Agregar al carrito
-          </Button>
+          <AddToCart
+            productId={product.id}
+            name={product.name}
+            priceCop={product.price_cop}
+            imageUrl={images[0]?.url ?? null}
+          />
         </div>
       </div>
     </div>
