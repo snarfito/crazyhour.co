@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createHash } from "crypto";
+import type { WompiWebhookPayload } from "./wompi";
 
 // wompi.ts imports "server-only", which throws when loaded outside a real
 // Next.js server render (same fix as dal.test.ts/enhance.test.ts).
@@ -89,9 +90,9 @@ describe("verifyWebhookSignature", () => {
 
   it("returns false (not a throw) for a malformed payload", async () => {
     const { verifyWebhookSignature } = await import("./wompi");
-    const malformed = { event: "transaction.updated", data: {}, timestamp: 1700000000 };
+    const malformed = { event: "transaction.updated", data: {}, timestamp: 1700000000 } as unknown as WompiWebhookPayload;
 
-    expect(() => verifyWebhookSignature(malformed as any)).not.toThrow();
-    expect(verifyWebhookSignature(malformed as any)).toBe(false);
+    expect(() => verifyWebhookSignature(malformed)).not.toThrow();
+    expect(verifyWebhookSignature(malformed)).toBe(false);
   });
 });
