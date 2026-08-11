@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { EventAnimation } from "./event-animation";
-import { DEFAULT_MOTION_SETTINGS, type ThemeMotionSettings } from "@/lib/theme-settings";
+import { DEFAULT_MOTION_SETTINGS, type ThemeMotionSettings } from "@/lib/theme-motion-defaults";
 import type { EventTheme } from "@/lib/event-themes";
 
 export function ThemeSelectPreview({

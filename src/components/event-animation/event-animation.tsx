@@ -1,5 +1,5 @@
 import { EVENT_THEME_REGISTRY, type EventTheme, type ThemeConfig } from "@/lib/event-themes";
-import type { ThemeMotionSettings } from "@/lib/theme-settings";
+import type { ThemeMotionSettings } from "@/lib/theme-motion-defaults";
 
 function buildParticles(config: ThemeConfig, settings: ThemeMotionSettings) {
   return Array.from({ length: settings.particleCount }, (_, i) => ({

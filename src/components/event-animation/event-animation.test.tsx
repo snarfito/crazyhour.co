@@ -1,11 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import { EventAnimation } from "./event-animation";
-import { DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
-
-// theme-settings.ts imports "server-only", which throws when loaded outside
-// a real Next.js server render (same fix as settings.test.ts).
-vi.mock("server-only", () => ({}));
+import { DEFAULT_MOTION_SETTINGS } from "@/lib/theme-motion-defaults";
 
 describe("EventAnimation", () => {
   it("renders nothing when the theme is none", () => {

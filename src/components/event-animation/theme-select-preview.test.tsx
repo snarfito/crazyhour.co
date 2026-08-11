@@ -1,13 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeSelectPreview } from "./theme-select-preview";
-import { DEFAULT_MOTION_SETTINGS, type ThemeMotionSettings } from "@/lib/theme-settings";
+import { DEFAULT_MOTION_SETTINGS, type ThemeMotionSettings } from "@/lib/theme-motion-defaults";
 import type { EventTheme } from "@/lib/event-themes";
-
-// theme-settings.ts imports "server-only", which throws when loaded outside
-// a real Next.js server render (same fix as settings.test.ts).
-vi.mock("server-only", () => ({}));
 
 const OPTIONS = [
   { value: "none", label: "Ninguno" },
