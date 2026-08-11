@@ -27,8 +27,16 @@ vi.mock("next/navigation", () => ({
   notFound: mockNotFound,
 }));
 
+// settings.ts imports "server-only", which throws when loaded outside a
+// real Next.js server render (same fix as settings.test.ts/dal.test.ts).
+vi.mock("server-only", () => ({}));
+
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
+}));
+
+vi.mock("@/lib/supabase/service", () => ({
+  createServiceClient: () => createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
 }));
 
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", () => {
@@ -136,5 +144,32 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
       CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}no-existe` }) })
     ).rejects.toThrow("NOT_FOUND");
     expect(mockNotFound).toHaveBeenCalled();
+  });
+
+  it("uses the category's own animation_theme, overriding whatever the site-wide theme is", async () => {
+    await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}Carnaval`, slug: `${TEST_PREFIX}carnaval`, sort_order: 1, animation_theme: "carnaval" });
+
+    const CategoryPage = (await import("./page")).default;
+    const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}carnaval` }) });
+    const { container } = render(ui);
+
+    expect(container.querySelectorAll(".event-particle")).toHaveLength(8);
+  });
+
+  it("renders no particles when animation_theme is explicitly 'none', even if a site-wide theme is active", async () => {
+    await admin.from("settings").update({ active_event_theme: "navidad" }).eq("id", true);
+    await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}SinAnimacion`, slug: `${TEST_PREFIX}sin-animacion`, sort_order: 1, animation_theme: "none" });
+
+    const CategoryPage = (await import("./page")).default;
+    const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}sin-animacion` }) });
+    const { container } = render(ui);
+
+    expect(container.querySelectorAll(".event-particle")).toHaveLength(0);
+
+    await admin.from("settings").update({ active_event_theme: "none" }).eq("id", true);
   });
 });

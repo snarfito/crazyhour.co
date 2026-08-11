@@ -3,7 +3,6 @@ import { render, screen } from "@testing-library/react";
 
 vi.mock("@/lib/settings", () => ({
   getWhatsAppNumber: vi.fn().mockResolvedValue("573000000000"),
-  getActiveEventTheme: vi.fn().mockResolvedValue("navidad"),
 }));
 
 describe("public layout", () => {
@@ -34,13 +33,5 @@ describe("public layout", () => {
     render(ui);
 
     expect(screen.getByRole("link", { name: /carrito/i })).toHaveAttribute("href", "/carrito");
-  });
-
-  it("renders the event animation overlay for the active theme", async () => {
-    const PublicLayout = (await import("./layout")).default;
-    const ui = await PublicLayout({ children: <p>contenido</p> });
-    const { container } = render(ui);
-
-    expect(container.querySelectorAll(".event-particle").length).toBeGreaterThan(0);
   });
 });

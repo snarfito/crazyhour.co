@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { EmptyState } from "@/components/catalog/empty-state";
+import { EventAnimation } from "@/components/event-animation/event-animation";
+import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
+import { isValidEventTheme } from "@/lib/event-themes";
 
 export async function generateMetadata({
   params,
@@ -35,11 +38,14 @@ export default async function CategoryPage({
 
   const { data: category } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("id, name, animation_theme")
     .eq("slug", categorySlug)
     .maybeSingle();
 
   if (!category) notFound();
+
+  const categoryTheme = isValidEventTheme(category.animation_theme) ? category.animation_theme : null;
+  const theme = await getEffectiveEventTheme(categoryTheme);
 
   const { data: products } = await supabase
     .from("products")
@@ -57,15 +63,18 @@ export default async function CategoryPage({
   });
 
   return (
-    <div className="p-4">
-      <h1 className="font-heading text-2xl font-extrabold">{category.name}</h1>
-      {items.length === 0 ? (
-        <EmptyState message="No hay productos en esta categoría todavía." />
-      ) : (
-        <div className="mt-4">
-          <ProductGrid products={items} />
-        </div>
-      )}
-    </div>
+    <>
+      <EventAnimation theme={theme} />
+      <div className="p-4">
+        <h1 className="font-heading text-2xl font-extrabold">{category.name}</h1>
+        {items.length === 0 ? (
+          <EmptyState message="No hay productos en esta categoría todavía." />
+        ) : (
+          <div className="mt-4">
+            <ProductGrid products={items} />
+          </div>
+        )}
+      </div>
+    </>
   );
 }

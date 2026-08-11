@@ -34,6 +34,10 @@ vi.mock("@/lib/supabase/server", () => ({
     forceEmpty ? emptyClient : createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
 }));
 
+vi.mock("@/lib/settings", () => ({
+  getActiveEventTheme: vi.fn().mockResolvedValue("none"),
+}));
+
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 

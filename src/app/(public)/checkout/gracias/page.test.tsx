@@ -1,6 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import GraciasPage from "./page";
+
+vi.mock("@/lib/settings", () => ({
+  getActiveEventTheme: vi.fn().mockResolvedValue("none"),
+}));
 
 describe("GraciasPage", () => {
   it("shows a thank-you message and the reference when present", async () => {
