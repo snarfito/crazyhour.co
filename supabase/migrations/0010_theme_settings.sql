@@ -17,3 +17,8 @@ create table theme_settings (
 );
 
 alter table theme_settings enable row level security;
+-- No RLS policies on purpose: same default-deny model as settings (0006).
+-- service_role needs an explicit GRANT even though it bypasses RLS
+-- (BYPASSRLS skips policy evaluation, not the separate table-level GRANT
+-- check) — same lesson as 0006's grant on settings.
+grant select, insert, update on theme_settings to service_role;
