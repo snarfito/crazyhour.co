@@ -1,8 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CartProvider, type CartItem } from "@/components/cart/cart-context";
 import CarritoPage from "./page";
+
+vi.mock("@/lib/settings", () => ({
+  getActiveEventTheme: vi.fn().mockResolvedValue("none"),
+}));
 
 function seedCart(items: CartItem[]) {
   localStorage.setItem("crazyhour_cart", JSON.stringify(items));
@@ -13,10 +17,10 @@ describe("CarritoPage", () => {
     localStorage.clear();
   });
 
-  it("shows an empty-state message when the cart has no items", () => {
+  it("shows an empty-state message when the cart has no items", async () => {
     render(
       <CartProvider>
-        <CarritoPage />
+        {await CarritoPage()}
       </CartProvider>
     );
 
@@ -31,7 +35,7 @@ describe("CarritoPage", () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <CarritoPage />
+        {await CarritoPage()}
       </CartProvider>
     );
 
@@ -54,7 +58,7 @@ describe("CarritoPage", () => {
     seedCart([{ productId: "p1", name: "Piñata estrella", priceCop: 45000, imageUrl: null, quantity: 1 }]);
     render(
       <CartProvider>
-        <CarritoPage />
+        {await CarritoPage()}
       </CartProvider>
     );
 

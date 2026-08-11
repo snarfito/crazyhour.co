@@ -8,15 +8,19 @@ vi.mock("./actions", () => ({
   createWhatsAppOrder: vi.fn(),
 }));
 
+vi.mock("@/lib/settings", () => ({
+  getActiveEventTheme: vi.fn().mockResolvedValue("none"),
+}));
+
 describe("CheckoutPage", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it("shows an empty-cart message when there's nothing to check out", () => {
+  it("shows an empty-cart message when there's nothing to check out", async () => {
     render(
       <CartProvider>
-        <CheckoutPage />
+        {await CheckoutPage()}
       </CartProvider>
     );
 
@@ -30,7 +34,7 @@ describe("CheckoutPage", () => {
     );
     render(
       <CartProvider>
-        <CheckoutPage />
+        {await CheckoutPage()}
       </CartProvider>
     );
 
