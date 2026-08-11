@@ -24,4 +24,12 @@ describe("EventAnimation", () => {
       expect(particle).toHaveClass("event-particle-up");
     }
   });
+
+  it("uses an absolute, non-fixed container when contained is true (for embedding in a preview box)", () => {
+    const { container } = render(<EventAnimation theme="navidad" contained />);
+
+    const overlay = container.firstChild as HTMLElement;
+    expect(overlay).toHaveClass("absolute", "inset-0");
+    expect(overlay).not.toHaveClass("fixed", "z-10");
+  });
 });
