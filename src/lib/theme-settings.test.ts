@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
@@ -9,10 +9,18 @@ vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
 }));
 
+// theme_settings rows are keyed by real theme names, not a per-file test
+// prefix (unlike categories/products) — without an afterEach too, a row
+// this file leaves behind for "carnaval"/"velitas" can leak into any other
+// test file that exercises those same theme keys against local Supabase.
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("theme-settings (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
   beforeEach(async () => {
+    await admin.from("theme_settings").delete().in("theme", ["carnaval", "velitas"]);
+  });
+
+  afterEach(async () => {
     await admin.from("theme_settings").delete().in("theme", ["carnaval", "velitas"]);
   });
 

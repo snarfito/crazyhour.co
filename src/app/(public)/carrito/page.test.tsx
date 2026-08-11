@@ -8,6 +8,17 @@ vi.mock("@/lib/settings", () => ({
   getActiveEventTheme: vi.fn().mockResolvedValue("none"),
 }));
 
+vi.mock("@/lib/theme-settings", () => ({
+  DEFAULT_MOTION_SETTINGS: {
+    particleCount: 8, minDuration: 14, maxDuration: 22,
+    minSize: 16, maxSize: 28, maxOpacity: 0.18, customCss: null,
+  },
+  getThemeMotionSettings: vi.fn().mockResolvedValue({
+    particleCount: 8, minDuration: 14, maxDuration: 22,
+    minSize: 16, maxSize: 28, maxOpacity: 0.18, customCss: null,
+  }),
+}));
+
 function seedCart(items: CartItem[]) {
   localStorage.setItem("crazyhour_cart", JSON.stringify(items));
 }

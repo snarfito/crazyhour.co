@@ -1,5 +1,6 @@
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
+import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
 import { CarritoPageClient } from "./carrito-page-client";
 
 // Without this, Next has no dynamic-API signal here (getEffectiveEventTheme
@@ -11,10 +12,11 @@ export const dynamic = "force-dynamic";
 
 export default async function CarritoPage() {
   const theme = await getEffectiveEventTheme();
+  const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
   return (
     <>
-      <EventAnimation theme={theme} />
+      <EventAnimation theme={theme} settings={settings} />
       <CarritoPageClient />
     </>
   );

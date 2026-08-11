@@ -5,6 +5,7 @@ import { ProductGrid } from "@/components/catalog/product-grid";
 import { EmptyState } from "@/components/catalog/empty-state";
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
+import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
 import { isValidEventTheme } from "@/lib/event-themes";
 
 export async function generateMetadata({
@@ -46,6 +47,7 @@ export default async function CategoryPage({
 
   const categoryTheme = isValidEventTheme(category.animation_theme) ? category.animation_theme : null;
   const theme = await getEffectiveEventTheme(categoryTheme);
+  const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
   const { data: products } = await supabase
     .from("products")
@@ -64,7 +66,7 @@ export default async function CategoryPage({
 
   return (
     <>
-      <EventAnimation theme={theme} />
+      <EventAnimation theme={theme} settings={settings} />
       <div className="p-4">
         <h1 className="font-heading text-2xl font-extrabold">{category.name}</h1>
         {items.length === 0 ? (

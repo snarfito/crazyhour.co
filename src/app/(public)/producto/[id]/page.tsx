@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatCOP } from "@/lib/format";
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
+import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
 import { ImageGallery } from "./image-gallery";
 import { AddToCart } from "./add-to-cart";
 
@@ -48,10 +49,11 @@ export default async function ProductPage({
     product.categories as unknown as { slug: string } | null
   )?.slug;
   const theme = await getEffectiveEventTheme();
+  const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
   return (
     <>
-      <EventAnimation theme={theme} />
+      <EventAnimation theme={theme} settings={settings} />
       <div className="p-4">
         {categorySlug && (
           <Link href={`/${categorySlug}`} className="text-sm text-primary hover:underline">

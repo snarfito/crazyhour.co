@@ -147,12 +147,17 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
   });
 
   it("uses the category's own animation_theme, overriding whatever the site-wide theme is", async () => {
+    // Uses "grados", not "carnaval"/"velitas" — those two are exercised by
+    // src/lib/theme-settings.test.ts against the same real theme_settings
+    // rows (no per-file prefix is possible for a table keyed by a fixed
+    // theme enum), and Vitest's file-level parallelism means that file's
+    // transient writes could otherwise leak into this assertion.
     await admin
       .from("categories")
-      .insert({ name: `${TEST_PREFIX}Carnaval`, slug: `${TEST_PREFIX}carnaval`, sort_order: 1, animation_theme: "carnaval" });
+      .insert({ name: `${TEST_PREFIX}Grados`, slug: `${TEST_PREFIX}grados`, sort_order: 1, animation_theme: "grados" });
 
     const CategoryPage = (await import("./page")).default;
-    const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}carnaval` }) });
+    const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}grados` }) });
     const { container } = render(ui);
 
     expect(container.querySelectorAll(".event-particle")).toHaveLength(8);

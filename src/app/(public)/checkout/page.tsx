@@ -1,5 +1,6 @@
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
+import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
 import { CheckoutPageClient } from "./checkout-page-client";
 
 // See carrito/page.tsx for why this is needed — getEffectiveEventTheme()
@@ -9,10 +10,11 @@ export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage() {
   const theme = await getEffectiveEventTheme();
+  const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
   return (
     <>
-      <EventAnimation theme={theme} />
+      <EventAnimation theme={theme} settings={settings} />
       <CheckoutPageClient />
     </>
   );
