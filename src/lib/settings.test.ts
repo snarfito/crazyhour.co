@@ -21,7 +21,12 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("settings (against 
     // for multi-row tables.
     await admin
       .from("settings")
-      .update({ whatsapp_number: "573000000000", contact_email: "hola@crazyhour.co", contact_phone: "3000000000" })
+      .update({
+        whatsapp_number: "573000000000",
+        contact_email: "hola@crazyhour.co",
+        contact_phone: "3000000000",
+        active_event_theme: "none",
+      })
       .eq("id", true);
   });
 
@@ -34,6 +39,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("settings (against 
       whatsappNumber: "573000000000",
       contactEmail: "hola@crazyhour.co",
       contactPhone: "3000000000",
+      activeEventTheme: "none",
     });
   });
 
@@ -43,5 +49,20 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("settings (against 
     const number = await getWhatsAppNumber();
 
     expect(number).toBe("573000000000");
+  });
+
+  it("getSettings includes the active event theme", async () => {
+    const { getSettings } = await import("./settings");
+
+    const settings = await getSettings();
+
+    expect(settings.activeEventTheme).toBe("none");
+  });
+
+  it("getActiveEventTheme returns the current theme", async () => {
+    await admin.from("settings").update({ active_event_theme: "navidad" }).eq("id", true);
+    const { getActiveEventTheme } = await import("./settings");
+
+    expect(await getActiveEventTheme()).toBe("navidad");
   });
 });
