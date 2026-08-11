@@ -24,6 +24,7 @@ describe("protected admin layout", () => {
     expect(screen.getByText("Productos")).toBeInTheDocument();
     expect(screen.getByText("Pedidos")).toBeInTheDocument();
     expect(screen.getByText("Ajustes")).toBeInTheDocument();
+    expect(screen.getByText("Animaciones")).toBeInTheDocument();
     expect(screen.getByText("contenido")).toBeInTheDocument();
   });
 });

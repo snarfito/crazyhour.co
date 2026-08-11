@@ -33,6 +33,9 @@ export default async function ProtectedAdminLayout({
         <Link href="/admin/ajustes" className="hover:text-primary">
           Ajustes
         </Link>
+        <Link href="/admin/animaciones" className="hover:text-primary">
+          Animaciones
+        </Link>
       </nav>
       <main className="font-body p-6">{children}</main>
     </>
