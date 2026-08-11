@@ -214,9 +214,48 @@
     transform: none;
   }
 
+  .event-particle {
+    display: none;
+  }
+
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/* Event Theme Animations — ambient decorative overlay, deliberate
+   exception to the "no continuous decorative animation" rule (CLAUDE.md
+   §8) for the seasonal storefront differentiator. Kept subtle (low
+   opacity, slow) on purpose — see spec §2/§5. */
+@keyframes event-particle-down {
+  from { transform: translateY(-10vh) translateX(0); }
+  to { transform: translateY(110vh) translateX(20px); }
+}
+
+@keyframes event-particle-up {
+  from { transform: translateY(110vh) translateX(0); }
+  to { transform: translateY(-10vh) translateX(20px); }
+}
+
+.event-particle {
+  position: absolute;
+  top: 0;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.event-particle-down {
+  animation-name: event-particle-down;
+}
+
+.event-particle-up {
+  animation-name: event-particle-up;
+}
+
+@media (max-width: 767px) {
+  .event-particle:nth-child(n + 5) {
+    display: none;
   }
 }
