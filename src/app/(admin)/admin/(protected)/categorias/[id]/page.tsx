@@ -1,10 +1,15 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateCategory } from "../actions";
+import { buildThemeOptions } from "@/lib/event-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CoverUpload } from "../cover-upload";
+import { ThemeSelectPreview } from "@/components/event-animation/theme-select-preview";
+
+const SELECT_CLASSES =
+  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
 export default async function EditarCategoriaPage({
   params,
@@ -25,20 +30,32 @@ export default async function EditarCategoriaPage({
       <form action={updateWithId} className="mt-6 flex flex-col gap-4">
         <div>
           <Label htmlFor="name">Nombre</Label>
-          <Input id="name" name="name" defaultValue={category.name} required />
+          <Input key={category.name} id="name" name="name" defaultValue={category.name} required />
         </div>
         <div>
           <Label htmlFor="slug">Slug</Label>
-          <Input id="slug" name="slug" defaultValue={category.slug} required />
+          <Input key={category.slug} id="slug" name="slug" defaultValue={category.slug} required />
         </div>
         <div>
           <Label htmlFor="sort_order">Orden</Label>
           <Input
+            key={category.sort_order}
             id="sort_order"
             name="sort_order"
             type="number"
             defaultValue={category.sort_order}
             required
+          />
+        </div>
+        <div>
+          <Label htmlFor="animation_theme">Tema de animación</Label>
+          <ThemeSelectPreview
+            key={category.animation_theme ?? ""}
+            id="animation_theme"
+            name="animation_theme"
+            initialTheme={category.animation_theme ?? ""}
+            options={buildThemeOptions(true)}
+            className={SELECT_CLASSES}
           />
         </div>
         <Button type="submit">Guardar</Button>

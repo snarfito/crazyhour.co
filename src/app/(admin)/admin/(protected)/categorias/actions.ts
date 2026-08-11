@@ -5,6 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { verifySession } from "@/lib/supabase/dal";
 import { slugify } from "@/lib/slug";
 
+function readAnimationTheme(formData: FormData): string | null {
+  const value = String(formData.get("animation_theme") ?? "");
+  return value === "" ? null : value;
+}
+
 export async function createCategory(formData: FormData) {
   await verifySession();
   const supabase = await createClient();
@@ -12,6 +17,7 @@ export async function createCategory(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const sortOrder = Number(formData.get("sort_order") ?? 0);
   const slug = slugify(name);
+  const animationTheme = readAnimationTheme(formData);
 
   const { data: existing } = await supabase
     .from("categories")
@@ -24,7 +30,7 @@ export async function createCategory(formData: FormData) {
 
   const { error } = await supabase
     .from("categories")
-    .insert({ name, slug, sort_order: sortOrder });
+    .insert({ name, slug, sort_order: sortOrder, animation_theme: animationTheme });
   if (error) throw error;
 
   revalidatePath("/admin/categorias");
@@ -37,6 +43,7 @@ export async function updateCategory(id: string, formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
   const sortOrder = Number(formData.get("sort_order") ?? 0);
+  const animationTheme = readAnimationTheme(formData);
 
   const { data: existing } = await supabase
     .from("categories")
@@ -50,7 +57,7 @@ export async function updateCategory(id: string, formData: FormData) {
 
   const { error } = await supabase
     .from("categories")
-    .update({ name, slug, sort_order: sortOrder })
+    .update({ name, slug, sort_order: sortOrder, animation_theme: animationTheme })
     .eq("id", id);
   if (error) throw error;
 

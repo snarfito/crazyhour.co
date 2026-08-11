@@ -115,6 +115,69 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     expect(updated?.slug).toBe(`${TEST_PREFIX}decoracion-fiestas`);
   });
 
+  it("createCategory stores a null animation_theme when the field is empty ('usar tema del sitio')", async () => {
+    const { createCategory } = await import("./actions");
+    const formData = new FormData();
+    formData.set("name", `${TEST_PREFIX}Sin tema`);
+    formData.set("sort_order", "0");
+    formData.set("animation_theme", "");
+
+    await createCategory(formData);
+
+    const { data } = await admin
+      .from("categories")
+      .select("animation_theme")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+    expect(data?.animation_theme).toBeNull();
+  });
+
+  it("createCategory stores a real theme when one is picked", async () => {
+    const { createCategory } = await import("./actions");
+    const formData = new FormData();
+    formData.set("name", `${TEST_PREFIX}Con tema`);
+    formData.set("sort_order", "0");
+    formData.set("animation_theme", "carnaval");
+
+    await createCategory(formData);
+
+    const { data } = await admin
+      .from("categories")
+      .select("animation_theme")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+    expect(data?.animation_theme).toBe("carnaval");
+  });
+
+  it("updateCategory stores 'none' as an explicit no-animation override, not null", async () => {
+    const { createCategory, updateCategory } = await import("./actions");
+    const createFormData = new FormData();
+    createFormData.set("name", `${TEST_PREFIX}Editar tema`);
+    createFormData.set("sort_order", "0");
+    createFormData.set("animation_theme", "carnaval");
+    await createCategory(createFormData);
+
+    const { data: created } = await admin
+      .from("categories")
+      .select("id, slug")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+
+    const updateFormData = new FormData();
+    updateFormData.set("name", `${TEST_PREFIX}Editar tema`);
+    updateFormData.set("slug", created!.slug);
+    updateFormData.set("sort_order", "0");
+    updateFormData.set("animation_theme", "none");
+    await updateCategory(created!.id, updateFormData);
+
+    const { data: updated } = await admin
+      .from("categories")
+      .select("animation_theme")
+      .eq("id", created!.id)
+      .single();
+    expect(updated?.animation_theme).toBe("none");
+  });
+
   it("deleteCategory removes the row", async () => {
     const { createCategory, deleteCategory } = await import("./actions");
     const create = new FormData();

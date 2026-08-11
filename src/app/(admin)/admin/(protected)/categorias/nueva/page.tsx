@@ -1,7 +1,12 @@
 import { createCategory } from "../actions";
+import { buildThemeOptions } from "@/lib/event-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ThemeSelectPreview } from "@/components/event-animation/theme-select-preview";
+
+const SELECT_CLASSES =
+  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
 export default function NuevaCategoriaPage() {
   return (
@@ -15,6 +20,16 @@ export default function NuevaCategoriaPage() {
         <div>
           <Label htmlFor="sort_order">Orden</Label>
           <Input id="sort_order" name="sort_order" type="number" defaultValue={0} required />
+        </div>
+        <div>
+          <Label htmlFor="animation_theme">Tema de animación</Label>
+          <ThemeSelectPreview
+            id="animation_theme"
+            name="animation_theme"
+            initialTheme=""
+            options={buildThemeOptions(true)}
+            className={SELECT_CLASSES}
+          />
         </div>
         <Button type="submit">Crear</Button>
       </form>
