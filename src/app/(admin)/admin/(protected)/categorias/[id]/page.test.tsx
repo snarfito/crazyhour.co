@@ -30,6 +30,14 @@ vi.mock("../cover-upload", () => ({
   CoverUpload: () => null,
 }));
 
+vi.mock("@/lib/theme-settings", () => ({
+  getAllThemeMotionSettings: vi.fn().mockResolvedValue({}),
+  DEFAULT_MOTION_SETTINGS: {
+    particleCount: 8, minDuration: 14, maxDuration: 22,
+    minSize: 16, maxSize: 28, maxOpacity: 0.18, customCss: null,
+  },
+}));
+
 describe("EditarCategoriaPage", () => {
   it("pre-selects the category's current animation_theme", async () => {
     const EditarCategoriaPage = (await import("./page")).default;

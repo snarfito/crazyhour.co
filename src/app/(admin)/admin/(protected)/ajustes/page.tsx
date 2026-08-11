@@ -1,5 +1,6 @@
 import { getSettings } from "@/lib/settings";
 import { buildThemeOptions } from "@/lib/event-themes";
+import { getAllThemeMotionSettings } from "@/lib/theme-settings";
 import { updateSettings } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ const SELECT_CLASSES =
   "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
 export default async function AjustesPage() {
-  const settings = await getSettings();
+  const [settings, settingsMap] = await Promise.all([getSettings(), getAllThemeMotionSettings()]);
 
   return (
     <div className="max-w-md">
@@ -55,6 +56,7 @@ export default async function AjustesPage() {
             initialTheme={settings.activeEventTheme}
             options={buildThemeOptions(false)}
             className={SELECT_CLASSES}
+            settingsMap={settingsMap}
           />
         </div>
         <Button type="submit">Guardar</Button>

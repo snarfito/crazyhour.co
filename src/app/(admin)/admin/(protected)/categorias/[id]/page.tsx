@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateCategory } from "../actions";
 import { buildThemeOptions } from "@/lib/event-themes";
+import { getAllThemeMotionSettings } from "@/lib/theme-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ export default async function EditarCategoriaPage({
 
   if (!category) notFound();
 
+  const settingsMap = await getAllThemeMotionSettings();
   const updateWithId = updateCategory.bind(null, id);
 
   return (
@@ -56,6 +58,7 @@ export default async function EditarCategoriaPage({
             initialTheme={category.animation_theme ?? ""}
             options={buildThemeOptions(true)}
             className={SELECT_CLASSES}
+            settingsMap={settingsMap}
           />
         </div>
         <Button type="submit">Guardar</Button>

@@ -1,5 +1,6 @@
 import { createCategory } from "../actions";
 import { buildThemeOptions } from "@/lib/event-themes";
+import { getAllThemeMotionSettings } from "@/lib/theme-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,9 @@ import { ThemeSelectPreview } from "@/components/event-animation/theme-select-pr
 const SELECT_CLASSES =
   "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
-export default function NuevaCategoriaPage() {
+export default async function NuevaCategoriaPage() {
+  const settingsMap = await getAllThemeMotionSettings();
+
   return (
     <div className="max-w-md">
       <h1 className="font-heading text-2xl font-extrabold">Nueva categoría</h1>
@@ -29,6 +32,7 @@ export default function NuevaCategoriaPage() {
             initialTheme=""
             options={buildThemeOptions(true)}
             className={SELECT_CLASSES}
+            settingsMap={settingsMap}
           />
         </div>
         <Button type="submit">Crear</Button>

@@ -15,6 +15,14 @@ vi.mock("./actions", () => ({
   updateSettings: vi.fn(),
 }));
 
+vi.mock("@/lib/theme-settings", () => ({
+  getAllThemeMotionSettings: vi.fn().mockResolvedValue({}),
+  DEFAULT_MOTION_SETTINGS: {
+    particleCount: 8, minDuration: 14, maxDuration: 22,
+    minSize: 16, maxSize: 28, maxOpacity: 0.18, customCss: null,
+  },
+}));
+
 describe("AjustesPage", () => {
   it("lists Ninguno plus every registered theme, in Spanish", async () => {
     const AjustesPage = (await import("./page")).default;
