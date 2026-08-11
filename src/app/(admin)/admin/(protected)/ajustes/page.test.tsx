@@ -22,7 +22,11 @@ describe("AjustesPage", () => {
 
     const select = screen.getByLabelText(/tema de animación/i);
     const options = Array.from(select.querySelectorAll("option")).map((o) => o.textContent);
-    expect(options).toEqual(["Ninguno", "Navidad", "Amor y Amistad", "Halloween", "Hora Loca"]);
+    expect(options).toEqual([
+      "Ninguno", "Navidad", "Amor y Amistad", "Halloween", "Hora Loca",
+      "Velitas", "Carnaval", "Día de la Madre", "Día del Padre",
+      "Fiestas Patrias", "Grados", "Primeras Comuniones", "Baby Shower",
+    ]);
   });
 
   it("pre-selects the currently active theme", async () => {
