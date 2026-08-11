@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { EVENT_THEMES, isValidEventTheme, EVENT_THEME_REGISTRY } from "./event-themes";
+import { EVENT_THEMES, isValidEventTheme, EVENT_THEME_REGISTRY, buildThemeOptions } from "./event-themes";
 
 describe("isValidEventTheme", () => {
   it("accepts every value in EVENT_THEMES", () => {
@@ -26,5 +26,21 @@ describe("EVENT_THEME_REGISTRY", () => {
       expect(config.colors.length).toBeGreaterThan(0);
       expect(["up", "down"]).toContain(config.direction);
     }
+  });
+});
+
+describe("buildThemeOptions", () => {
+  it("without inherit: Ninguno first, then all 12 themes in registry order", () => {
+    const options = buildThemeOptions(false);
+    expect(options[0]).toEqual({ value: "none", label: "Ninguno" });
+    expect(options).toHaveLength(13);
+    expect(options[1]).toEqual({ value: "navidad", label: "Navidad" });
+  });
+
+  it("with inherit: 'Usar tema del sitio' first, then Ninguno, then all 12 themes", () => {
+    const options = buildThemeOptions(true);
+    expect(options[0]).toEqual({ value: "", label: "Usar tema del sitio" });
+    expect(options[1]).toEqual({ value: "none", label: "Ninguno" });
+    expect(options).toHaveLength(14);
   });
 });
