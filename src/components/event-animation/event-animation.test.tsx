@@ -1,23 +1,30 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { EventAnimation } from "./event-animation";
+import { DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
+
+// theme-settings.ts imports "server-only", which throws when loaded outside
+// a real Next.js server render (same fix as settings.test.ts).
+vi.mock("server-only", () => ({}));
 
 describe("EventAnimation", () => {
   it("renders nothing when the theme is none", () => {
-    const { container } = render(<EventAnimation theme="none" />);
+    const { container } = render(<EventAnimation theme="none" settings={DEFAULT_MOTION_SETTINGS} />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders 8 particles for an active theme, in a pointer-events-none fixed overlay", () => {
-    const { container } = render(<EventAnimation theme="navidad" />);
+  it("renders settings.particleCount particles, in a pointer-events-none fixed overlay", () => {
+    const { container } = render(
+      <EventAnimation theme="navidad" settings={{ ...DEFAULT_MOTION_SETTINGS, particleCount: 5 }} />,
+    );
 
     const overlay = container.firstChild as HTMLElement;
     expect(overlay).toHaveClass("pointer-events-none", "fixed", "inset-0", "z-10");
-    expect(overlay.querySelectorAll(".event-particle")).toHaveLength(8);
+    expect(overlay.querySelectorAll(".event-particle")).toHaveLength(5);
   });
 
-  it("gives every particle the theme's movement direction class", () => {
-    const { container } = render(<EventAnimation theme="amor_y_amistad" />);
+  it("gives every particle the theme's movement direction class when there's no custom CSS", () => {
+    const { container } = render(<EventAnimation theme="amor_y_amistad" settings={DEFAULT_MOTION_SETTINGS} />);
 
     const particles = container.querySelectorAll(".event-particle");
     for (const particle of particles) {
@@ -25,11 +32,34 @@ describe("EventAnimation", () => {
     }
   });
 
-  it("uses an absolute, non-fixed container when contained is true (for embedding in a preview box)", () => {
-    const { container } = render(<EventAnimation theme="navidad" contained />);
+  it("uses an absolute, non-fixed container when contained is true", () => {
+    const { container } = render(
+      <EventAnimation theme="navidad" contained settings={DEFAULT_MOTION_SETTINGS} />,
+    );
 
     const overlay = container.firstChild as HTMLElement;
     expect(overlay).toHaveClass("absolute", "inset-0");
     expect(overlay).not.toHaveClass("fixed", "z-10");
+  });
+
+  it("respects settings.maxOpacity", () => {
+    const { container } = render(
+      <EventAnimation theme="navidad" settings={{ ...DEFAULT_MOTION_SETTINGS, maxOpacity: 0.42 }} />,
+    );
+    const particle = container.querySelector(".event-particle") as HTMLElement;
+    expect(particle.style.opacity).toBe("0.42");
+  });
+
+  it("renders custom CSS in a <style> tag and omits the direction class + inline duration when customCss is set", () => {
+    const customCss = ".event-particle[data-theme='navidad'] { animation: spin 2s linear infinite; }";
+    const { container } = render(
+      <EventAnimation theme="navidad" settings={{ ...DEFAULT_MOTION_SETTINGS, customCss }} />,
+    );
+
+    expect(container.querySelector("style")?.textContent).toBe(customCss);
+    const particle = container.querySelector(".event-particle") as HTMLElement;
+    expect(particle).not.toHaveClass("event-particle-down");
+    expect(particle.getAttribute("data-theme")).toBe("navidad");
+    expect(particle.style.animationDuration).toBe("");
   });
 });
