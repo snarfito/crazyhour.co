@@ -18,7 +18,12 @@ vi.mock("next/cache", () => ({
 
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateSettings (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
-  const ORIGINAL = { whatsapp_number: "", contact_email: null as string | null, contact_phone: null as string | null };
+  const ORIGINAL = {
+    whatsapp_number: "",
+    contact_email: null as string | null,
+    contact_phone: null as string | null,
+    active_event_theme: "none",
+  };
 
   beforeEach(async () => {
     await admin.from("settings").update(ORIGINAL).eq("id", true);
@@ -55,5 +60,19 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateSettings (ag
     const { data } = await admin.from("settings").select("*").eq("id", true).single();
     expect(data?.contact_email).toBeNull();
     expect(data?.contact_phone).toBeNull();
+  });
+
+  it("updates the active event theme", async () => {
+    const { updateSettings } = await import("./actions");
+    const formData = new FormData();
+    formData.set("whatsapp_number", "573001112233");
+    formData.set("contact_email", "");
+    formData.set("contact_phone", "");
+    formData.set("active_event_theme", "navidad");
+
+    await updateSettings(formData);
+
+    const { data } = await admin.from("settings").select("*").eq("id", true).single();
+    expect(data?.active_event_theme).toBe("navidad");
   });
 });

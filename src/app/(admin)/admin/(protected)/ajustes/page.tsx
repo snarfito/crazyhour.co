@@ -1,8 +1,12 @@
 import { getSettings } from "@/lib/settings";
+import { EVENT_THEME_REGISTRY, type EventTheme } from "@/lib/event-themes";
 import { updateSettings } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+const SELECT_CLASSES =
+  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
 export default async function AjustesPage() {
   const settings = await getSettings();
@@ -23,6 +27,22 @@ export default async function AjustesPage() {
         <div>
           <Label htmlFor="contact_phone">Teléfono de contacto</Label>
           <Input id="contact_phone" name="contact_phone" defaultValue={settings.contactPhone ?? ""} />
+        </div>
+        <div>
+          <Label htmlFor="active_event_theme">Tema de animación</Label>
+          <select
+            id="active_event_theme"
+            name="active_event_theme"
+            defaultValue={settings.activeEventTheme}
+            className={SELECT_CLASSES}
+          >
+            <option value="none">Ninguno</option>
+            {(Object.keys(EVENT_THEME_REGISTRY) as Array<Exclude<EventTheme, "none">>).map((theme) => (
+              <option key={theme} value={theme}>
+                {EVENT_THEME_REGISTRY[theme].label}
+              </option>
+            ))}
+          </select>
         </div>
         <Button type="submit">Guardar</Button>
       </form>

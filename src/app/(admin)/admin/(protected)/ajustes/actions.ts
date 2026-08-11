@@ -14,6 +14,7 @@ export async function updateSettings(formData: FormData) {
       whatsapp_number: String(formData.get("whatsapp_number") ?? "").trim(),
       contact_email: String(formData.get("contact_email") ?? "").trim() || null,
       contact_phone: String(formData.get("contact_phone") ?? "").trim() || null,
+      active_event_theme: String(formData.get("active_event_theme") ?? "none"),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);
