@@ -21,6 +21,10 @@ export async function generateMetadata({
 
 const NEW_PRODUCT_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
 
+function isRecentlyCreated(createdAt: string): boolean {
+  return Date.now() - new Date(createdAt).getTime() < NEW_PRODUCT_WINDOW_MS;
+}
+
 export default async function CategoryPage({
   params,
 }: {
@@ -44,12 +48,11 @@ export default async function CategoryPage({
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  const now = Date.now();
   const items = (products ?? []).map((p) => {
     const images = (p.product_images ?? []) as { original_url: string; enhanced_url: string | null }[];
     const first = images.find((img) => img.enhanced_url || img.original_url);
     const imageUrl = first ? first.enhanced_url || first.original_url : null;
-    const isNew = now - new Date(p.created_at).getTime() < NEW_PRODUCT_WINDOW_MS;
+    const isNew = isRecentlyCreated(p.created_at);
     return { id: p.id, name: p.name, price_cop: p.price_cop, imageUrl, isNew };
   });
 
