@@ -1,15 +1,19 @@
 import Image from "next/image";
 import { MessageCircle } from "lucide-react";
 import { PUBLIC_THEME_CLASS } from "@/lib/theme";
-import { getWhatsAppNumber } from "@/lib/settings";
+import { getWhatsAppNumber, getActiveEventTheme } from "@/lib/settings";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { CartProvider } from "@/components/cart/cart-context";
 import { CartIcon } from "@/components/cart/cart-icon";
+import { EventAnimation } from "@/components/event-animation/event-animation";
 
 export default async function PublicLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const whatsappNumber = await getWhatsAppNumber();
+  const [whatsappNumber, activeEventTheme] = await Promise.all([
+    getWhatsAppNumber(),
+    getActiveEventTheme(),
+  ]);
   const whatsappUrl = buildWhatsAppUrl(whatsappNumber, "Hola, tengo una pregunta sobre sus productos.");
 
   return (
@@ -29,6 +33,7 @@ export default async function PublicLayout({
         >
           <MessageCircle aria-hidden="true" className="h-7 w-7" />
         </a>
+        <EventAnimation theme={activeEventTheme} />
       </CartProvider>
     </div>
   );
