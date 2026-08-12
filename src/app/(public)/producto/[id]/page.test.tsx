@@ -94,7 +94,9 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
     const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
     render(<CartProvider>{ui}</CartProvider>);
 
-    expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
+    // Scoped to the heading: the breadcrumb's current-page item now also
+    // shows the product name, so a bare getByText would match two elements.
+    expect(screen.getByRole("heading", { name: "Piñata estrella" })).toBeInTheDocument();
     expect(screen.getByText("$ 45.000")).toBeInTheDocument();
     expect(screen.getByText("Piñata artesanal grande")).toBeInTheDocument();
     expect(screen.getByText("Agregar al carrito")).toBeInTheDocument();
@@ -127,5 +129,82 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
     await expect(
       ProductPage({ params: Promise.resolve({ id: "00000000-0000-0000-0000-000000000000" }) })
     ).rejects.toThrow("NOT_FOUND");
+  });
+
+  it("renders a breadcrumb with the category and product name", async () => {
+    const { data: product } = await admin
+      .from("products")
+      .insert({
+        category_id: categoryId,
+        name: "Piñata estrella",
+        description: "x",
+        price_cop: 45000,
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    const ProductPage = (await import("./page")).default;
+    const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
+    render(<CartProvider>{ui}</CartProvider>);
+
+    expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: `${TEST_PREFIX}Piñatas` })).toHaveAttribute(
+      "href",
+      `/${TEST_PREFIX}pinatas`
+    );
+    expect(screen.getByText("Piñata estrella", { selector: "span[aria-current='page']" })).toBeInTheDocument();
+  });
+
+  it("shows up to 3 other active products from the same category, excluding itself", async () => {
+    const { data: main } = await admin
+      .from("products")
+      .insert({
+        category_id: categoryId,
+        name: "Piñata estrella",
+        description: "x",
+        price_cop: 45000,
+        is_active: true,
+      })
+      .select()
+      .single();
+    await admin.from("products").insert([
+      { category_id: categoryId, name: "Piñata luna", description: "x", price_cop: 30000, is_active: true },
+      { category_id: categoryId, name: "Piñata sol", description: "x", price_cop: 30000, is_active: true },
+      { category_id: categoryId, name: "Piñata inactiva", description: "x", price_cop: 30000, is_active: false },
+    ]);
+
+    const ProductPage = (await import("./page")).default;
+    const ui = await ProductPage({ params: Promise.resolve({ id: main!.id }) });
+    render(<CartProvider>{ui}</CartProvider>);
+
+    expect(screen.getByText("Piñata luna")).toBeInTheDocument();
+    expect(screen.getByText("Piñata sol")).toBeInTheDocument();
+    expect(screen.queryByText("Piñata inactiva")).not.toBeInTheDocument();
+    // "Piñata estrella" (the product itself) already appears twice on a
+    // correct render — once as the breadcrumb's current-page item, once as
+    // the <h1> title (see Task 3/this task's breadcrumb wiring). A 3rd
+    // occurrence would mean it leaked into the related-products grid too.
+    expect(screen.getAllByText("Piñata estrella")).toHaveLength(2);
+  });
+
+  it("omits the related-products section when there are no other products in the category", async () => {
+    const { data: product } = await admin
+      .from("products")
+      .insert({
+        category_id: categoryId,
+        name: "Piñata única",
+        description: "x",
+        price_cop: 45000,
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    const ProductPage = (await import("./page")).default;
+    const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
+    render(<CartProvider>{ui}</CartProvider>);
+
+    expect(screen.queryByRole("heading", { name: /también te puede servir/i })).not.toBeInTheDocument();
   });
 });
