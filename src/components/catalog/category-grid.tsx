@@ -5,6 +5,7 @@ export type CategoryListItem = {
   name: string;
   slug: string;
   cover_image_url: string | null;
+  productCount: number;
 };
 
 export function CategoryGrid({ categories }: { categories: CategoryListItem[] }) {
@@ -19,6 +20,7 @@ export function CategoryGrid({ categories }: { categories: CategoryListItem[] })
           coverImageUrl={c.cover_image_url}
           wide={i % 5 === 4}
           index={i}
+          productCount={c.productCount}
         />
       ))}
     </div>

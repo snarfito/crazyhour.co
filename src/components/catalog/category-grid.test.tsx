@@ -7,8 +7,8 @@ describe("CategoryGrid", () => {
     render(
       <CategoryGrid
         categories={[
-          { id: "c1", name: "Piñatas", slug: "pinatas", cover_image_url: null },
-          { id: "c2", name: "Globos", slug: "globos", cover_image_url: null },
+          { id: "c1", name: "Piñatas", slug: "pinatas", cover_image_url: null, productCount: 3 },
+          { id: "c2", name: "Globos", slug: "globos", cover_image_url: null, productCount: 8 },
         ]}
       />
     );
@@ -23,10 +23,22 @@ describe("CategoryGrid", () => {
       name: `Categoria ${i}`,
       slug: `categoria-${i}`,
       cover_image_url: null,
+      productCount: 0,
     }));
     render(<CategoryGrid categories={categories} />);
     const links = screen.getAllByRole("link");
     expect(links[4]).toHaveClass("col-span-2");
     expect(links[0]).not.toHaveClass("col-span-2");
+  });
+
+  it("passes each category's product count through to its card", () => {
+    render(
+      <CategoryGrid
+        categories={[
+          { id: "c1", name: "Piñatas", slug: "pinatas", cover_image_url: null, productCount: 5 },
+        ]}
+      />
+    );
+    expect(screen.getByText("5 productos")).toBeInTheDocument();
   });
 });
