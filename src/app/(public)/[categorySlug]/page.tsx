@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ProductGrid } from "@/components/catalog/product-grid";
+import { getWhatsAppNumber } from "@/lib/settings";
+import { CategoryProductsFilter } from "@/components/catalog/category-products-filter";
+import { CategoryWhatsAppCta } from "@/components/catalog/category-whatsapp-cta";
+import { Breadcrumb } from "@/components/catalog/breadcrumb";
+import { BrandPlaceholder } from "@/components/catalog/brand-placeholder";
 import { EmptyState } from "@/components/catalog/empty-state";
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
@@ -39,14 +44,17 @@ export default async function CategoryPage({
 
   const { data: category } = await supabase
     .from("categories")
-    .select("id, name, animation_theme")
+    .select("id, name, description, cover_image_url, animation_theme")
     .eq("slug", categorySlug)
     .maybeSingle();
 
   if (!category) notFound();
 
   const categoryTheme = isValidEventTheme(category.animation_theme) ? category.animation_theme : null;
-  const theme = await getEffectiveEventTheme(categoryTheme);
+  const [theme, whatsappNumber] = await Promise.all([
+    getEffectiveEventTheme(categoryTheme),
+    getWhatsAppNumber(),
+  ]);
   const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
   const { data: products } = await supabase
@@ -68,14 +76,41 @@ export default async function CategoryPage({
     <>
       <EventAnimation theme={theme} settings={settings} />
       <div className="p-4">
-        <h1 className="font-heading text-2xl font-extrabold">{category.name}</h1>
+        <Breadcrumb items={[{ label: "Inicio", href: "/" }, { label: category.name }]} />
+
+        <div className="grid gap-6 sm:grid-cols-2 sm:items-center">
+          <div>
+            <h1 className="font-heading text-2xl font-extrabold sm:text-3xl">{category.name}</h1>
+            {category.description && (
+              <p className="mt-2 text-muted-foreground">{category.description}</p>
+            )}
+          </div>
+          <div className="relative aspect-video overflow-hidden rounded-2xl sm:aspect-[16/10]">
+            {category.cover_image_url ? (
+              <Image
+                src={category.cover_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 100vw, 50vw"
+                className="object-cover"
+              />
+            ) : (
+              <BrandPlaceholder seed={category.id} />
+            )}
+          </div>
+        </div>
+
         {items.length === 0 ? (
-          <EmptyState message="No hay productos en esta categoría todavía." />
-        ) : (
           <div className="mt-4">
-            <ProductGrid products={items} />
+            <EmptyState message="No hay productos en esta categoría todavía." />
+          </div>
+        ) : (
+          <div className="mt-6">
+            <CategoryProductsFilter products={items} />
           </div>
         )}
+
+        <CategoryWhatsAppCta whatsappNumber={whatsappNumber} />
       </div>
     </>
   );

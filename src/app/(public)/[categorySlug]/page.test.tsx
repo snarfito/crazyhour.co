@@ -177,4 +177,35 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
 
     await admin.from("settings").update({ active_event_theme: "none" }).eq("id", true);
   });
+
+  it("renders a breadcrumb, the category description and banner, and the WhatsApp CTA", async () => {
+    await admin.from("categories").insert({
+      name: `${TEST_PREFIX}Halloween`,
+      slug: `${TEST_PREFIX}halloween`,
+      sort_order: 1,
+      description: "Calabazas, telarañas y naranja por todas partes.",
+      cover_image_url: "https://example.com/banner.jpg",
+    });
+
+    const CategoryPage = (await import("./page")).default;
+    const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}halloween` }) });
+    render(ui);
+
+    expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/");
+    expect(screen.getByText("Calabazas, telarañas y naranja por todas partes.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /escribir por whatsapp/i })).toBeInTheDocument();
+  });
+
+  it("still shows the breadcrumb and WhatsApp CTA when the category has no products", async () => {
+    await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}Vacia2`, slug: `${TEST_PREFIX}vacia2`, sort_order: 1 });
+
+    const CategoryPage = (await import("./page")).default;
+    const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}vacia2` }) });
+    render(ui);
+
+    expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /escribir por whatsapp/i })).toBeInTheDocument();
+  });
 });
