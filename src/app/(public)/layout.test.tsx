@@ -34,4 +34,21 @@ describe("public layout", () => {
 
     expect(screen.getByRole("link", { name: /carrito/i })).toHaveAttribute("href", "/carrito");
   });
+
+  it("wraps the logo in a link to the homepage", async () => {
+    const PublicLayout = (await import("./layout")).default;
+    const ui = await PublicLayout({ children: <p>contenido</p> });
+    render(ui);
+
+    const logo = screen.getByAltText("Crazy Hour");
+    expect(logo.closest("a")).toHaveAttribute("href", "/");
+  });
+
+  it("renders the footer with the brand name", async () => {
+    const PublicLayout = (await import("./layout")).default;
+    const ui = await PublicLayout({ children: <p>contenido</p> });
+    render(ui);
+
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+  });
 });

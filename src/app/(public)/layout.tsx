@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 import { MessageCircle } from "lucide-react";
 import { PUBLIC_THEME_CLASS } from "@/lib/theme";
@@ -5,6 +6,7 @@ import { getWhatsAppNumber } from "@/lib/settings";
 import { buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { CartProvider } from "@/components/cart/cart-context";
 import { CartIcon } from "@/components/cart/cart-icon";
+import { Footer } from "@/components/catalog/footer";
 
 export default async function PublicLayout({
   children,
@@ -16,10 +18,13 @@ export default async function PublicLayout({
     <div data-testid="public-theme-root" className={`${PUBLIC_THEME_CLASS} min-h-screen bg-background text-foreground`}>
       <CartProvider>
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
-          <Image src="/logo.webp" alt="Crazy Hour" width={120} height={40} priority />
+          <Link href="/">
+            <Image src="/logo.webp" alt="Crazy Hour" width={120} height={40} priority />
+          </Link>
           <CartIcon />
         </header>
         <main className="font-body pb-24">{children}</main>
+        <Footer whatsappNumber={whatsappNumber} />
         <a
           href={whatsappUrl}
           target="_blank"
