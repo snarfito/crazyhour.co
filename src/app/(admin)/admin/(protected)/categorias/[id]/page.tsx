@@ -39,17 +39,6 @@ export default async function EditarCategoriaPage({
           <Input key={category.slug} id="slug" name="slug" defaultValue={category.slug} required />
         </div>
         <div>
-          <Label htmlFor="sort_order">Orden</Label>
-          <Input
-            key={category.sort_order}
-            id="sort_order"
-            name="sort_order"
-            type="number"
-            defaultValue={category.sort_order}
-            required
-          />
-        </div>
-        <div>
           <Label htmlFor="animation_theme">Tema de animación</Label>
           <ThemeSelectPreview
             key={category.animation_theme ?? ""}

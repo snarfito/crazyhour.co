@@ -21,10 +21,6 @@ export default async function NuevaCategoriaPage() {
           <Input id="name" name="name" required />
         </div>
         <div>
-          <Label htmlFor="sort_order">Orden</Label>
-          <Input id="sort_order" name="sort_order" type="number" defaultValue={0} required />
-        </div>
-        <div>
           <Label htmlFor="animation_theme">Tema de animación</Label>
           <ThemeSelectPreview
             id="animation_theme"
