@@ -6,6 +6,11 @@ import { render, screen } from "@testing-library/react";
 // server render (same fix as settings.test.ts/dal.test.ts).
 vi.mock("server-only", () => ({}));
 
+const mockRequireFullAdmin = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co", role: "full" });
+vi.mock("@/lib/supabase/dal", () => ({
+  requireFullAdmin: () => mockRequireFullAdmin(),
+}));
+
 const mockSettings = {
   particleCount: 12, minDuration: 10, maxDuration: 20,
   minSize: 16, maxSize: 28, maxOpacity: 0.25, customCss: null,
@@ -45,5 +50,14 @@ describe("Animaciones editor page", () => {
     await expect(
       AnimacionEditorPage({ params: Promise.resolve({ theme: "none" }) }),
     ).rejects.toThrow("NOT_FOUND");
+  });
+
+  it("redirects non-full admins away", async () => {
+    mockRequireFullAdmin.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const AnimacionEditorPage = (await import("./page")).default;
+
+    await expect(
+      AnimacionEditorPage({ params: Promise.resolve({ theme: "carnaval" }) }),
+    ).rejects.toThrow("REDIRECT:/admin/pedidos");
   });
 });

@@ -2,6 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { getSettings } from "@/lib/settings";
 
+const mockRequireFullAdmin = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co", role: "full" });
+vi.mock("@/lib/supabase/dal", () => ({
+  requireFullAdmin: () => mockRequireFullAdmin(),
+}));
+
 vi.mock("@/lib/settings", () => ({
   getSettings: vi.fn().mockResolvedValue({
     whatsappNumber: "573000000000",
@@ -64,5 +69,12 @@ describe("AjustesPage", () => {
 
     const select = screen.getByLabelText(/tema de animación/i) as HTMLSelectElement;
     expect(select.value).toBe("hora_loca");
+  });
+
+  it("redirects non-full admins away", async () => {
+    mockRequireFullAdmin.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const AjustesPage = (await import("./page")).default;
+
+    await expect(AjustesPage()).rejects.toThrow("REDIRECT:/admin/pedidos");
   });
 });

@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { requireFullAdmin } from "@/lib/supabase/dal";
 import { EVENT_THEME_REGISTRY, type EventTheme } from "@/lib/event-themes";
 
-export default function AnimacionesPage() {
+export default async function AnimacionesPage() {
+  await requireFullAdmin();
   const themes = Object.keys(EVENT_THEME_REGISTRY) as Array<Exclude<EventTheme, "none">>;
 
   return (

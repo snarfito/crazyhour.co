@@ -1,3 +1,4 @@
+import { requireFullAdmin } from "@/lib/supabase/dal";
 import { getSettings } from "@/lib/settings";
 import { buildThemeOptions } from "@/lib/event-themes";
 import { getAllThemeMotionSettings } from "@/lib/theme-settings";
@@ -11,6 +12,7 @@ const SELECT_CLASSES =
   "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
 
 export default async function AjustesPage() {
+  await requireFullAdmin();
   const [settings, settingsMap] = await Promise.all([getSettings(), getAllThemeMotionSettings()]);
 
   return (
