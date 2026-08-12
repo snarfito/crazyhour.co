@@ -6,6 +6,7 @@ export default async function ProtectedAdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await verifySession();
+  const isFullAdmin = session.role === "full";
 
   return (
     <>
@@ -30,12 +31,19 @@ export default async function ProtectedAdminLayout({
         <Link href="/admin/categorias" className="hover:text-primary">
           Categorías
         </Link>
-        <Link href="/admin/ajustes" className="hover:text-primary">
-          Ajustes
-        </Link>
-        <Link href="/admin/animaciones" className="hover:text-primary">
-          Animaciones
-        </Link>
+        {isFullAdmin && (
+          <>
+            <Link href="/admin/ajustes" className="hover:text-primary">
+              Ajustes
+            </Link>
+            <Link href="/admin/animaciones" className="hover:text-primary">
+              Animaciones
+            </Link>
+            <Link href="/admin/usuarios" className="hover:text-primary">
+              Usuarios
+            </Link>
+          </>
+        )}
       </nav>
       <main className="font-body p-6">{children}</main>
     </>
