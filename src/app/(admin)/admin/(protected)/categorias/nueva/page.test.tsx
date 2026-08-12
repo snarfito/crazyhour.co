@@ -22,4 +22,12 @@ describe("NuevaCategoriaPage", () => {
     expect(select.value).toBe("");
     expect(screen.getByText("Usar tema del sitio")).toBeInTheDocument();
   });
+
+  it("renders the description field and featured checkbox, unchecked by default", async () => {
+    const NuevaCategoriaPage = (await import("./page")).default;
+    render(await NuevaCategoriaPage());
+
+    expect(screen.getByLabelText(/descripción/i)).toHaveValue("");
+    expect(screen.getByLabelText(/destacar en el home/i)).not.toBeChecked();
+  });
 });

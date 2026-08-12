@@ -4,6 +4,7 @@ import { getAllThemeMotionSettings } from "@/lib/theme-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ThemeSelectPreview } from "@/components/event-animation/theme-select-preview";
 
 const SELECT_CLASSES =
@@ -21,6 +22,10 @@ export default async function NuevaCategoriaPage() {
           <Input id="name" name="name" required />
         </div>
         <div>
+          <Label htmlFor="description">Descripción</Label>
+          <Textarea id="description" name="description" rows={3} />
+        </div>
+        <div>
           <Label htmlFor="animation_theme">Tema de animación</Label>
           <ThemeSelectPreview
             id="animation_theme"
@@ -30,6 +35,10 @@ export default async function NuevaCategoriaPage() {
             className={SELECT_CLASSES}
             settingsMap={settingsMap}
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <input id="is_featured" name="is_featured" type="checkbox" className="h-4 w-4 rounded border-input" />
+          <Label htmlFor="is_featured">Destacar en el home</Label>
         </div>
         <Button type="submit">Crear</Button>
       </form>

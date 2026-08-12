@@ -169,6 +169,66 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     expect(updated?.animation_theme).toBe("none");
   });
 
+  it("createCategory stores description and is_featured", async () => {
+    const { createCategory } = await import("./actions");
+    const formData = new FormData();
+    formData.set("name", `${TEST_PREFIX}Con descripcion`);
+    formData.set("description", "Calabazas, telarañas y naranja por todas partes.");
+    formData.set("is_featured", "on");
+
+    await createCategory(formData);
+
+    const { data } = await admin
+      .from("categories")
+      .select("description, is_featured")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+    expect(data?.description).toBe("Calabazas, telarañas y naranja por todas partes.");
+    expect(data?.is_featured).toBe(true);
+  });
+
+  it("createCategory stores a null description and is_featured=false when omitted", async () => {
+    const { createCategory } = await import("./actions");
+    const formData = new FormData();
+    formData.set("name", `${TEST_PREFIX}Sin descripcion`);
+
+    await createCategory(formData);
+
+    const { data } = await admin
+      .from("categories")
+      .select("description, is_featured")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+    expect(data?.description).toBeNull();
+    expect(data?.is_featured).toBe(false);
+  });
+
+  it("updateCategory can toggle is_featured off", async () => {
+    const { createCategory, updateCategory } = await import("./actions");
+    const create = new FormData();
+    create.set("name", `${TEST_PREFIX}Destacada`);
+    create.set("is_featured", "on");
+    await createCategory(create);
+    const { data: created } = await admin
+      .from("categories")
+      .select("id, slug")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+
+    const update = new FormData();
+    update.set("name", `${TEST_PREFIX}Destacada`);
+    update.set("slug", created!.slug);
+    // is_featured checkbox omitted from formData == unchecked in a real form
+    await updateCategory(created!.id, update);
+
+    const { data: updated } = await admin
+      .from("categories")
+      .select("is_featured")
+      .eq("id", created!.id)
+      .single();
+    expect(updated?.is_featured).toBe(false);
+  });
+
   it("deleteCategory removes the row", async () => {
     const { createCategory, deleteCategory } = await import("./actions");
     const create = new FormData();

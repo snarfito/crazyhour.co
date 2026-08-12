@@ -10,6 +10,15 @@ function readAnimationTheme(formData: FormData): string | null {
   return value === "" ? null : value;
 }
 
+function readDescription(formData: FormData): string | null {
+  const value = String(formData.get("description") ?? "").trim();
+  return value === "" ? null : value;
+}
+
+function readIsFeatured(formData: FormData): boolean {
+  return formData.get("is_featured") === "on";
+}
+
 export async function createCategory(formData: FormData) {
   await verifySession();
   const supabase = await createClient();
@@ -37,7 +46,14 @@ export async function createCategory(formData: FormData) {
 
   const { error } = await supabase
     .from("categories")
-    .insert({ name, slug, sort_order: sortOrder, animation_theme: animationTheme });
+    .insert({
+      name,
+      slug,
+      sort_order: sortOrder,
+      animation_theme: animationTheme,
+      description: readDescription(formData),
+      is_featured: readIsFeatured(formData),
+    });
   if (error) throw error;
 
   revalidatePath("/admin/categorias");
@@ -63,7 +79,13 @@ export async function updateCategory(id: string, formData: FormData) {
 
   const { error } = await supabase
     .from("categories")
-    .update({ name, slug, animation_theme: animationTheme })
+    .update({
+      name,
+      slug,
+      animation_theme: animationTheme,
+      description: readDescription(formData),
+      is_featured: readIsFeatured(formData),
+    })
     .eq("id", id);
   if (error) throw error;
 

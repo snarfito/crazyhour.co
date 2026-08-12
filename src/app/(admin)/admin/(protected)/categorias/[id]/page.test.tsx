@@ -8,6 +8,8 @@ const mockCategory = {
   sort_order: 0,
   cover_image_url: null,
   animation_theme: "carnaval",
+  description: null,
+  is_featured: false,
 };
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -67,5 +69,26 @@ describe("EditarCategoriaPage", () => {
 
     const select = screen.getByLabelText(/tema de animación/i) as HTMLSelectElement;
     expect(select.value).toBe("");
+  });
+
+  it("pre-fills description and pre-checks the featured toggle when set", async () => {
+    const featuredCategory = { ...mockCategory, description: "Copy de prueba", is_featured: true };
+    const { createClient } = await import("@/lib/supabase/server");
+    vi.mocked(createClient).mockResolvedValueOnce({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({ data: featuredCategory }),
+          }),
+        }),
+      }),
+    } as never);
+
+    const EditarCategoriaPage = (await import("./page")).default;
+    const ui = await EditarCategoriaPage({ params: Promise.resolve({ id: "cat-1" }) });
+    render(ui);
+
+    expect(screen.getByLabelText(/descripción/i)).toHaveValue("Copy de prueba");
+    expect(screen.getByLabelText(/destacar en el home/i)).toBeChecked();
   });
 });

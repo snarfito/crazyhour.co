@@ -6,6 +6,7 @@ import { getAllThemeMotionSettings } from "@/lib/theme-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { CoverUpload } from "../cover-upload";
 import { ThemeSelectPreview } from "@/components/event-animation/theme-select-preview";
 
@@ -39,6 +40,16 @@ export default async function EditarCategoriaPage({
           <Input key={category.slug} id="slug" name="slug" defaultValue={category.slug} required />
         </div>
         <div>
+          <Label htmlFor="description">Descripción</Label>
+          <Textarea
+            key={category.description ?? ""}
+            id="description"
+            name="description"
+            rows={3}
+            defaultValue={category.description ?? ""}
+          />
+        </div>
+        <div>
           <Label htmlFor="animation_theme">Tema de animación</Label>
           <ThemeSelectPreview
             key={category.animation_theme ?? ""}
@@ -49,6 +60,17 @@ export default async function EditarCategoriaPage({
             className={SELECT_CLASSES}
             settingsMap={settingsMap}
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            key={String(category.is_featured)}
+            id="is_featured"
+            name="is_featured"
+            type="checkbox"
+            defaultChecked={category.is_featured}
+            className="h-4 w-4 rounded border-input"
+          />
+          <Label htmlFor="is_featured">Destacar en el home</Label>
         </div>
         <Button type="submit">Guardar</Button>
       </form>
