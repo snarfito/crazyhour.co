@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getWhatsAppNumber } from "@/lib/settings";
 import { CategoryProductsFilter } from "@/components/catalog/category-products-filter";
+import { isRecentlyCreated } from "@/lib/product-freshness";
 import { CategoryWhatsAppCta } from "@/components/catalog/category-whatsapp-cta";
 import { Breadcrumb } from "@/components/catalog/breadcrumb";
 import { BrandPlaceholder } from "@/components/catalog/brand-placeholder";
@@ -26,12 +27,6 @@ export async function generateMetadata({
     .eq("slug", categorySlug)
     .maybeSingle();
   return { title: data ? `${data.name} — Crazy Hour` : "Crazy Hour" };
-}
-
-const NEW_PRODUCT_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
-
-function isRecentlyCreated(createdAt: string): boolean {
-  return Date.now() - new Date(createdAt).getTime() < NEW_PRODUCT_WINDOW_MS;
 }
 
 export default async function CategoryPage({
