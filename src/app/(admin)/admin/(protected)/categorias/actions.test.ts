@@ -58,7 +58,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { createCategory } = await import("./actions");
     const formData = new FormData();
     formData.set("name", `${TEST_PREFIX}Hora Loca`);
-    formData.set("sort_order", "1");
 
     await createCategory(formData);
 
@@ -78,12 +77,10 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { createCategory } = await import("./actions");
     const first = new FormData();
     first.set("name", `${TEST_PREFIX}Globos`);
-    first.set("sort_order", "1");
     await createCategory(first);
 
     const duplicate = new FormData();
     duplicate.set("name", `${TEST_PREFIX}Globos`);
-    duplicate.set("sort_order", "2");
 
     await expect(createCategory(duplicate)).rejects.toThrow(/slug/i);
   });
@@ -92,7 +89,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { createCategory, updateCategory } = await import("./actions");
     const create = new FormData();
     create.set("name", `${TEST_PREFIX}Decoracion`);
-    create.set("sort_order", "1");
     await createCategory(create);
     const { data: created } = await admin
       .from("categories")
@@ -103,7 +99,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const update = new FormData();
     update.set("name", `${TEST_PREFIX}Decoración`);
     update.set("slug", `${TEST_PREFIX}decoracion-fiestas`);
-    update.set("sort_order", "2");
     await updateCategory(created!.id, update);
 
     const { data: updated } = await admin
@@ -119,7 +114,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { createCategory } = await import("./actions");
     const formData = new FormData();
     formData.set("name", `${TEST_PREFIX}Sin tema`);
-    formData.set("sort_order", "0");
     formData.set("animation_theme", "");
 
     await createCategory(formData);
@@ -136,7 +130,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { createCategory } = await import("./actions");
     const formData = new FormData();
     formData.set("name", `${TEST_PREFIX}Con tema`);
-    formData.set("sort_order", "0");
     formData.set("animation_theme", "carnaval");
 
     await createCategory(formData);
@@ -153,7 +146,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { createCategory, updateCategory } = await import("./actions");
     const createFormData = new FormData();
     createFormData.set("name", `${TEST_PREFIX}Editar tema`);
-    createFormData.set("sort_order", "0");
     createFormData.set("animation_theme", "carnaval");
     await createCategory(createFormData);
 
@@ -166,7 +158,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const updateFormData = new FormData();
     updateFormData.set("name", `${TEST_PREFIX}Editar tema`);
     updateFormData.set("slug", created!.slug);
-    updateFormData.set("sort_order", "0");
     updateFormData.set("animation_theme", "none");
     await updateCategory(created!.id, updateFormData);
 
@@ -182,7 +173,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     const { createCategory, deleteCategory } = await import("./actions");
     const create = new FormData();
     create.set("name", `${TEST_PREFIX}Recordatorios`);
-    create.set("sort_order", "1");
     await createCategory(create);
     const { data: created } = await admin
       .from("categories")
@@ -197,5 +187,58 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
       .select("*")
       .like("slug", TEST_PREFIX_LIKE);
     expect(remaining).toHaveLength(0);
+  });
+
+  it("createCategory appends to the end when categories already exist", async () => {
+    const { createCategory } = await import("./actions");
+    const first = new FormData();
+    first.set("name", `${TEST_PREFIX}Primero`);
+    await createCategory(first);
+    const { data: firstRow } = await admin
+      .from("categories")
+      .select("sort_order")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+
+    const second = new FormData();
+    second.set("name", `${TEST_PREFIX}Segundo`);
+    await createCategory(second);
+    const { data: rows } = await admin
+      .from("categories")
+      .select("name, sort_order")
+      .like("slug", TEST_PREFIX_LIKE)
+      .order("sort_order");
+
+    expect(rows).toHaveLength(2);
+    expect(rows![1].sort_order).toBe(firstRow!.sort_order + 1);
+  });
+
+  it("reorderCategories persists the new order without touching name/slug", async () => {
+    const { createCategory, reorderCategories } = await import("./actions");
+    const a = new FormData();
+    a.set("name", `${TEST_PREFIX}A`);
+    await createCategory(a);
+    const b = new FormData();
+    b.set("name", `${TEST_PREFIX}B`);
+    await createCategory(b);
+
+    const { data: rows } = await admin
+      .from("categories")
+      .select("id, name, slug")
+      .like("slug", TEST_PREFIX_LIKE)
+      .order("sort_order");
+    const [rowA, rowB] = rows!;
+
+    await reorderCategories([rowB.id, rowA.id]);
+
+    const { data: reordered } = await admin
+      .from("categories")
+      .select("id, name, slug, sort_order")
+      .like("slug", TEST_PREFIX_LIKE)
+      .order("sort_order");
+    expect(reordered![0].id).toBe(rowB.id);
+    expect(reordered![0].name).toBe(rowB.name);
+    expect(reordered![0].slug).toBe(rowB.slug);
+    expect(reordered![1].id).toBe(rowA.id);
   });
 });

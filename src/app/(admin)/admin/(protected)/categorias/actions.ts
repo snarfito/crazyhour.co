@@ -15,7 +15,6 @@ export async function createCategory(formData: FormData) {
   const supabase = await createClient();
 
   const name = String(formData.get("name") ?? "").trim();
-  const sortOrder = Number(formData.get("sort_order") ?? 0);
   const slug = slugify(name);
   const animationTheme = readAnimationTheme(formData);
 
@@ -27,6 +26,14 @@ export async function createCategory(formData: FormData) {
   if (existing) {
     throw new Error(`Ya existe una categoría con el slug "${slug}".`);
   }
+
+  const { data: last } = await supabase
+    .from("categories")
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const sortOrder = (last?.sort_order ?? -1) + 1;
 
   const { error } = await supabase
     .from("categories")
@@ -42,7 +49,6 @@ export async function updateCategory(id: string, formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
-  const sortOrder = Number(formData.get("sort_order") ?? 0);
   const animationTheme = readAnimationTheme(formData);
 
   const { data: existing } = await supabase
@@ -57,11 +63,31 @@ export async function updateCategory(id: string, formData: FormData) {
 
   const { error } = await supabase
     .from("categories")
-    .update({ name, slug, sort_order: sortOrder, animation_theme: animationTheme })
+    .update({ name, slug, animation_theme: animationTheme })
     .eq("id", id);
   if (error) throw error;
 
   revalidatePath("/admin/categorias");
+}
+
+export async function reorderCategories(orderedIds: string[]) {
+  await verifySession();
+  const supabase = await createClient();
+
+  // Not .upsert(): Supabase's upsert replaces the whole row via
+  // `excluded.*` for every column, not just the ones in the payload —
+  // sending only {id, sort_order} nulls out name/slug on conflict. A plain
+  // per-row UPDATE only ever touches the column it names.
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("categories").update({ sort_order: index }).eq("id", id),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+
+  revalidatePath("/admin/categorias");
+  revalidatePath("/");
 }
 
 export async function deleteCategory(id: string) {
