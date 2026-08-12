@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { likePattern } from "@/test/db-prefix";
 
@@ -26,7 +26,12 @@ const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 // real query/ordering/wiring against local Supabase.
 let forceEmpty = false;
 const emptyClient = {
-  from: () => ({ select: () => ({ order: async () => ({ data: [], error: null }) }) }),
+  from: () => ({
+    select: () => ({
+      order: async () => ({ data: [], error: null }),
+      eq: () => ({ data: [], error: null }),
+    }),
+  }),
 };
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -54,6 +59,14 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => 
 
   beforeEach(async () => {
     forceEmpty = false;
+    // Products must go first: a plain categories delete silently no-ops on
+    // the FK constraint when a prefixed category still has products
+    // referencing it (Supabase's delete() doesn't throw on error), leaving
+    // stale rows for every later test in the run. See
+    // [categorySlug]/page.test.tsx for the same pattern.
+    const { data: cats } = await admin.from("categories").select("id").like("slug", TEST_PREFIX_LIKE);
+    const ids = (cats ?? []).map((c) => c.id);
+    if (ids.length > 0) await admin.from("products").delete().in("category_id", ids);
     await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
   });
 
@@ -82,5 +95,84 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => 
     render(ui);
 
     expect(screen.getByText(/armando el catálogo/i)).toBeInTheDocument();
+  });
+
+  it("shows the product count for each category, counting only active products", async () => {
+    const { data: category } = await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 })
+      .select()
+      .single();
+    await admin.from("products").insert([
+      { category_id: category!.id, name: "A", description: "x", price_cop: 1000, is_active: true },
+      { category_id: category!.id, name: "B", description: "x", price_cop: 1000, is_active: true },
+      { category_id: category!.id, name: "C", description: "x", price_cop: 1000, is_active: false },
+    ]);
+
+    const HomePage = (await import("./page")).default;
+    const ui = await HomePage();
+    render(ui);
+
+    // Scoped to this test's own card via its href — plain getByText("2
+    // productos") would risk colliding with another category's badge from a
+    // concurrently-running test file (same risk class as the "renders a
+    // category card" test above, which scopes via prefixedLinks for the
+    // same reason).
+    const link = screen.getAllByRole("link").find((l) => l.getAttribute("href") === `/${TEST_PREFIX}pinatas`);
+    expect(link).toBeDefined();
+    expect(within(link!).getByText("2 productos")).toBeInTheDocument();
+  });
+
+  it("renders the featured category strip only for the category flagged is_featured", async () => {
+    // Both rows list the same keys explicitly: PostgREST's bulk insert sends
+    // an explicit NULL (not the column default) for any key missing on some
+    // row in the batch, which would otherwise violate categories.is_featured
+    // NOT NULL on the row that omits it.
+    await admin.from("categories").insert([
+      { name: `${TEST_PREFIX}Normal`, slug: `${TEST_PREFIX}normal`, sort_order: 1, is_featured: false, description: null },
+      {
+        name: `${TEST_PREFIX}Hora Loca`,
+        slug: `${TEST_PREFIX}hora-loca`,
+        sort_order: 2,
+        is_featured: true,
+        description: "La fiesta no para.",
+      },
+    ]);
+
+    const HomePage = (await import("./page")).default;
+    const ui = await HomePage();
+    render(ui);
+
+    expect(screen.getByRole("link", { name: /ver.*hora loca/i })).toHaveAttribute(
+      "href",
+      `/${TEST_PREFIX}hora-loca`
+    );
+  });
+
+  it("omits the featured strip when no category is flagged", async () => {
+    await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}Normal`, slug: `${TEST_PREFIX}normal`, sort_order: 1 });
+
+    const HomePage = (await import("./page")).default;
+    const ui = await HomePage();
+    render(ui);
+
+    // Hero always renders its own "Ver catálogo →" CTA (see hero.tsx) — the
+    // assertion is that no *additional* "Ver X →" link (the featured-strip
+    // CTA) appears alongside it.
+    const verLinks = screen.getAllByRole("link", { name: /^Ver /i });
+    expect(verLinks).toHaveLength(1);
+    expect(verLinks[0]).toHaveTextContent("Ver catálogo");
+  });
+
+  it("always renders the how-it-works section, even with no categories", async () => {
+    forceEmpty = true;
+
+    const HomePage = (await import("./page")).default;
+    const ui = await HomePage();
+    render(ui);
+
+    expect(screen.getByText("Miras el catálogo")).toBeInTheDocument();
   });
 });
