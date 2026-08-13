@@ -30,7 +30,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
       email: `zzadminusuarios_inviter_${Date.now()}@crazyhour.test`,
       email_confirm: true,
     });
-    inviterId = data!.user.id;
+    inviterId = data.user!.id;
   });
 
   afterAll(async () => {
@@ -66,8 +66,8 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
   it("rejects an email that already has an admin_users row", async () => {
     const email = `zzadminusuarios_dup_${Date.now()}@crazyhour.test`;
     const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
-    createdUserIds.push(created!.user.id);
-    await admin.from("admin_users").insert({ id: created!.user.id, email, role: "full" });
+    createdUserIds.push(created.user!.id);
+    await admin.from("admin_users").insert({ id: created.user!.id, email, role: "full" });
 
     const { inviteAdmin } = await import("./actions");
     const formData = new FormData();
@@ -81,7 +81,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
   it("re-grants access to an Auth user that exists but was revoked, without erroring", async () => {
     const email = `zzadminusuarios_revoked_${Date.now()}@crazyhour.test`;
     const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
-    createdUserIds.push(created!.user.id);
+    createdUserIds.push(created.user!.id);
     // No admin_users row — simulates a previously-revoked account.
 
     const { inviteAdmin } = await import("./actions");
@@ -92,36 +92,36 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
     const result = await inviteAdmin(undefined, formData);
     expect(result).toEqual({ success: true });
 
-    const { data: row } = await admin.from("admin_users").select("*").eq("id", created!.user.id).single();
+    const { data: row } = await admin.from("admin_users").select("*").eq("id", created.user!.id).single();
     expect(row?.role).toBe("full");
   });
 
   it("revokes access by deleting the admin_users row, leaving the Auth account intact", async () => {
     const email = `zzadminusuarios_revoke_${Date.now()}@crazyhour.test`;
     const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
-    createdUserIds.push(created!.user.id);
-    await admin.from("admin_users").insert({ id: created!.user.id, email, role: "limited" });
+    createdUserIds.push(created.user!.id);
+    await admin.from("admin_users").insert({ id: created.user!.id, email, role: "limited" });
 
     const { revokeAdmin } = await import("./actions");
-    await revokeAdmin(created!.user.id);
+    await revokeAdmin(created.user!.id);
 
-    const { data: row } = await admin.from("admin_users").select("*").eq("id", created!.user.id).maybeSingle();
+    const { data: row } = await admin.from("admin_users").select("*").eq("id", created.user!.id).maybeSingle();
     expect(row).toBeNull();
-    const { data: authUser } = await admin.auth.admin.getUserById(created!.user.id);
+    const { data: authUser } = await admin.auth.admin.getUserById(created.user!.id);
     expect(authUser.user).not.toBeNull();
   });
 
   it("refuses to let a full admin revoke their own access", async () => {
     const email = `zzadminusuarios_self_${Date.now()}@crazyhour.test`;
     const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
-    createdUserIds.push(created!.user.id);
-    await admin.from("admin_users").insert({ id: created!.user.id, email, role: "full" });
-    mockRequireFullAdmin.mockResolvedValue({ userId: created!.user.id, email, role: "full" });
+    createdUserIds.push(created.user!.id);
+    await admin.from("admin_users").insert({ id: created.user!.id, email, role: "full" });
+    mockRequireFullAdmin.mockResolvedValue({ userId: created.user!.id, email, role: "full" });
 
     const { revokeAdmin } = await import("./actions");
-    await expect(revokeAdmin(created!.user.id)).rejects.toThrow("No puedes revocarte tu propio acceso.");
+    await expect(revokeAdmin(created.user!.id)).rejects.toThrow("No puedes revocarte tu propio acceso.");
 
-    const { data: row } = await admin.from("admin_users").select("*").eq("id", created!.user.id).maybeSingle();
+    const { data: row } = await admin.from("admin_users").select("*").eq("id", created.user!.id).maybeSingle();
     expect(row).not.toBeNull();
   });
 });
