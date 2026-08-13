@@ -12,24 +12,17 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-export async function enhanceImage({
-  imageBytes,
-  mimeType,
-  prompt,
-}: {
-  imageBytes: Buffer;
-  mimeType: string;
-  prompt: string;
-}): Promise<{ imageBytes: Buffer; mimeType: string }> {
+type GeminiContentPart = { text: string } | { inlineData: { data: string; mimeType: string } };
+
+async function callGeminiForImage(
+  contents: GeminiContentPart[]
+): Promise<{ imageBytes: Buffer; mimeType: string }> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
   const response = await withTimeout(
     ai.models.generateContent({
       model: "gemini-2.5-flash-image",
-      contents: [
-        { inlineData: { data: imageBytes.toString("base64"), mimeType } },
-        { text: prompt },
-      ],
+      contents,
       config: { responseModalities: ["IMAGE", "TEXT"] },
     }),
     TIMEOUT_MS
@@ -47,4 +40,27 @@ export async function enhanceImage({
     imageBytes: Buffer.from(imagePart.inlineData.data, "base64"),
     mimeType: imagePart.inlineData.mimeType!,
   };
+}
+
+export async function enhanceImage({
+  imageBytes,
+  mimeType,
+  prompt,
+}: {
+  imageBytes: Buffer;
+  mimeType: string;
+  prompt: string;
+}): Promise<{ imageBytes: Buffer; mimeType: string }> {
+  return callGeminiForImage([
+    { inlineData: { data: imageBytes.toString("base64"), mimeType } },
+    { text: prompt },
+  ]);
+}
+
+export async function generateCoverImage({
+  prompt,
+}: {
+  prompt: string;
+}): Promise<{ imageBytes: Buffer; mimeType: string }> {
+  return callGeminiForImage([{ text: prompt }]);
 }
