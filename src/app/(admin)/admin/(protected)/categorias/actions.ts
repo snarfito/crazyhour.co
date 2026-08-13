@@ -73,7 +73,7 @@ export async function createCategory(formData: FormData) {
   if (error) throw error;
   if (isFeatured) await clearOtherFeatured(supabase, created.id);
 
-  revalidatePath("/admin/categorias");
+  revalidatePath("/admin/categorias", "layout");
 }
 
 export async function updateCategory(id: string, formData: FormData) {
@@ -108,7 +108,7 @@ export async function updateCategory(id: string, formData: FormData) {
   if (error) throw error;
   if (isFeatured) await clearOtherFeatured(supabase, id);
 
-  revalidatePath("/admin/categorias");
+  revalidatePath("/admin/categorias", "layout");
 }
 
 export async function reorderCategories(orderedIds: string[]) {
@@ -127,7 +127,7 @@ export async function reorderCategories(orderedIds: string[]) {
   const failed = results.find((r) => r.error);
   if (failed?.error) throw failed.error;
 
-  revalidatePath("/admin/categorias");
+  revalidatePath("/admin/categorias", "layout");
   revalidatePath("/");
 }
 
@@ -138,7 +138,7 @@ export async function deleteCategory(id: string) {
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw error;
 
-  revalidatePath("/admin/categorias");
+  revalidatePath("/admin/categorias", "layout");
 }
 
 export async function setCategoryCoverImage(categoryId: string, url: string) {
@@ -156,7 +156,7 @@ export async function setCategoryCoverImage(categoryId: string, url: string) {
     .eq("id", categoryId);
   if (error) throw error;
 
-  revalidatePath("/admin/categorias");
+  revalidatePath("/admin/categorias", "layout");
 }
 
 export async function generateCategoryCoverImage(categoryId: string, prompt: string) {
