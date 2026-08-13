@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { SELECT_CLASSES } from "@/lib/admin-ui";
 
 export function CategoryFilter({
   categories,
@@ -19,7 +20,7 @@ export function CategoryFilter({
         const value = e.target.value;
         router.push(value ? `/admin/productos?categoria=${value}` : "/admin/productos");
       }}
-      className="w-full max-w-xs rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+      className={`${SELECT_CLASSES} max-w-xs`}
     >
       <option value="">Todas las categorías</option>
       {categories.map((c) => (

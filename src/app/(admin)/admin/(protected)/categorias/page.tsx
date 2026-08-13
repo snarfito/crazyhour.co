@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { CategoriasListClient } from "./categorias-list-client";
 
 export default async function CategoriasPage() {
@@ -13,12 +15,22 @@ export default async function CategoriasPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-extrabold">Categorías</h1>
-        <Button render={<Link href="/admin/categorias/nueva">Nueva categoría</Link>} />
+        <div>
+          <h1 className="font-heading text-2xl font-extrabold text-foreground">Categorías</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Arrastra las filas para reordenar el home</p>
+        </div>
+        <Button
+          render={
+            <Link href="/admin/categorias/nueva">
+              <Plus />
+              Nueva categoría
+            </Link>
+          }
+        />
       </div>
-      <div className="mt-6">
+      <Card className="mt-4 overflow-x-auto py-0">
         <CategoriasListClient categories={categories ?? []} />
-      </div>
+      </Card>
     </div>
   );
 }

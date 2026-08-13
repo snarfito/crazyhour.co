@@ -18,8 +18,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { DeleteForm } from "@/components/admin/delete-form";
 import { computeNewOrder } from "@/lib/reorder";
 import { reorderCategories, deleteCategory } from "./actions";
@@ -43,12 +44,19 @@ function SortableRow({ category }: { category: Category }) {
           <GripVertical className="h-4 w-4" />
         </button>
       </TableCell>
-      <TableCell>{category.name}</TableCell>
+      <TableCell className="font-medium text-foreground">{category.name}</TableCell>
       <TableCell className="text-muted-foreground">{category.slug}</TableCell>
-      <TableCell className="flex gap-3">
-        <Link href={`/admin/categorias/${category.id}`} className="text-primary hover:underline">
-          Editar
-        </Link>
+      <TableCell className="flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          render={
+            <Link href={`/admin/categorias/${category.id}`}>
+              <Pencil />
+              Editar
+            </Link>
+          }
+        />
         <DeleteForm
           action={deleteCategory.bind(null, category.id)}
           confirmMessage={`¿Eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`}

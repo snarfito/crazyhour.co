@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_ENHANCE_PROMPT } from "@/lib/gemini/prompt";
@@ -14,14 +15,15 @@ export function EnhanceButton({ imageId }: { imageId: string }) {
 
   if (!open) {
     return (
-      <button type="button" className="text-sm text-primary hover:underline" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Sparkles />
         Mejorar imagen
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="mt-2 flex flex-col gap-2 rounded-md border border-border p-3">
+    <div className="mt-2 flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
       <Textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4} />
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-2">
@@ -40,6 +42,7 @@ export function EnhanceButton({ imageId }: { imageId: string }) {
             })
           }
         >
+          <Sparkles />
           {pending ? "Procesando..." : "Procesar con Gemini"}
         </Button>
         <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>

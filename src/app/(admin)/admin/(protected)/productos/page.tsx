@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { Pencil, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DeleteForm } from "@/components/admin/delete-form";
 import { deleteProduct, toggleProductActive } from "./actions";
@@ -30,13 +33,24 @@ export default async function ProductosPage({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-extrabold">Productos</h1>
-        <Button render={<Link href="/admin/productos/nuevo">Nuevo producto</Link>} />
+        <div>
+          <h1 className="font-heading text-2xl font-extrabold text-foreground">Productos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Catálogo de la tienda</p>
+        </div>
+        <Button
+          render={
+            <Link href="/admin/productos/nuevo">
+              <Plus />
+              Nuevo producto
+            </Link>
+          }
+        />
       </div>
       <div className="mt-4">
         <CategoryFilter categories={categories ?? []} selectedCategoryId={categoria} />
       </div>
-      <Table className="mt-6">
+      <Card className="mt-4 overflow-x-auto py-0">
+        <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
@@ -49,7 +63,7 @@ export default async function ProductosPage({
         <TableBody>
           {(products ?? []).map((p) => (
             <TableRow key={p.id}>
-              <TableCell>{p.name}</TableCell>
+              <TableCell className="font-medium text-foreground">{p.name}</TableCell>
               <TableCell className="text-muted-foreground">
                 {(p.categories as { name: string } | null)?.name ?? "—"}
               </TableCell>
@@ -58,16 +72,31 @@ export default async function ProductosPage({
                 <form action={toggleProductActive.bind(null, p.id, !p.is_active)}>
                   <button
                     type="submit"
-                    className={p.is_active ? "text-brand-green" : "text-muted-foreground"}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                      p.is_active
+                        ? "bg-brand-green/10 text-brand-green"
+                        : "bg-muted text-muted-foreground",
+                    )}
                   >
+                    <span
+                      className={cn("size-1.5 rounded-full", p.is_active ? "bg-brand-green" : "bg-muted-foreground")}
+                    />
                     {p.is_active ? "Activo" : "Inactivo"}
                   </button>
                 </form>
               </TableCell>
-              <TableCell className="flex gap-3">
-                <Link href={`/admin/productos/${p.id}`} className="text-primary hover:underline">
-                  Editar
-                </Link>
+              <TableCell className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  render={
+                    <Link href={`/admin/productos/${p.id}`}>
+                      <Pencil />
+                      Editar
+                    </Link>
+                  }
+                />
                 <DeleteForm
                   action={deleteProduct.bind(null, p.id)}
                   confirmMessage={`¿Eliminar el producto "${p.name}"? Esta acción no se puede deshacer.`}
@@ -76,7 +105,8 @@ export default async function ProductosPage({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+        </Table>
+      </Card>
     </div>
   );
 }

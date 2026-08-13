@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { verifySession } from "@/lib/supabase/dal";
 import { signOut } from "../login/actions";
+import { AdminNav } from "./admin-nav";
+import { Button } from "@/components/ui/button";
 
 export default async function ProtectedAdminLayout({
   children,
@@ -10,42 +11,33 @@ export default async function ProtectedAdminLayout({
 
   return (
     <>
-      <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <span className="font-heading font-extrabold">Crazy Hour — Admin</span>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-muted-foreground">{session.email}</span>
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:px-6">
+        <div className="flex items-center gap-2">
+          <span className="flex size-7 items-center justify-center rounded-md bg-primary font-heading text-sm font-extrabold text-primary-foreground">
+            C
+          </span>
+          <span className="font-heading font-extrabold text-foreground">Crazy Hour — Admin</span>
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <div className="hidden flex-col items-end leading-tight sm:flex">
+            <span className="text-foreground">{session.email}</span>
+            <span className="text-xs text-muted-foreground capitalize">
+              {isFullAdmin ? "Administrador" : "Acceso limitado"}
+            </span>
+          </div>
           <form action={signOut}>
-            <button type="submit" className="text-primary hover:underline">
+            <Button type="submit" variant="outline" size="sm">
               Cerrar sesión
-            </button>
+            </Button>
           </form>
         </div>
       </header>
-      <nav className="flex gap-4 border-b border-border px-4 py-2 text-sm font-medium">
-        <Link href="/admin/pedidos" className="hover:text-primary">
-          Pedidos
-        </Link>
-        <Link href="/admin/productos" className="hover:text-primary">
-          Productos
-        </Link>
-        <Link href="/admin/categorias" className="hover:text-primary">
-          Categorías
-        </Link>
-        {isFullAdmin && (
-          <>
-            <Link href="/admin/ajustes" className="hover:text-primary">
-              Ajustes
-            </Link>
-            <Link href="/admin/animaciones" className="hover:text-primary">
-              Animaciones
-            </Link>
-            <Link href="/admin/usuarios" className="hover:text-primary">
-              Usuarios
-            </Link>
-          </>
-        )}
-      </nav>
-      <main className="font-body p-6">{children}</main>
+      <div className="border-b border-border bg-background">
+        <AdminNav isFullAdmin={isFullAdmin} />
+      </div>
+      <main className="font-body p-4 sm:p-6">
+        <div className="mx-auto max-w-5xl">{children}</div>
+      </main>
     </>
   );
 }

@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Upload, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { buildCoverPrompt } from "@/lib/gemini/prompt";
 import { setCategoryCoverImage, generateCategoryCoverImage } from "./actions";
@@ -24,14 +26,15 @@ function GenerateCoverButton({
 
   if (!open) {
     return (
-      <button type="button" className="text-sm text-primary hover:underline" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+        <Sparkles />
         Generar portada con IA
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="mt-2 flex flex-col gap-2 rounded-md border border-border p-3">
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
       <label htmlFor="cover-prompt-input" className="sr-only">
         Prompt
       </label>
@@ -54,6 +57,7 @@ function GenerateCoverButton({
             })
           }
         >
+          <Sparkles />
           {pending ? "Generando..." : "Generar"}
         </Button>
         <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
@@ -114,33 +118,43 @@ export function CoverUpload({
   }
 
   return (
-    <div className="mt-2 flex items-center gap-4">
-      {currentUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={currentUrl}
-          alt="Portada actual"
-          className="h-16 w-16 rounded object-cover"
-        />
-      )}
-      <div>
-        <label htmlFor="cover-upload-input" className="text-sm text-primary hover:underline cursor-pointer">
-          {uploading ? "Subiendo..." : "Subir portada"}
-        </label>
-        <input
-          id="cover-upload-input"
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={handleUpload}
-          disabled={uploading}
-        />
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30">
+        {currentUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={currentUrl} alt="Portada actual" className="h-full w-full object-cover" />
+        ) : (
+          <span className="px-2 text-center text-xs text-muted-foreground">Sin portada</span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-3">
+        <div className="flex flex-wrap gap-2">
+          <label
+            htmlFor="cover-upload-input"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "cursor-pointer",
+              uploading && "pointer-events-none opacity-50",
+            )}
+          >
+            <Upload />
+            {uploading ? "Subiendo..." : "Subir portada"}
+          </label>
+          <input
+            id="cover-upload-input"
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={handleUpload}
+            disabled={uploading}
+          />
+          <GenerateCoverButton
+            categoryId={categoryId}
+            categoryName={categoryName}
+            onGenerated={() => router.refresh()}
+          />
+        </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <GenerateCoverButton
-          categoryId={categoryId}
-          categoryName={categoryName}
-          onGenerated={() => router.refresh()}
-        />
       </div>
     </div>
   );

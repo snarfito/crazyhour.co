@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { EnhanceButton } from "./enhance-button";
 import { createProductImagePlaceholder, setProductImageUrl, deleteProductImage } from "./actions";
 
@@ -64,7 +67,7 @@ export function ImageUpload({
     <div className="mt-2">
       <div className="flex flex-col gap-4">
         {images.map((img) => (
-          <div key={img.id} className="rounded-md border border-border p-3">
+          <div key={img.id} className="rounded-lg border border-border p-3">
             <div className={img.enhanced_url ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
               <div>
                 <p className="mb-1 text-xs font-medium text-muted-foreground">Original</p>
@@ -72,7 +75,7 @@ export function ImageUpload({
                 <img
                   src={img.original_url}
                   alt="Foto original"
-                  className="h-64 w-full rounded border border-border bg-white object-contain"
+                  className="h-64 w-full rounded-md border border-border bg-white object-contain"
                 />
               </div>
               {img.enhanced_url && (
@@ -82,18 +85,22 @@ export function ImageUpload({
                   <img
                     src={img.enhanced_url}
                     alt="Foto mejorada"
-                    className="h-64 w-full rounded border border-border bg-white object-contain"
+                    className="h-64 w-full rounded-md border border-border bg-white object-contain"
                   />
                 </div>
               )}
             </div>
-            <div className="mt-2">
+            <div className="mt-3">
               <EnhanceButton imageId={img.id} />
             </div>
           </div>
         ))}
       </div>
-      <label htmlFor="product-image-input" className="mt-3 inline-block cursor-pointer text-sm text-primary hover:underline">
+      <label
+        htmlFor="product-image-input"
+        className={cn(buttonVariants({ variant: "outline" }), "mt-3 cursor-pointer", uploading && "pointer-events-none opacity-50")}
+      >
+        <Upload />
         {uploading ? "Subiendo..." : "Subir foto"}
       </label>
       <input
@@ -104,7 +111,7 @@ export function ImageUpload({
         onChange={handleUpload}
         disabled={uploading}
       />
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </div>
   );
 }
