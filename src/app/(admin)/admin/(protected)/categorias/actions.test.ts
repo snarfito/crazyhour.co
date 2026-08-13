@@ -38,6 +38,14 @@ vi.mock("@/lib/supabase/server", () => ({
     createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
 }));
 
+// generateCategoryCoverImage calls out to the real Gemini API — mocked here
+// so this suite stays a pure Storage/DB integration test, same reasoning as
+// the dal/server mocks above.
+const mockGenerateCoverImage = vi.fn();
+vi.mock("@/lib/gemini/enhance", () => ({
+  generateCoverImage: (...args: unknown[]) => mockGenerateCoverImage(...args),
+}));
+
 // revalidatePath() requires Next's request-scoped work store, which doesn't
 // exist when a "use server" action is invoked directly from a Vitest test
 // (outside the Next.js server runtime) — it throws "Invariant: static
@@ -300,5 +308,33 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     expect(reordered![0].name).toBe(rowB.name);
     expect(reordered![0].slug).toBe(rowB.slug);
     expect(reordered![1].id).toBe(rowA.id);
+  });
+
+  it("generateCategoryCoverImage uploads the generated image and sets it as the cover", async () => {
+    mockGenerateCoverImage.mockReset();
+    mockGenerateCoverImage.mockResolvedValue({
+      imageBytes: Buffer.from("generated-cover-bytes"),
+      mimeType: "image/png",
+    });
+
+    const { createCategory, generateCategoryCoverImage } = await import("./actions");
+    const create = new FormData();
+    create.set("name", `${TEST_PREFIX}Portada IA`);
+    await createCategory(create);
+    const { data: created } = await admin
+      .from("categories")
+      .select("id")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+
+    await generateCategoryCoverImage(created!.id, "un prompt de prueba");
+
+    expect(mockGenerateCoverImage).toHaveBeenCalledWith({ prompt: "un prompt de prueba" });
+    const { data: updated } = await admin
+      .from("categories")
+      .select("cover_image_url")
+      .eq("id", created!.id)
+      .single();
+    expect(updated?.cover_image_url).toContain(`categories/${created!.id}/cover.png`);
   });
 });

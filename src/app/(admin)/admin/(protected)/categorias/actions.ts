@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { verifySession } from "@/lib/supabase/dal";
 import { slugify } from "@/lib/slug";
+import { generateCoverImage } from "@/lib/gemini/enhance";
 
 function readAnimationTheme(formData: FormData): string | null {
   const value = String(formData.get("animation_theme") ?? "");
@@ -133,4 +134,25 @@ export async function setCategoryCoverImage(categoryId: string, url: string) {
   if (error) throw error;
 
   revalidatePath("/admin/categorias");
+}
+
+export async function generateCategoryCoverImage(categoryId: string, prompt: string) {
+  await verifySession();
+  const supabase = await createClient();
+
+  const { imageBytes, mimeType } = await generateCoverImage({ prompt });
+
+  const ext = mimeType.split("/")[1] ?? "png";
+  const path = `categories/${categoryId}/cover.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("catalog-images")
+    .upload(path, imageBytes, { contentType: mimeType, upsert: true });
+  if (uploadError) throw uploadError;
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("catalog-images").getPublicUrl(path);
+
+  await setCategoryCoverImage(categoryId, publicUrl);
 }
