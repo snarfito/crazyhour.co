@@ -127,9 +127,14 @@ export async function setCategoryCoverImage(categoryId: string, url: string) {
   await verifySession();
   const supabase = await createClient();
 
+  // Storage path is deterministic (categories/{id}/cover.*) so re-uploading
+  // or regenerating overwrites the same object at the same URL. Without a
+  // cache-busting query param, browsers keep showing the previous image.
+  const cacheBustedUrl = `${url}?v=${Date.now()}`;
+
   const { error } = await supabase
     .from("categories")
-    .update({ cover_image_url: url })
+    .update({ cover_image_url: cacheBustedUrl })
     .eq("id", categoryId);
   if (error) throw error;
 

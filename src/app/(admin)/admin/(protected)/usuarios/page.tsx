@@ -1,6 +1,7 @@
 import { requireFullAdmin } from "@/lib/supabase/dal";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DeleteForm } from "@/components/admin/delete-form";
 import { InviteAdminForm } from "./invite-admin-form";
 import { revokeAdmin } from "./actions";
 
@@ -40,11 +41,12 @@ export default async function UsuariosPage() {
               <TableCell>{new Date(u.created_at).toLocaleDateString("es-CO")}</TableCell>
               <TableCell>
                 {u.id !== session.userId && (
-                  <form action={revokeAdmin.bind(null, u.id)}>
-                    <button type="submit" className="text-destructive hover:underline">
-                      Revocar
-                    </button>
-                  </form>
+                  <DeleteForm
+                    action={revokeAdmin.bind(null, u.id)}
+                    confirmMessage={`¿Revocar el acceso de "${u.email}"? Esta acción no se puede deshacer.`}
+                  >
+                    Revocar
+                  </DeleteForm>
                 )}
               </TableCell>
             </TableRow>

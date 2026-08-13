@@ -20,22 +20,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DeleteForm } from "@/components/admin/delete-form";
 import { computeNewOrder } from "@/lib/reorder";
 import { reorderCategories, deleteCategory } from "./actions";
 
 type Category = { id: string; name: string; slug: string; sort_order: number };
-
-export async function reorderOnDrop(
-  items: Category[],
-  activeId: string,
-  overId: string,
-): Promise<Category[]> {
-  const fromIndex = items.findIndex((c) => c.id === activeId);
-  const toIndex = items.findIndex((c) => c.id === overId);
-  const reordered = computeNewOrder(items, fromIndex, toIndex);
-  await reorderCategories(reordered.map((c) => c.id));
-  return reordered;
-}
 
 function SortableRow({ category }: { category: Category }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id });
@@ -60,11 +49,10 @@ function SortableRow({ category }: { category: Category }) {
         <Link href={`/admin/categorias/${category.id}`} className="text-primary hover:underline">
           Editar
         </Link>
-        <form action={deleteCategory.bind(null, category.id)}>
-          <button type="submit" className="text-destructive hover:underline">
-            Eliminar
-          </button>
-        </form>
+        <DeleteForm
+          action={deleteCategory.bind(null, category.id)}
+          confirmMessage={`¿Eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`}
+        />
       </TableCell>
     </TableRow>
   );
@@ -82,11 +70,17 @@ export function CategoriasListClient({ categories }: { categories: Category[] })
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
+    const fromIndex = items.findIndex((c) => c.id === active.id);
+    const toIndex = items.findIndex((c) => c.id === over.id);
+    const reordered = computeNewOrder(items, fromIndex, toIndex);
+
+    // Update state immediately so the row doesn't snap back to its old
+    // position while the reorder is saved in the background.
     const previous = items;
+    setItems(reordered);
     setError(null);
     try {
-      const reordered = await reorderOnDrop(items, String(active.id), String(over.id));
-      setItems(reordered);
+      await reorderCategories(reordered.map((c) => c.id));
     } catch {
       setItems(previous);
       setError("No se pudo guardar el nuevo orden. Intenta de nuevo.");

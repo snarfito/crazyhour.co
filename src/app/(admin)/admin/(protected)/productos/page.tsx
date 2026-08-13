@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DeleteForm } from "@/components/admin/delete-form";
 import { deleteProduct, toggleProductActive } from "./actions";
 import { CategoryFilter } from "./category-filter";
 
@@ -67,11 +68,10 @@ export default async function ProductosPage({
                 <Link href={`/admin/productos/${p.id}`} className="text-primary hover:underline">
                   Editar
                 </Link>
-                <form action={deleteProduct.bind(null, p.id)}>
-                  <button type="submit" className="text-destructive hover:underline">
-                    Eliminar
-                  </button>
-                </form>
+                <DeleteForm
+                  action={deleteProduct.bind(null, p.id)}
+                  confirmMessage={`¿Eliminar el producto "${p.name}"? Esta acción no se puede deshacer.`}
+                />
               </TableCell>
             </TableRow>
           ))}

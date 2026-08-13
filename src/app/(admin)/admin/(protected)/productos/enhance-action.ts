@@ -38,9 +38,14 @@ export async function enhanceProductImage(imageId: string, prompt: string) {
     data: { publicUrl },
   } = supabase.storage.from("catalog-images").getPublicUrl(path);
 
+  // Storage path is deterministic (products/{productId}/{imageId}-enhanced.*)
+  // so regenerating overwrites the same object at the same URL. Without a
+  // cache-busting query param, browsers keep showing the previous image.
+  const cacheBustedUrl = `${publicUrl}?v=${Date.now()}`;
+
   const { error: updateError } = await supabase
     .from("product_images")
-    .update({ enhanced_url: publicUrl, gemini_processed_at: new Date().toISOString() })
+    .update({ enhanced_url: cacheBustedUrl, gemini_processed_at: new Date().toISOString() })
     .eq("id", imageId);
   if (updateError) throw updateError;
 
