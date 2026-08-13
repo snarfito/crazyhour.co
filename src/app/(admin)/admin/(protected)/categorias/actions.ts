@@ -20,6 +20,18 @@ function readIsFeatured(formData: FormData): boolean {
   return formData.get("is_featured") === "on";
 }
 
+// The home page only ever shows one featured category (the lowest
+// sort_order among is_featured=true rows) — enforce that at write time so
+// checking one doesn't silently leave a previous pick still marked featured.
+async function clearOtherFeatured(supabase: Awaited<ReturnType<typeof createClient>>, exceptId: string) {
+  const { error } = await supabase
+    .from("categories")
+    .update({ is_featured: false })
+    .eq("is_featured", true)
+    .neq("id", exceptId);
+  if (error) throw error;
+}
+
 export async function createCategory(formData: FormData) {
   await verifySession();
   const supabase = await createClient();
@@ -45,7 +57,8 @@ export async function createCategory(formData: FormData) {
     .maybeSingle();
   const sortOrder = (last?.sort_order ?? -1) + 1;
 
-  const { error } = await supabase
+  const isFeatured = readIsFeatured(formData);
+  const { data: created, error } = await supabase
     .from("categories")
     .insert({
       name,
@@ -53,9 +66,12 @@ export async function createCategory(formData: FormData) {
       sort_order: sortOrder,
       animation_theme: animationTheme,
       description: readDescription(formData),
-      is_featured: readIsFeatured(formData),
-    });
+      is_featured: isFeatured,
+    })
+    .select("id")
+    .single();
   if (error) throw error;
+  if (isFeatured) await clearOtherFeatured(supabase, created.id);
 
   revalidatePath("/admin/categorias");
 }
@@ -78,6 +94,7 @@ export async function updateCategory(id: string, formData: FormData) {
     throw new Error(`Ya existe otra categoría con el slug "${slug}".`);
   }
 
+  const isFeatured = readIsFeatured(formData);
   const { error } = await supabase
     .from("categories")
     .update({
@@ -85,10 +102,11 @@ export async function updateCategory(id: string, formData: FormData) {
       slug,
       animation_theme: animationTheme,
       description: readDescription(formData),
-      is_featured: readIsFeatured(formData),
+      is_featured: isFeatured,
     })
     .eq("id", id);
   if (error) throw error;
+  if (isFeatured) await clearOtherFeatured(supabase, id);
 
   revalidatePath("/admin/categorias");
 }

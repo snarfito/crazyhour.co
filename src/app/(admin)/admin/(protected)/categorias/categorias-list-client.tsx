@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -27,12 +28,12 @@ import { reorderCategories, deleteCategory } from "./actions";
 
 type Category = { id: string; name: string; slug: string; sort_order: number };
 
-function SortableRow({ category }: { category: Category }) {
+function SortableRow({ category, isActive }: { category: Category; isActive: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
-    <TableRow ref={setNodeRef} style={style}>
+    <TableRow ref={setNodeRef} style={style} aria-current={isActive ? "page" : undefined} className={isActive ? "bg-primary/5" : undefined}>
       <TableCell>
         <button
           type="button"
@@ -44,7 +45,9 @@ function SortableRow({ category }: { category: Category }) {
           <GripVertical className="h-4 w-4" />
         </button>
       </TableCell>
-      <TableCell className="font-medium text-foreground">{category.name}</TableCell>
+      <TableCell className={isActive ? "font-semibold text-primary" : "font-medium text-foreground"}>
+        {category.name}
+      </TableCell>
       <TableCell className="text-muted-foreground">{category.slug}</TableCell>
       <TableCell className="flex gap-1">
         <Button
@@ -69,6 +72,7 @@ function SortableRow({ category }: { category: Category }) {
 export function CategoriasListClient({ categories }: { categories: Category[] }) {
   const [items, setItems] = useState(categories);
   const [error, setError] = useState<string | null>(null);
+  const pathname = usePathname();
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -111,7 +115,11 @@ export function CategoriasListClient({ categories }: { categories: Category[] })
           <SortableContext items={items.map((c) => c.id)} strategy={verticalListSortingStrategy}>
             <TableBody>
               {items.map((category) => (
-                <SortableRow key={category.id} category={category} />
+                <SortableRow
+                  key={category.id}
+                  category={category}
+                  isActive={pathname === `/admin/categorias/${category.id}`}
+                />
               ))}
             </TableBody>
           </SortableContext>

@@ -64,16 +64,21 @@ export default async function EditarCategoriaPage({
                 settingsMap={settingsMap}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                key={String(category.is_featured)}
-                id="is_featured"
-                name="is_featured"
-                type="checkbox"
-                defaultChecked={category.is_featured}
-                className="h-4 w-4 rounded border-input accent-primary"
-              />
-              <Label htmlFor="is_featured">Destacar en el home</Label>
+            <div>
+              <div className="flex items-center gap-2">
+                <input
+                  key={String(category.is_featured)}
+                  id="is_featured"
+                  name="is_featured"
+                  type="checkbox"
+                  defaultChecked={category.is_featured}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                <Label htmlFor="is_featured">Destacar en el home</Label>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Solo una categoría puede estar destacada — activarla aquí quita la marca a cualquier otra.
+              </p>
             </div>
             <Button type="submit" className="self-start">
               Guardar

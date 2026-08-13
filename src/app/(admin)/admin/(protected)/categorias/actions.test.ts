@@ -237,6 +237,46 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
     expect(updated?.is_featured).toBe(false);
   });
 
+  it("createCategory/updateCategory unfeature every other category when one is marked featured", async () => {
+    const { createCategory, updateCategory } = await import("./actions");
+    const first = new FormData();
+    first.set("name", `${TEST_PREFIX}Primera destacada`);
+    first.set("is_featured", "on");
+    await createCategory(first);
+    const { data: firstRow } = await admin
+      .from("categories")
+      .select("id")
+      .like("slug", TEST_PREFIX_LIKE)
+      .single();
+
+    const second = new FormData();
+    second.set("name", `${TEST_PREFIX}Segunda destacada`);
+    second.set("is_featured", "on");
+    await createCategory(second);
+    const { data: secondRow } = await admin
+      .from("categories")
+      .select("id, slug")
+      .like("slug", TEST_PREFIX_LIKE)
+      .neq("id", firstRow!.id)
+      .single();
+
+    // Re-saving the second row without changing is_featured should also
+    // keep it as the sole featured category (not just at creation time).
+    const resave = new FormData();
+    resave.set("name", `${TEST_PREFIX}Segunda destacada`);
+    resave.set("slug", secondRow!.slug);
+    resave.set("is_featured", "on");
+    await updateCategory(secondRow!.id, resave);
+
+    const { data: rows } = await admin
+      .from("categories")
+      .select("id, is_featured")
+      .like("slug", TEST_PREFIX_LIKE);
+    const featured = rows!.filter((r) => r.is_featured);
+    expect(featured).toHaveLength(1);
+    expect(featured[0].id).toBe(secondRow!.id);
+  });
+
   it("deleteCategory removes the row", async () => {
     const { createCategory, deleteCategory } = await import("./actions");
     const create = new FormData();
