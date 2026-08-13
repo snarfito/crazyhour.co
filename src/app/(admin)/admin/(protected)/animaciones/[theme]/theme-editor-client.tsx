@@ -29,8 +29,8 @@ export function ThemeEditorClient({
   const actionWithTheme = updateThemeSettingsAction.bind(null, theme);
 
   return (
-    <div className="max-w-md">
-      <form action={actionWithTheme} className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8 lg:flex-row">
+      <form action={actionWithTheme} className="flex max-w-md flex-1 flex-col gap-4">
         <div>
           <Label htmlFor="particle_count">Cantidad de partículas</Label>
           <input
@@ -140,9 +140,9 @@ export function ThemeEditorClient({
         <Button type="submit">Guardar</Button>
       </form>
 
-      <div className="mt-8">
+      <div className="shrink-0 lg:w-80">
         <Label>Vista previa</Label>
-        <div className="relative mt-2 h-40 w-full overflow-hidden rounded-lg border border-input bg-background">
+        <div className="relative mt-2 h-80 w-full overflow-hidden rounded-lg border border-input bg-background">
           <EventAnimation theme={theme} contained settings={settings} />
         </div>
       </div>
