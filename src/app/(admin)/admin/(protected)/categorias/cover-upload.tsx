@@ -1,15 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { setCategoryCoverImage } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { buildCoverPrompt } from "@/lib/gemini/prompt";
+import { setCategoryCoverImage, generateCategoryCoverImage } from "./actions";
+
+function GenerateCoverButton({
+  categoryId,
+  categoryName,
+  onGenerated,
+}: {
+  categoryId: string;
+  categoryName: string;
+  onGenerated: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [prompt, setPrompt] = useState(() => buildCoverPrompt(categoryName));
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  if (!open) {
+    return (
+      <button type="button" className="text-sm text-primary hover:underline" onClick={() => setOpen(true)}>
+        Generar portada con IA
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-2 rounded-md border border-border p-3">
+      <label htmlFor="cover-prompt-input" className="sr-only">
+        Prompt
+      </label>
+      <Textarea id="cover-prompt-input" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4} />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              setError(null);
+              try {
+                await generateCategoryCoverImage(categoryId, prompt);
+                setOpen(false);
+                onGenerated();
+              } catch {
+                setError("No se pudo generar la portada. Intenta de nuevo.");
+              }
+            })
+          }
+        >
+          {pending ? "Generando..." : "Generar"}
+        </Button>
+        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function CoverUpload({
   categoryId,
+  categoryName,
   currentUrl,
 }: {
   categoryId: string;
+  categoryName: string;
   currentUrl: string | null;
 }) {
   const [uploading, setUploading] = useState(false);
@@ -75,6 +136,11 @@ export function CoverUpload({
           disabled={uploading}
         />
         {error && <p className="text-sm text-destructive">{error}</p>}
+        <GenerateCoverButton
+          categoryId={categoryId}
+          categoryName={categoryName}
+          onGenerated={() => router.refresh()}
+        />
       </div>
     </div>
   );

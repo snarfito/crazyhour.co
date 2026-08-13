@@ -76,7 +76,7 @@ export default async function EditarCategoriaPage({
       </form>
       <div className="mt-8">
         <Label>Imagen de portada</Label>
-        <CoverUpload categoryId={category.id} currentUrl={category.cover_image_url} />
+        <CoverUpload categoryId={category.id} categoryName={category.name} currentUrl={category.cover_image_url} />
       </div>
     </div>
   );
