@@ -30,6 +30,11 @@ vi.mock("next/navigation", () => ({
   redirect: mockRedirect,
 }));
 
+const ALL_GRANTED = {
+  can_pedidos: true, can_productos: true, can_categorias: true,
+  can_ajustes: true, can_animaciones: true, can_usuarios: true,
+};
+
 describe("verifySession", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -38,17 +43,27 @@ describe("verifySession", () => {
     mockRedirect.mockClear();
   });
 
-  it("returns the user id, email, and role when a session and admin_users row exist", async () => {
+  it("returns the user id, email, and the 6 permissions read from admin_users", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: "user-123", email: "admin@crazyhour.co" } },
       error: null,
     });
-    mockMaybeSingle.mockResolvedValue({ data: { role: "limited" }, error: null });
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        can_pedidos: true, can_productos: false, can_categorias: false,
+        can_ajustes: false, can_animaciones: false, can_usuarios: true,
+      },
+      error: null,
+    });
     const { verifySession } = await import("@/lib/supabase/dal");
 
     const session = await verifySession();
 
-    expect(session).toEqual({ userId: "user-123", email: "admin@crazyhour.co", role: "limited" });
+    expect(session).toEqual({
+      userId: "user-123",
+      email: "admin@crazyhour.co",
+      permissions: { pedidos: true, productos: false, categorias: false, ajustes: false, animaciones: false, usuarios: true },
+    });
   });
 
   it("redirects to /admin/login when there is no session", async () => {
@@ -70,7 +85,7 @@ describe("verifySession", () => {
   });
 });
 
-describe("requireFullAdmin", () => {
+describe("requirePermission", () => {
   beforeEach(() => {
     vi.resetModules();
     mockGetUser.mockReset();
@@ -78,29 +93,35 @@ describe("requireFullAdmin", () => {
     mockRedirect.mockClear();
   });
 
-  it("returns the session when role is full", async () => {
+  it("returns the session when the requested permission is true", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: "user-123", email: "admin@crazyhour.co" } },
       error: null,
     });
-    mockMaybeSingle.mockResolvedValue({ data: { role: "full" }, error: null });
-    const { requireFullAdmin } = await import("@/lib/supabase/dal");
+    mockMaybeSingle.mockResolvedValue({ data: ALL_GRANTED, error: null });
+    const { requirePermission } = await import("@/lib/supabase/dal");
 
-    await expect(requireFullAdmin()).resolves.toEqual({
+    await expect(requirePermission("productos")).resolves.toEqual({
       userId: "user-123",
       email: "admin@crazyhour.co",
-      role: "full",
+      permissions: { pedidos: true, productos: true, categorias: true, ajustes: true, animaciones: true, usuarios: true },
     });
   });
 
-  it("redirects to /admin/pedidos when role is limited", async () => {
+  it("redirects to /admin/pedidos when the requested permission is false", async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: "user-123", email: "admin@crazyhour.co" } },
       error: null,
     });
-    mockMaybeSingle.mockResolvedValue({ data: { role: "limited" }, error: null });
-    const { requireFullAdmin } = await import("@/lib/supabase/dal");
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        can_pedidos: true, can_productos: true, can_categorias: true,
+        can_ajustes: false, can_animaciones: false, can_usuarios: false,
+      },
+      error: null,
+    });
+    const { requirePermission } = await import("@/lib/supabase/dal");
 
-    await expect(requireFullAdmin()).rejects.toThrow("REDIRECT:/admin/pedidos");
+    await expect(requirePermission("usuarios")).rejects.toThrow("REDIRECT:/admin/pedidos");
   });
 });
