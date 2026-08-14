@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Crazy Hour",
   description: "Piñatería y artículos de fiesta",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.svg",
   },
 };
 

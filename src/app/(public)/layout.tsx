@@ -19,7 +19,7 @@ export default async function PublicLayout({
       <CartProvider>
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
           <Link href="/">
-            <Image src="/logo.webp" alt="Crazy Hour" width={120} height={40} priority />
+            <Image src="/logo.webp" alt="Crazy Hour" width={996} height={848} className="h-10 w-auto" priority />
           </Link>
           <CartIcon />
         </header>
