@@ -62,7 +62,9 @@ function SortableRow({ category, isActive }: { category: Category; isActive: boo
         <DeleteForm
           action={deleteCategory.bind(null, category.id)}
           confirmMessage={`¿Eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`}
-        />
+        >
+          <span className="sr-only">Eliminar</span>
+        </DeleteForm>
       </TableCell>
     </TableRow>
   );
