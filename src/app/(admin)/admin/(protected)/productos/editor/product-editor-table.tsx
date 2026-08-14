@@ -54,20 +54,20 @@ export function ProductEditorTable({
       <Table className="mt-4">
         <TableHeader>
           <TableRow>
-            <TableHead>Nombre</TableHead>
+            <TableHead className="min-w-48">Nombre</TableHead>
             <TableHead>Descripción</TableHead>
             <TableHead>Categorías</TableHead>
-            <TableHead>Unidad</TableHead>
+            <TableHead className="min-w-32">Unidad ($)</TableHead>
             <TableHead>Media paca (cant.)</TableHead>
-            <TableHead>Media paca (precio)</TableHead>
+            <TableHead>Media paca ($)</TableHead>
             <TableHead>Paca completa (cant.)</TableHead>
-            <TableHead>Paca completa (precio)</TableHead>
+            <TableHead>Paca completa ($)</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((p) => (
             <TableRow key={p.id}>
-              <TableCell>
+              <TableCell className="min-w-48">
                 <EditableCell productId={p.id} field="name" value={p.name} required onSaveError={setGlobalError} />
               </TableCell>
               <TableCell>
@@ -87,7 +87,7 @@ export function ProductEditorTable({
                   onSaveError={setGlobalError}
                 />
               </TableCell>
-              <TableCell>
+              <TableCell className="min-w-32">
                 <EditableCell
                   productId={p.id}
                   field="unit_price_cop"
