@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
-import { requireFullAdmin } from "@/lib/supabase/dal";
+import { requirePermission } from "@/lib/supabase/dal";
 
 export async function updateSettings(formData: FormData) {
-  await requireFullAdmin();
+  await requirePermission("ajustes");
   const supabase = createServiceClient();
 
   const { error } = await supabase

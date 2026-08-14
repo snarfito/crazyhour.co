@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireFullAdmin } from "@/lib/supabase/dal";
+import { requirePermission } from "@/lib/supabase/dal";
 import { updateThemeMotionSettings } from "@/lib/theme-settings";
 import type { EventTheme } from "@/lib/event-themes";
 
@@ -14,7 +14,7 @@ function readNumber(formData: FormData, field: string, min: number, max: number)
 }
 
 export async function updateThemeSettingsAction(theme: Exclude<EventTheme, "none">, formData: FormData) {
-  await requireFullAdmin();
+  await requirePermission("animaciones");
 
   const particleCount = readNumber(formData, "particle_count", 1, 30);
   const minDuration = readNumber(formData, "min_duration", 4, 40);

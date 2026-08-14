@@ -9,7 +9,7 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/supabase/dal", () => ({
-  requireFullAdmin: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co", role: "full" }),
+  requirePermission: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
 }));
 
 vi.mock("@/lib/supabase/service", () => ({

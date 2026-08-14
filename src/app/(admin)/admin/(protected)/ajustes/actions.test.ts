@@ -5,7 +5,7 @@ const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
 
 vi.mock("@/lib/supabase/dal", () => ({
-  requireFullAdmin: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co", role: "full" }),
+  requirePermission: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
 }));
 
 vi.mock("@/lib/supabase/service", () => ({

@@ -1,4 +1,4 @@
-import { requireFullAdmin } from "@/lib/supabase/dal";
+import { requirePermission } from "@/lib/supabase/dal";
 import { getSettings } from "@/lib/settings";
 import { buildThemeOptions } from "@/lib/event-themes";
 import { getAllThemeMotionSettings } from "@/lib/theme-settings";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { ThemeSelectPreview } from "@/components/event-animation/theme-select-preview";
 
 export default async function AjustesPage() {
-  await requireFullAdmin();
+  await requirePermission("ajustes");
   const [settings, settingsMap] = await Promise.all([getSettings(), getAllThemeMotionSettings()]);
 
   return (

@@ -6,9 +6,9 @@ import { render, screen } from "@testing-library/react";
 // server render (same fix as settings.test.ts/dal.test.ts).
 vi.mock("server-only", () => ({}));
 
-const mockRequireFullAdmin = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co", role: "full" });
+const mockRequirePermission = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co" });
 vi.mock("@/lib/supabase/dal", () => ({
-  requireFullAdmin: () => mockRequireFullAdmin(),
+  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
 }));
 
 const mockSettings = {
@@ -52,12 +52,13 @@ describe("Animaciones editor page", () => {
     ).rejects.toThrow("NOT_FOUND");
   });
 
-  it("redirects non-full admins away", async () => {
-    mockRequireFullAdmin.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+  it("redirects when the caller lacks the animaciones permission", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
     const AnimacionEditorPage = (await import("./page")).default;
 
     await expect(
       AnimacionEditorPage({ params: Promise.resolve({ theme: "carnaval" }) }),
     ).rejects.toThrow("REDIRECT:/admin/pedidos");
+    expect(mockRequirePermission).toHaveBeenCalledWith("animaciones");
   });
 });

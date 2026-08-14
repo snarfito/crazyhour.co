@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { getSettings } from "@/lib/settings";
 
-const mockRequireFullAdmin = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co", role: "full" });
+const mockRequirePermission = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co" });
 vi.mock("@/lib/supabase/dal", () => ({
-  requireFullAdmin: () => mockRequireFullAdmin(),
+  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
 }));
 
 vi.mock("@/lib/settings", () => ({
@@ -71,10 +71,11 @@ describe("AjustesPage", () => {
     expect(select.value).toBe("hora_loca");
   });
 
-  it("redirects non-full admins away", async () => {
-    mockRequireFullAdmin.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+  it("redirects when the caller lacks the ajustes permission", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
     const AjustesPage = (await import("./page")).default;
 
     await expect(AjustesPage()).rejects.toThrow("REDIRECT:/admin/pedidos");
+    expect(mockRequirePermission).toHaveBeenCalledWith("ajustes");
   });
 });
