@@ -5,9 +5,9 @@ import { inviteAdmin } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PERMISSION_ITEMS } from "./permissions";
 
-const SELECT_CLASSES =
-  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
+const DEFAULT_CHECKED = new Set(["pedidos", "productos", "categorias"]);
 
 export function InviteAdminForm() {
   const [state, action, pending] = useActionState(inviteAdmin, undefined);
@@ -19,11 +19,21 @@ export function InviteAdminForm() {
         <Input id="email" name="email" type="email" required />
       </div>
       <div>
-        <Label htmlFor="role">Rol</Label>
-        <select id="role" name="role" defaultValue="limited" className={SELECT_CLASSES}>
-          <option value="limited">Limitado (pedidos, productos, categorías)</option>
-          <option value="full">Completo</option>
-        </select>
+        <Label>Permisos</Label>
+        <div className="mt-1 flex flex-wrap gap-3">
+          {PERMISSION_ITEMS.map(({ key, label }) => (
+            <div key={key} className="flex items-center gap-1.5">
+              <input
+                id={`invite_can_${key}`}
+                name={`can_${key}`}
+                type="checkbox"
+                defaultChecked={DEFAULT_CHECKED.has(key)}
+                className="h-4 w-4 rounded border-input accent-primary"
+              />
+              <Label htmlFor={`invite_can_${key}`}>{label}</Label>
+            </div>
+          ))}
+        </div>
       </div>
       <Button type="submit" disabled={pending}>
         {pending ? "Invitando..." : "Invitar"}

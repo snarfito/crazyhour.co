@@ -8,11 +8,16 @@ vi.mock("./actions", () => ({
 }));
 
 describe("InviteAdminForm", () => {
-  it("defaults the role select to limited", async () => {
+  it("defaults to pedidos/productos/categorias checked, the rest unchecked", async () => {
     const { InviteAdminForm } = await import("./invite-admin-form");
     render(<InviteAdminForm />);
 
-    expect(screen.getByLabelText(/rol/i)).toHaveValue("limited");
+    expect(screen.getByLabelText("Pedidos")).toBeChecked();
+    expect(screen.getByLabelText("Productos")).toBeChecked();
+    expect(screen.getByLabelText("Categorías")).toBeChecked();
+    expect(screen.getByLabelText("Ajustes")).not.toBeChecked();
+    expect(screen.getByLabelText("Animaciones")).not.toBeChecked();
+    expect(screen.getByLabelText("Usuarios")).not.toBeChecked();
   });
 
   it("shows the error message returned by inviteAdmin", async () => {
