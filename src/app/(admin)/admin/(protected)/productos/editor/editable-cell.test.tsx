@@ -63,4 +63,24 @@ describe("EditableCell", () => {
     expect(await screen.findByText("El precio por unidad no puede quedar vacío.")).toBeInTheDocument();
     expect(input).toHaveValue(20000);
   });
+
+  it("does not save redundantly after a successful edit, then focus/blur with no change", async () => {
+    const user = userEvent.setup();
+    render(<EditableCell productId="p-1" field="name" value="Piñata estrella" />);
+
+    const input = screen.getByRole("textbox");
+    // First edit + blur: should save
+    await user.clear(input);
+    await user.type(input, "Piñata gigante");
+    await user.tab();
+
+    expect(mockUpdateProductField).toHaveBeenCalledTimes(1);
+    expect(mockUpdateProductField).toHaveBeenCalledWith("p-1", "name", "Piñata gigante");
+
+    // Second focus + blur: no edit, should NOT save again
+    await user.click(input);
+    await user.tab();
+
+    expect(mockUpdateProductField).toHaveBeenCalledTimes(1);
+  });
 });

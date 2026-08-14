@@ -19,22 +19,23 @@ export function EditableCell({
   required?: boolean;
 }) {
   const [draft, setDraft] = useState(String(value));
+  const [lastSaved, setLastSaved] = useState(String(value));
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   function handleBlur() {
-    const previous = String(value);
-    if (draft === previous) return;
+    if (draft === lastSaved) return;
 
     setError(null);
     startTransition(async () => {
       try {
         await updateProductField(productId, field, draft);
+        setLastSaved(draft);
         setSaved(true);
         setTimeout(() => setSaved(false), 1500);
       } catch (err) {
-        setDraft(previous);
+        setDraft(lastSaved);
         setError(err instanceof Error ? err.message : "No se pudo guardar el cambio.");
       }
     });
