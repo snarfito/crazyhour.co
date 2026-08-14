@@ -4,22 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardList, Package, Tags, Settings, Sparkles, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { AdminPermissions } from "@/lib/supabase/dal";
 
-const BASE_ITEMS = [
-  { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList },
-  { href: "/admin/productos", label: "Productos", icon: Package },
-  { href: "/admin/categorias", label: "Categorías", icon: Tags },
+const NAV_ITEMS = [
+  { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList, permission: "pedidos" },
+  { href: "/admin/productos", label: "Productos", icon: Package, permission: "productos" },
+  { href: "/admin/categorias", label: "Categorías", icon: Tags, permission: "categorias" },
+  { href: "/admin/ajustes", label: "Ajustes", icon: Settings, permission: "ajustes" },
+  { href: "/admin/animaciones", label: "Animaciones", icon: Sparkles, permission: "animaciones" },
+  { href: "/admin/usuarios", label: "Usuarios", icon: Users, permission: "usuarios" },
 ] as const;
 
-const FULL_ADMIN_ITEMS = [
-  { href: "/admin/ajustes", label: "Ajustes", icon: Settings },
-  { href: "/admin/animaciones", label: "Animaciones", icon: Sparkles },
-  { href: "/admin/usuarios", label: "Usuarios", icon: Users },
-] as const;
-
-export function AdminNav({ isFullAdmin }: { isFullAdmin: boolean }) {
+export function AdminNav({ permissions }: { permissions: AdminPermissions }) {
   const pathname = usePathname();
-  const items = isFullAdmin ? [...BASE_ITEMS, ...FULL_ADMIN_ITEMS] : BASE_ITEMS;
+  const items = NAV_ITEMS.filter((item) => permissions[item.permission]);
 
   return (
     <nav className="flex gap-1 overflow-x-auto px-4 sm:px-6">

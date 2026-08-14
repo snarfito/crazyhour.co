@@ -7,7 +7,7 @@ export default async function ProtectedAdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await verifySession();
-  const isFullAdmin = session.role === "full";
+  const hasFullAccess = Object.values(session.permissions).every(Boolean);
 
   return (
     <>
@@ -22,7 +22,7 @@ export default async function ProtectedAdminLayout({
           <div className="hidden flex-col items-end leading-tight sm:flex">
             <span className="text-foreground">{session.email}</span>
             <span className="text-xs text-muted-foreground capitalize">
-              {isFullAdmin ? "Administrador" : "Acceso limitado"}
+              {hasFullAccess ? "Acceso completo" : "Acceso limitado"}
             </span>
           </div>
           <form action={signOut}>
@@ -33,7 +33,7 @@ export default async function ProtectedAdminLayout({
         </div>
       </header>
       <div className="border-b border-border bg-background">
-        <AdminNav isFullAdmin={isFullAdmin} />
+        <AdminNav permissions={session.permissions} />
       </div>
       <main className="font-body p-4 sm:p-6">
         <div className="mx-auto max-w-5xl">{children}</div>
