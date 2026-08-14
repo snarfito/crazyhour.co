@@ -8,12 +8,20 @@ import { useCart } from "@/components/cart/cart-context";
 export function AddToCart({
   productId,
   name,
-  priceCop,
+  unitPriceCop,
+  pack1Qty,
+  pack1PriceCop,
+  pack2Qty,
+  pack2PriceCop,
   imageUrl,
 }: {
   productId: string;
   name: string;
-  priceCop: number;
+  unitPriceCop: number;
+  pack1Qty: number | null;
+  pack1PriceCop: number | null;
+  pack2Qty: number | null;
+  pack2PriceCop: number | null;
   imageUrl: string | null;
 }) {
   const { addItem } = useCart();
@@ -21,7 +29,7 @@ export function AddToCart({
   const [added, setAdded] = useState(false);
 
   function handleAdd() {
-    addItem({ productId, name, priceCop, imageUrl }, quantity);
+    addItem({ productId, name, unitPriceCop, pack1Qty, pack1PriceCop, pack2Qty, pack2PriceCop, imageUrl }, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

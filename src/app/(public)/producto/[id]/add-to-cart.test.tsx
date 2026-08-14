@@ -9,12 +9,22 @@ function CartDebug() {
   return <p data-testid="items">{JSON.stringify(items)}</p>;
 }
 
+const baseProps = {
+  productId: "p1",
+  name: "Piñata estrella",
+  unitPriceCop: 45000,
+  pack1Qty: null,
+  pack1PriceCop: null,
+  pack2Qty: null,
+  pack2PriceCop: null,
+};
+
 describe("AddToCart", () => {
   it("adds the selected quantity to the cart", async () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <AddToCart productId="p1" name="Piñata estrella" priceCop={45000} imageUrl="https://example.com/p1.jpg" />
+        <AddToCart {...baseProps} imageUrl="https://example.com/p1.jpg" />
         <CartDebug />
       </CartProvider>
     );
@@ -24,7 +34,7 @@ describe("AddToCart", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("items")).toHaveTextContent(
-        JSON.stringify([{ productId: "p1", name: "Piñata estrella", priceCop: 45000, imageUrl: "https://example.com/p1.jpg", quantity: 2 }])
+        JSON.stringify([{ ...baseProps, imageUrl: "https://example.com/p1.jpg", quantity: 2 }])
       );
     });
   });
@@ -33,7 +43,7 @@ describe("AddToCart", () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <AddToCart productId="p1" name="Piñata estrella" priceCop={45000} imageUrl={null} />
+        <AddToCart {...baseProps} imageUrl={null} />
       </CartProvider>
     );
 

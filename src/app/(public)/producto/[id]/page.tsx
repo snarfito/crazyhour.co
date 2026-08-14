@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatCOP } from "@/lib/format";
 import { isRecentlyCreated } from "@/lib/product-freshness";
+import { resolveEffectiveTiers } from "@/lib/pricing";
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
 import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
@@ -37,7 +38,7 @@ export default async function ProductPage({
   const { data: product } = await supabase
     .from("products")
     .select(
-      "id, name, description, price_cop, is_active, category_id, categories(name, slug), product_images(original_url, enhanced_url)"
+      "id, name, description, unit_price_cop, pack1_qty, pack1_price_cop, pack2_qty, pack2_price_cop, is_active, product_categories(categories(id, name, slug)), product_images(original_url, enhanced_url)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -49,31 +50,54 @@ export default async function ProductPage({
     .filter((url: string): url is string => Boolean(url))
     .map((url: string) => ({ url, alt: product.name }));
 
-  const category = product.categories as unknown as { name: string; slug: string } | null;
+  const categoryLinks = (product.product_categories ?? []) as {
+    categories: { id: string; name: string; slug: string } | null;
+  }[];
+  const category = categoryLinks[0]?.categories ?? null;
+  const categoryIds = categoryLinks.map((l) => l.categories?.id).filter((cid): cid is string => Boolean(cid));
+
   const theme = await getEffectiveEventTheme();
   const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
-  const { data: relatedRaw } = await supabase
-    .from("products")
-    .select("id, name, price_cop, created_at, product_images(original_url, enhanced_url)")
-    .eq("category_id", product.category_id)
-    .eq("is_active", true)
-    .neq("id", product.id)
-    .order("created_at", { ascending: false })
-    .limit(3);
-
-  const related = (relatedRaw ?? []).map((p) => {
-    const relatedImages = (p.product_images ?? []) as { original_url: string; enhanced_url: string | null }[];
-    const first = relatedImages.find((img) => img.enhanced_url || img.original_url);
-    const imageUrl = first ? first.enhanced_url || first.original_url : null;
-    return {
-      id: p.id,
-      name: p.name,
-      price_cop: p.price_cop,
-      imageUrl,
-      isNew: isRecentlyCreated(p.created_at),
-    };
+  const tiers = resolveEffectiveTiers({
+    unitPriceCop: product.unit_price_cop,
+    pack1Qty: product.pack1_qty,
+    pack1PriceCop: product.pack1_price_cop,
+    pack2Qty: product.pack2_qty,
+    pack2PriceCop: product.pack2_price_cop,
   });
+
+  let related: { id: string; name: string; price_cop: number; imageUrl: string | null; isNew: boolean }[] = [];
+  if (categoryIds.length > 0) {
+    const { data: relatedRaw } = await supabase
+      .from("products")
+      .select(
+        "id, name, unit_price_cop, created_at, product_images(original_url, enhanced_url), product_categories!inner(category_id)"
+      )
+      .in("product_categories.category_id", categoryIds)
+      .eq("is_active", true)
+      .neq("id", product.id)
+      .order("created_at", { ascending: false });
+
+    // A product sharing more than one category with the current one can
+    // come back once per shared category — dedupe before slicing to 3.
+    const seen = new Set<string>();
+    related = (relatedRaw ?? [])
+      .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
+      .slice(0, 3)
+      .map((p) => {
+        const relatedImages = (p.product_images ?? []) as { original_url: string; enhanced_url: string | null }[];
+        const first = relatedImages.find((img) => img.enhanced_url || img.original_url);
+        const imageUrl = first ? first.enhanced_url || first.original_url : null;
+        return {
+          id: p.id,
+          name: p.name,
+          price_cop: p.unit_price_cop,
+          imageUrl,
+          isNew: isRecentlyCreated(p.created_at),
+        };
+      });
+  }
 
   return (
     <>
@@ -90,14 +114,30 @@ export default async function ProductPage({
           <ImageGallery images={images} productName={product.name} />
           <div>
             <h1 className="font-heading text-2xl font-extrabold">{product.name}</h1>
-            <p className="mt-2 font-heading text-xl font-bold">{formatCOP(product.price_cop)}</p>
+            <div className="mt-2 flex flex-col gap-1">
+              <p className="font-heading text-xl font-bold">{formatCOP(tiers.unitPriceCop)} c/u</p>
+              {tiers.pack2 && (
+                <p className="text-sm text-muted-foreground">
+                  Media paca ({tiers.pack2.qty} un.): {formatCOP(tiers.pack2.unitPriceCop)} c/u
+                </p>
+              )}
+              {tiers.pack1 && (
+                <p className="text-sm text-muted-foreground">
+                  Paca completa ({tiers.pack1.qty} un.): {formatCOP(tiers.pack1.unitPriceCop)} c/u
+                </p>
+              )}
+            </div>
             {product.description && (
               <p className="mt-4 text-muted-foreground">{product.description}</p>
             )}
             <AddToCart
               productId={product.id}
               name={product.name}
-              priceCop={product.price_cop}
+              unitPriceCop={product.unit_price_cop}
+              pack1Qty={product.pack1_qty}
+              pack1PriceCop={product.pack1_price_cop}
+              pack2Qty={product.pack2_qty}
+              pack2PriceCop={product.pack2_price_cop}
               imageUrl={images[0]?.url ?? null}
             />
           </div>

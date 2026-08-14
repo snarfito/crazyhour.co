@@ -5,20 +5,7 @@ import { likePattern } from "@/test/db-prefix";
 import { CartProvider } from "@/components/cart/cart-context";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
-// Falls back to a placeholder when unset so `describe.skipIf` below can skip
-// cleanly: the describe callback (including `createServiceClient(...)` at
-// its top) still runs during Vitest's collection phase even when the suite
-// is skipped, and `createServiceClient` throws immediately on an
-// empty/undefined key regardless of whether any test actually runs.
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
-// Named "pgprod" (page+prod, swapped) rather than "prodpage" purely as
-// defensive hygiene against future prefix additions that might share a
-// literal-string root — productos/actions.test.ts's own escaped pattern
-// (`zzfase2prod\_%`) already keeps its delimiter, so it was never actually
-// at risk of matching "zzfase2prodpage_..." rows either way (see
-// categorias/actions.test.ts for the LIKE-wildcard bug this file's own
-// escaping below guards against, and for the one prefix pair — categorias
-// vs. the category-page test — where a rename actually was required).
 const TEST_PREFIX = "zzfase2pgprod_";
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
@@ -54,9 +41,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
   let categoryId: string;
 
   beforeEach(async () => {
-    const { data: cats } = await admin.from("categories").select("id").like("slug", TEST_PREFIX_LIKE);
-    const ids = (cats ?? []).map((c) => c.id);
-    if (ids.length > 0) await admin.from("products").delete().in("category_id", ids);
+    await admin.from("products").delete().like("name", TEST_PREFIX_LIKE);
     await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
     mockNotFound.mockClear();
 
@@ -68,22 +53,18 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
     categoryId = category!.id;
   });
 
-  it("renders the product's name, formatted price, and description", async () => {
+  it("renders the product's name, unit price, and description", async () => {
     const { data: product } = await admin
       .from("products")
       .insert({
-        category_id: categoryId,
-        name: "Piñata estrella",
+        name: `${TEST_PREFIX}Piñata estrella`,
         description: "Piñata artesanal grande",
-        price_cop: 45000,
+        unit_price_cop: 45000,
         is_active: true,
       })
       .select()
       .single();
-    // Give the product a real image — otherwise the empty product_images
-    // array falls back to no images, which is a different code path than
-    // what this test is checking. See [categorySlug]/page.test.tsx for the
-    // equivalent category-page seeding pattern (see Task 6).
+    await admin.from("product_categories").insert({ product_id: product!.id, category_id: categoryId });
     await admin.from("product_images").insert({
       product_id: product!.id,
       original_url: "https://example.com/original.jpg",
@@ -94,22 +75,65 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
     const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
     render(<CartProvider>{ui}</CartProvider>);
 
-    // Scoped to the heading: the breadcrumb's current-page item now also
-    // shows the product name, so a bare getByText would match two elements.
-    expect(screen.getByRole("heading", { name: "Piñata estrella" })).toBeInTheDocument();
-    expect(screen.getByText("$ 45.000")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: `${TEST_PREFIX}Piñata estrella` })).toBeInTheDocument();
+    expect(screen.getByText(/\$ 45\.000/)).toBeInTheDocument();
     expect(screen.getByText("Piñata artesanal grande")).toBeInTheDocument();
     expect(screen.getByText("Agregar al carrito")).toBeInTheDocument();
+  });
+
+  it("shows the media-paca and paca-completa tiers when present", async () => {
+    const { data: product } = await admin
+      .from("products")
+      .insert({
+        name: `${TEST_PREFIX}Globo por mayor`,
+        description: "x",
+        unit_price_cop: 4000,
+        pack1_qty: 10,
+        pack1_price_cop: 3000,
+        pack2_qty: 5,
+        pack2_price_cop: 3500,
+        is_active: true,
+      })
+      .select()
+      .single();
+    await admin.from("product_categories").insert({ product_id: product!.id, category_id: categoryId });
+
+    const ProductPage = (await import("./page")).default;
+    const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
+    render(<CartProvider>{ui}</CartProvider>);
+
+    expect(screen.getByText(/Media paca \(5 un\.\).*\$ 3\.500/)).toBeInTheDocument();
+    expect(screen.getByText(/Paca completa \(10 un\.\).*\$ 3\.000/)).toBeInTheDocument();
+  });
+
+  it("omits pack tiers that don't exist for the product", async () => {
+    const { data: product } = await admin
+      .from("products")
+      .insert({
+        name: `${TEST_PREFIX}Producto suelto`,
+        description: "x",
+        unit_price_cop: 4000,
+        is_active: true,
+      })
+      .select()
+      .single();
+    await admin.from("product_categories").insert({ product_id: product!.id, category_id: categoryId });
+
+    const ProductPage = (await import("./page")).default;
+    const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
+    render(<CartProvider>{ui}</CartProvider>);
+
+    expect(screen.queryByText(/Media paca/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Paca completa/)).not.toBeInTheDocument();
   });
 
   it("calls notFound() for an inactive product", async () => {
     const { data: product } = await admin
       .from("products")
       .insert({
-        category_id: categoryId,
-        name: "Producto inactivo",
+        name: `${TEST_PREFIX}Producto inactivo`,
         description: "x",
-        price_cop: 1000,
+        unit_price_cop: 1000,
         is_active: false,
       })
       .select()
@@ -131,18 +155,18 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
     ).rejects.toThrow("NOT_FOUND");
   });
 
-  it("renders a breadcrumb with the category and product name", async () => {
+  it("renders a breadcrumb with the (first linked) category and product name", async () => {
     const { data: product } = await admin
       .from("products")
       .insert({
-        category_id: categoryId,
-        name: "Piñata estrella",
+        name: `${TEST_PREFIX}Piñata estrella`,
         description: "x",
-        price_cop: 45000,
+        unit_price_cop: 45000,
         is_active: true,
       })
       .select()
       .single();
+    await admin.from("product_categories").insert({ product_id: product!.id, category_id: categoryId });
 
     const ProductPage = (await import("./page")).default;
     const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
@@ -153,53 +177,58 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
       "href",
       `/${TEST_PREFIX}pinatas`
     );
-    expect(screen.getByText("Piñata estrella", { selector: "span[aria-current='page']" })).toBeInTheDocument();
+    expect(screen.getByText(`${TEST_PREFIX}Piñata estrella`, { selector: "span[aria-current='page']" })).toBeInTheDocument();
   });
 
-  it("shows up to 3 other active products from the same category, excluding itself", async () => {
+  it("shows up to 3 other active products sharing a category, excluding itself", async () => {
     const { data: main } = await admin
       .from("products")
       .insert({
-        category_id: categoryId,
-        name: "Piñata estrella",
+        name: `${TEST_PREFIX}Piñata estrella`,
         description: "x",
-        price_cop: 45000,
+        unit_price_cop: 45000,
         is_active: true,
       })
       .select()
       .single();
-    await admin.from("products").insert([
-      { category_id: categoryId, name: "Piñata luna", description: "x", price_cop: 30000, is_active: true },
-      { category_id: categoryId, name: "Piñata sol", description: "x", price_cop: 30000, is_active: true },
-      { category_id: categoryId, name: "Piñata inactiva", description: "x", price_cop: 30000, is_active: false },
+    const { data: others } = await admin
+      .from("products")
+      .insert([
+        { name: `${TEST_PREFIX}Piñata luna`, description: "x", unit_price_cop: 30000, is_active: true },
+        { name: `${TEST_PREFIX}Piñata sol`, description: "x", unit_price_cop: 30000, is_active: true },
+        { name: `${TEST_PREFIX}Piñata inactiva`, description: "x", unit_price_cop: 30000, is_active: false },
+      ])
+      .select();
+    await admin.from("product_categories").insert([
+      { product_id: main!.id, category_id: categoryId },
+      ...(others ?? []).map((p) => ({ product_id: p.id, category_id: categoryId })),
     ]);
 
     const ProductPage = (await import("./page")).default;
     const ui = await ProductPage({ params: Promise.resolve({ id: main!.id }) });
     render(<CartProvider>{ui}</CartProvider>);
 
-    expect(screen.getByText("Piñata luna")).toBeInTheDocument();
-    expect(screen.getByText("Piñata sol")).toBeInTheDocument();
-    expect(screen.queryByText("Piñata inactiva")).not.toBeInTheDocument();
-    // "Piñata estrella" (the product itself) already appears twice on a
-    // correct render — once as the breadcrumb's current-page item, once as
-    // the <h1> title (see Task 3/this task's breadcrumb wiring). A 3rd
-    // occurrence would mean it leaked into the related-products grid too.
-    expect(screen.getAllByText("Piñata estrella")).toHaveLength(2);
+    expect(screen.getByText(`${TEST_PREFIX}Piñata luna`)).toBeInTheDocument();
+    expect(screen.getByText(`${TEST_PREFIX}Piñata sol`)).toBeInTheDocument();
+    expect(screen.queryByText(`${TEST_PREFIX}Piñata inactiva`)).not.toBeInTheDocument();
+    // The product itself appears twice on a correct render — breadcrumb's
+    // current-page item + the <h1> title — a 3rd occurrence would mean it
+    // leaked into the related-products grid too.
+    expect(screen.getAllByText(`${TEST_PREFIX}Piñata estrella`)).toHaveLength(2);
   });
 
-  it("omits the related-products section when there are no other products in the category", async () => {
+  it("omits the related-products section when there are no other products sharing a category", async () => {
     const { data: product } = await admin
       .from("products")
       .insert({
-        category_id: categoryId,
-        name: "Piñata única",
+        name: `${TEST_PREFIX}Piñata única`,
         description: "x",
-        price_cop: 45000,
+        unit_price_cop: 45000,
         is_active: true,
       })
       .select()
       .single();
+    await admin.from("product_categories").insert({ product_id: product!.id, category_id: categoryId });
 
     const ProductPage = (await import("./page")).default;
     const ui = await ProductPage({ params: Promise.resolve({ id: product!.id }) });
