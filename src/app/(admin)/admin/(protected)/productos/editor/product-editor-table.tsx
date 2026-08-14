@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EditableCell } from "./editable-cell";
@@ -26,7 +26,9 @@ export function ProductEditorTable({
   categories: { id: string; name: string }[];
 }) {
   const [search, setSearch] = useState("");
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+  const deferredSearch = useDeferredValue(search);
+  const filtered = products.filter((p) => p.name.toLowerCase().includes(deferredSearch.toLowerCase()));
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
   return (
     <div>
@@ -38,6 +40,17 @@ export function ProductEditorTable({
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
       />
+      {globalError && (
+        <div
+          data-testid="global-error-banner"
+          className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {globalError}{" "}
+          <button type="button" onClick={() => setGlobalError(null)} className="ml-2 underline">
+            Cerrar
+          </button>
+        </div>
+      )}
       <Table className="mt-4">
         <TableHeader>
           <TableRow>
@@ -55,28 +68,72 @@ export function ProductEditorTable({
           {filtered.map((p) => (
             <TableRow key={p.id}>
               <TableCell>
-                <EditableCell productId={p.id} field="name" value={p.name} required />
+                <EditableCell productId={p.id} field="name" value={p.name} required onSaveError={setGlobalError} />
               </TableCell>
               <TableCell>
-                <EditableCell productId={p.id} field="description" value={p.description ?? ""} />
+                <EditableCell
+                  productId={p.id}
+                  field="description"
+                  value={p.description ?? ""}
+                  multiline
+                  onSaveError={setGlobalError}
+                />
               </TableCell>
               <TableCell>
-                <CategoryPickerCell productId={p.id} categories={categories} selectedCategoryIds={p.category_ids} />
+                <CategoryPickerCell
+                  productId={p.id}
+                  categories={categories}
+                  selectedCategoryIds={p.category_ids}
+                  onSaveError={setGlobalError}
+                />
               </TableCell>
               <TableCell>
-                <EditableCell productId={p.id} field="unit_price_cop" value={p.unit_price_cop} type="number" required />
+                <EditableCell
+                  productId={p.id}
+                  field="unit_price_cop"
+                  value={p.unit_price_cop}
+                  type="number"
+                  required
+                  onSaveError={setGlobalError}
+                />
               </TableCell>
               <TableCell>
-                <EditableCell productId={p.id} field="pack2_qty" value={p.pack2_qty ?? ""} type="number" />
+                <EditableCell
+                  productId={p.id}
+                  field="pack2_qty"
+                  value={p.pack2_qty ?? ""}
+                  type="number"
+                  min={1}
+                  onSaveError={setGlobalError}
+                />
               </TableCell>
               <TableCell>
-                <EditableCell productId={p.id} field="pack2_price_cop" value={p.pack2_price_cop ?? ""} type="number" />
+                <EditableCell
+                  productId={p.id}
+                  field="pack2_price_cop"
+                  value={p.pack2_price_cop ?? ""}
+                  type="number"
+                  onSaveError={setGlobalError}
+                />
               </TableCell>
               <TableCell>
-                <EditableCell productId={p.id} field="pack1_qty" value={p.pack1_qty ?? ""} type="number" />
+                <EditableCell
+                  productId={p.id}
+                  field="pack1_qty"
+                  value={p.pack1_qty ?? ""}
+                  type="number"
+                  min={1}
+                  onSaveError={setGlobalError}
+                />
               </TableCell>
               <TableCell>
-                <EditableCell productId={p.id} field="pack1_price_cop" value={p.pack1_price_cop ?? ""} type="number" />
+                <EditableCell
+                  productId={p.id}
+                  field="pack1_price_cop"
+                  value={p.pack1_price_cop ?? ""}
+                  type="number"
+                  onSaveError={setGlobalError}
+                />
               </TableCell>
             </TableRow>
           ))}

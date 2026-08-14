@@ -90,6 +90,45 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product editor act
     expect(data?.unit_price_cop).toBe(20000);
   });
 
+  it("updateProductField rejects an empty name without writing", async () => {
+    const { updateProductField } = await import("./actions");
+
+    await expect(updateProductField(productId, "name", "")).rejects.toThrow("El nombre no puede quedar vacío.");
+
+    const { data } = await admin.from("products").select("name").eq("id", productId).single();
+    expect(data?.name).toBe(`${TEST_PREFIX}Piñata estrella`);
+  });
+
+  it("updateProductField rejects a pack qty below 1 without writing", async () => {
+    const { updateProductField } = await import("./actions");
+
+    await expect(updateProductField(productId, "pack1_qty", "0")).rejects.toThrow(
+      "La cantidad debe ser al menos 1.",
+    );
+
+    const { data } = await admin.from("products").select("pack1_qty").eq("id", productId).single();
+    expect(data?.pack1_qty).toBeNull();
+  });
+
+  it("updateProductField rejects a negative pack qty without writing", async () => {
+    const { updateProductField } = await import("./actions");
+
+    await expect(updateProductField(productId, "pack2_qty", "-3")).rejects.toThrow(
+      "La cantidad debe ser al menos 1.",
+    );
+
+    const { data } = await admin.from("products").select("pack2_qty").eq("id", productId).single();
+    expect(data?.pack2_qty).toBeNull();
+  });
+
+  it("updateProductField rejects a field outside the allowed set without writing", async () => {
+    const { updateProductField } = await import("./actions");
+
+    await expect(
+      updateProductField(productId, "is_active" as unknown as Parameters<typeof updateProductField>[1], "true"),
+    ).rejects.toThrow("Campo no editable.");
+  });
+
   it("updateProductField translates a pack-price-without-qty constraint violation into a short message", async () => {
     const { updateProductField } = await import("./actions");
 

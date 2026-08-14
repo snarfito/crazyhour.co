@@ -64,6 +64,39 @@ describe("EditableCell", () => {
     expect(input).toHaveValue(20000);
   });
 
+  it("passes the min prop through to the underlying number input", () => {
+    render(<EditableCell productId="p-1" field="pack1_qty" value={10} type="number" min={1} />);
+    expect(screen.getByRole("spinbutton")).toHaveAttribute("min", "1");
+  });
+
+  it("does not set a min attribute when min is not provided", () => {
+    render(<EditableCell productId="p-1" field="unit_price_cop" value={20000} type="number" />);
+    expect(screen.getByRole("spinbutton")).not.toHaveAttribute("min");
+  });
+
+  it("renders a textarea when multiline is set, preserving newlines", () => {
+    render(<EditableCell productId="p-1" field="description" value={"linea 1\nlinea 2"} multiline />);
+    const textbox = screen.getByRole("textbox");
+    expect(textbox.tagName).toBe("TEXTAREA");
+    expect(textbox).toHaveValue("linea 1\nlinea 2");
+  });
+
+  it("calls onSaveError in addition to the local inline error when a save fails", async () => {
+    mockUpdateProductField.mockRejectedValueOnce(new Error("No se pudo guardar el cambio."));
+    const onSaveError = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <EditableCell productId="p-1" field="name" value="Piñata estrella" onSaveError={onSaveError} />,
+    );
+
+    const input = screen.getByRole("textbox");
+    await user.type(input, " grande");
+    await user.tab();
+
+    expect(await screen.findByText("No se pudo guardar el cambio.")).toBeInTheDocument();
+    expect(onSaveError).toHaveBeenCalledWith("No se pudo guardar el cambio.");
+  });
+
   it("does not save redundantly after a successful edit, then focus/blur with no change", async () => {
     const user = userEvent.setup();
     render(<EditableCell productId="p-1" field="name" value="Piñata estrella" />);

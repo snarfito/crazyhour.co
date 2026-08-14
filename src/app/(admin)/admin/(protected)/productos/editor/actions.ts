@@ -21,6 +21,10 @@ const NUMERIC_FIELDS = new Set<EditableField>([
   "pack2_price_cop",
 ]);
 
+const QTY_FIELDS = new Set<EditableField>(["pack1_qty", "pack2_qty"]);
+
+const ALL_EDITABLE_FIELDS = new Set<EditableField>(["name", "description", ...NUMERIC_FIELDS]);
+
 // Postgres check-constraint names from migration 0013 mapped to short
 // Spanish messages a non-technical admin can act on — the raw constraint
 // name/error is never shown in the UI (spec section 5).
@@ -44,9 +48,15 @@ function friendlyPostgresMessage(error: { code?: string; message: string }): str
 export async function updateProductField(productId: string, field: EditableField, value: string | number) {
   await requirePermission("productos");
 
+  if (!ALL_EDITABLE_FIELDS.has(field)) {
+    throw new Error("Campo no editable.");
+  }
+
   const trimmed = String(value).trim();
-  if (field === "unit_price_cop" && trimmed === "") {
-    throw new Error("El precio por unidad no puede quedar vacío.");
+  if (trimmed === "" && (field === "unit_price_cop" || field === "name")) {
+    throw new Error(
+      field === "name" ? "El nombre no puede quedar vacío." : "El precio por unidad no puede quedar vacío.",
+    );
   }
 
   const parsedValue: string | number | null = NUMERIC_FIELDS.has(field)
@@ -54,6 +64,10 @@ export async function updateProductField(productId: string, field: EditableField
       ? null
       : Number(trimmed)
     : trimmed;
+
+  if (QTY_FIELDS.has(field) && parsedValue !== null && (parsedValue as number) < 1) {
+    throw new Error("La cantidad debe ser al menos 1.");
+  }
 
   const supabase = await createClient();
   const { error } = await supabase

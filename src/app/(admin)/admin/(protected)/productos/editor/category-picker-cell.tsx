@@ -9,10 +9,12 @@ export function CategoryPickerCell({
   productId,
   categories,
   selectedCategoryIds,
+  onSaveError,
 }: {
   productId: string;
   categories: { id: string; name: string }[];
   selectedCategoryIds: string[];
+  onSaveError?: (message: string) => void;
 }) {
   const [selected, setSelected] = useState(new Set(selectedCategoryIds));
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +32,10 @@ export function CategoryPickerCell({
       try {
         await updateProductCategories(productId, Array.from(next));
       } catch (err) {
+        const message = err instanceof Error ? err.message : "No se pudo guardar el cambio.";
         setSelected(previous);
-        setError(err instanceof Error ? err.message : "No se pudo guardar el cambio.");
+        setError(message);
+        onSaveError?.(message);
       }
     });
   }
