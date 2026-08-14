@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProductEditorTable, type EditorProduct } from "./product-editor-table";
@@ -6,11 +6,25 @@ import { ProductEditorTable, type EditorProduct } from "./product-editor-table";
 const mockUpdateProductField = vi.fn().mockResolvedValue(undefined);
 const mockUpdateProductCategories = vi.fn().mockResolvedValue(undefined);
 const mockCreateQuickProduct = vi.fn();
+const mockDeleteProduct = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("./actions", () => ({
   updateProductField: (...args: unknown[]) => mockUpdateProductField(...args),
   updateProductCategories: (...args: unknown[]) => mockUpdateProductCategories(...args),
   createQuickProduct: (...args: unknown[]) => mockCreateQuickProduct(...args),
+}));
+
+vi.mock("../actions", () => ({
+  deleteProduct: (...args: unknown[]) => mockDeleteProduct(...args),
+}));
+
+// Full behavior (fetching images, opening the dialog) is covered in
+// product-image-modal.test.tsx; here we only need something visible and
+// stable to assert the "Acciones" column rendered per row.
+vi.mock("./product-image-modal", () => ({
+  ProductImageModal: ({ productName }: { productName: string }) => (
+    <button type="button">Editar imagen de {productName}</button>
+  ),
 }));
 
 const categories = [{ id: "cat-a", name: "Piñatas" }];
@@ -45,6 +59,11 @@ describe("ProductEditorTable", () => {
     mockUpdateProductField.mockReset().mockResolvedValue(undefined);
     mockUpdateProductCategories.mockReset().mockResolvedValue(undefined);
     mockCreateQuickProduct.mockReset();
+    mockDeleteProduct.mockReset().mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders every product's name", () => {
@@ -183,5 +202,51 @@ describe("ProductEditorTable", () => {
 
     expect(await screen.findByTestId("global-error-banner")).toHaveTextContent("No se pudo crear el producto.");
     expect(screen.queryByDisplayValue("Producto nuevo")).not.toBeInTheDocument();
+  });
+
+  it("renders an image-editing and a delete action for every row", () => {
+    render(<ProductEditorTable products={products} categories={categories} />);
+
+    expect(screen.getByRole("button", { name: "Editar imagen de Piñata estrella" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar imagen de Globo metálico" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Eliminar" })).toHaveLength(2);
+  });
+
+  it("deleting a product asks for confirmation, then removes only that row", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<ProductEditorTable products={products} categories={categories} />);
+
+    await user.click(screen.getAllByRole("button", { name: "Eliminar" })[0]);
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      '¿Eliminar el producto "Piñata estrella"? Esta acción no se puede deshacer.',
+    );
+    expect(mockDeleteProduct).toHaveBeenCalledWith("p-1");
+    expect(await screen.findByDisplayValue("Globo metálico")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Piñata estrella")).not.toBeInTheDocument();
+  });
+
+  it("does not delete when the confirmation is dismissed", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const user = userEvent.setup();
+    render(<ProductEditorTable products={products} categories={categories} />);
+
+    await user.click(screen.getAllByRole("button", { name: "Eliminar" })[0]);
+
+    expect(mockDeleteProduct).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("Piñata estrella")).toBeInTheDocument();
+  });
+
+  it("shows an error banner and keeps the row when deletion fails", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockDeleteProduct.mockRejectedValueOnce(new Error("No se pudo eliminar el producto."));
+    const user = userEvent.setup();
+    render(<ProductEditorTable products={products} categories={categories} />);
+
+    await user.click(screen.getAllByRole("button", { name: "Eliminar" })[0]);
+
+    expect(await screen.findByTestId("global-error-banner")).toHaveTextContent("No se pudo eliminar el producto.");
+    expect(screen.getByDisplayValue("Piñata estrella")).toBeInTheDocument();
   });
 });

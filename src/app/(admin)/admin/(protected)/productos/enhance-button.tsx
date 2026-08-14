@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DEFAULT_ENHANCE_PROMPT } from "@/lib/gemini/prompt";
 import { enhanceProductImage } from "./enhance-action";
 
-export function EnhanceButton({ imageId }: { imageId: string }) {
+export function EnhanceButton({ imageId, onEnhanced }: { imageId: string; onEnhanced?: () => void }) {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState(DEFAULT_ENHANCE_PROMPT);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +36,7 @@ export function EnhanceButton({ imageId }: { imageId: string }) {
               try {
                 await enhanceProductImage(imageId, prompt);
                 setOpen(false);
+                onEnhanced?.();
               } catch {
                 setError("No se pudo procesar la imagen. Intenta de nuevo.");
               }

@@ -6,9 +6,12 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DeleteForm } from "@/components/admin/delete-form";
 import { EditableCell } from "./editable-cell";
 import { CategoryPickerCell } from "./category-picker-cell";
+import { ProductImageModal } from "./product-image-modal";
 import { createQuickProduct } from "./actions";
+import { deleteProduct } from "../actions";
 
 const HEAD_CLASS = "sticky top-0 z-10 bg-muted font-semibold text-foreground uppercase tracking-wide text-xs";
 
@@ -89,6 +92,7 @@ export function ProductEditorTable({
             <TableHead className={HEAD_CLASS}>Media paca ($)</TableHead>
             <TableHead className={HEAD_CLASS}>Paca completa (cant.)</TableHead>
             <TableHead className={HEAD_CLASS}>Paca completa ($)</TableHead>
+            <TableHead className={HEAD_CLASS}>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -162,11 +166,25 @@ export function ProductEditorTable({
                   onSaveError={setGlobalError}
                 />
               </TableCell>
+              <TableCell className="flex gap-1">
+                <ProductImageModal productId={p.id} productName={p.name} />
+                <DeleteForm
+                  action={async () => {
+                    try {
+                      await deleteProduct(p.id);
+                      setProducts((prev) => prev.filter((row) => row.id !== p.id));
+                    } catch (err) {
+                      setGlobalError(err instanceof Error ? err.message : "No se pudo eliminar el producto.");
+                    }
+                  }}
+                  confirmMessage={`¿Eliminar el producto "${p.name}"? Esta acción no se puede deshacer.`}
+                />
+              </TableCell>
             </TableRow>
           ))}
           {filtered.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-muted-foreground">
+              <TableCell colSpan={9} className="text-center text-muted-foreground">
                 Sin resultados
               </TableCell>
             </TableRow>

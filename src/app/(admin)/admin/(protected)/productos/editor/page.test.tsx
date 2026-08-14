@@ -8,6 +8,11 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 const TEST_PREFIX = "zzeditorpage_";
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
+// ProductEditorTable now renders ProductImageModal per row, which reuses
+// ../image-upload.tsx -> EnhanceButton -> enhance-action.ts, which imports
+// server-only modules. Same fix as image-upload.test.tsx.
+vi.mock("server-only", () => ({}));
+
 const mockRequirePermission = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co" });
 vi.mock("@/lib/supabase/dal", () => ({
   requirePermission: (...args: unknown[]) => mockRequirePermission(...args),

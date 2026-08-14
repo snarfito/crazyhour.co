@@ -14,9 +14,11 @@ type ProductImage = { id: string; original_url: string; enhanced_url: string | n
 export function ImageUpload({
   productId,
   images,
+  onChange,
 }: {
   productId: string;
   images: ProductImage[];
+  onChange?: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export function ImageUpload({
 
     setUploading(false);
     router.refresh();
+    onChange?.();
   }
 
   return (
@@ -91,7 +94,7 @@ export function ImageUpload({
               )}
             </div>
             <div className="mt-3">
-              <EnhanceButton imageId={img.id} />
+              <EnhanceButton imageId={img.id} onEnhanced={onChange} />
             </div>
           </div>
         ))}
