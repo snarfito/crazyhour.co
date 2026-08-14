@@ -79,6 +79,24 @@ export async function updateProductField(productId: string, field: EditableField
   revalidatePath("/admin/productos/editor");
 }
 
+export async function createQuickProduct() {
+  await requirePermission("productos");
+  const supabase = await createClient();
+
+  // Placeholder row the admin renames/prices inline right after creation —
+  // "Producto nuevo" (not blank) so it stays reachable from the editor's
+  // own name search, same reasoning as the empty-name guard above.
+  const { data, error } = await supabase
+    .from("products")
+    .insert({ name: "Producto nuevo", unit_price_cop: 0 })
+    .select("id, name, description, unit_price_cop, pack1_qty, pack1_price_cop, pack2_qty, pack2_price_cop")
+    .single();
+  if (error || !data) throw error ?? new Error("No se pudo crear el producto.");
+
+  revalidatePath("/admin/productos/editor");
+  return data;
+}
+
 export async function updateProductCategories(productId: string, categoryIds: string[]) {
   await requirePermission("productos");
   const supabase = await createClient();

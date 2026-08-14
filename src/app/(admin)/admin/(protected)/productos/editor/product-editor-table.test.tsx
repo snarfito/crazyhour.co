@@ -5,10 +5,12 @@ import { ProductEditorTable, type EditorProduct } from "./product-editor-table";
 
 const mockUpdateProductField = vi.fn().mockResolvedValue(undefined);
 const mockUpdateProductCategories = vi.fn().mockResolvedValue(undefined);
+const mockCreateQuickProduct = vi.fn();
 
 vi.mock("./actions", () => ({
   updateProductField: (...args: unknown[]) => mockUpdateProductField(...args),
   updateProductCategories: (...args: unknown[]) => mockUpdateProductCategories(...args),
+  createQuickProduct: (...args: unknown[]) => mockCreateQuickProduct(...args),
 }));
 
 const categories = [{ id: "cat-a", name: "Piñatas" }];
@@ -42,6 +44,7 @@ describe("ProductEditorTable", () => {
   beforeEach(() => {
     mockUpdateProductField.mockReset().mockResolvedValue(undefined);
     mockUpdateProductCategories.mockReset().mockResolvedValue(undefined);
+    mockCreateQuickProduct.mockReset();
   });
 
   it("renders every product's name", () => {
@@ -149,5 +152,36 @@ describe("ProductEditorTable", () => {
     expect(mockUpdateProductField).toHaveBeenCalledTimes(2);
     expect(mockUpdateProductField).toHaveBeenCalledWith("p-2", "pack1_qty", "20");
     expect(mockUpdateProductField).toHaveBeenCalledWith("p-2", "pack2_qty", "7");
+  });
+
+  it("clicking 'Agregar producto' inserts a new row at the top of the table", async () => {
+    mockCreateQuickProduct.mockResolvedValueOnce({
+      id: "p-new",
+      name: "Producto nuevo",
+      description: null,
+      unit_price_cop: 0,
+      pack1_qty: null,
+      pack1_price_cop: null,
+      pack2_qty: null,
+      pack2_price_cop: null,
+    });
+    const user = userEvent.setup();
+    render(<ProductEditorTable products={products} categories={categories} />);
+
+    await user.click(screen.getByRole("button", { name: /agregar producto/i }));
+
+    expect(await screen.findByDisplayValue("Producto nuevo")).toBeInTheDocument();
+    expect(mockCreateQuickProduct).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows an error banner when creating a product fails, without adding a row", async () => {
+    mockCreateQuickProduct.mockRejectedValueOnce(new Error("No se pudo crear el producto."));
+    const user = userEvent.setup();
+    render(<ProductEditorTable products={products} categories={categories} />);
+
+    await user.click(screen.getByRole("button", { name: /agregar producto/i }));
+
+    expect(await screen.findByTestId("global-error-banner")).toHaveTextContent("No se pudo crear el producto.");
+    expect(screen.queryByDisplayValue("Producto nuevo")).not.toBeInTheDocument();
   });
 });

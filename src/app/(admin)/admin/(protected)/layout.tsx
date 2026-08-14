@@ -36,7 +36,7 @@ export default async function ProtectedAdminLayout({
         <AdminNav permissions={session.permissions} />
       </div>
       <main className="font-body p-4 sm:p-6">
-        <div className="mx-auto max-w-5xl">{children}</div>
+        <div className="mx-auto max-w-7xl">{children}</div>
       </main>
     </>
   );

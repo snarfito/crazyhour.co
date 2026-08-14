@@ -172,4 +172,34 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product editor act
     const { data: links } = await admin.from("product_categories").select("category_id").eq("product_id", productId);
     expect((links ?? []).map((l) => l.category_id)).toEqual([categoryAId]);
   });
+
+  it("createQuickProduct inserts a placeholder product with a default name and price", async () => {
+    const { createQuickProduct } = await import("./actions");
+    const created = await createQuickProduct();
+
+    try {
+      expect(created.name).toBe("Producto nuevo");
+      expect(created.unit_price_cop).toBe(0);
+      expect(created.pack1_qty).toBeNull();
+
+      const { data: row } = await admin.from("products").select("*").eq("id", created.id).single();
+      expect(row?.name).toBe("Producto nuevo");
+      expect(row?.is_active).toBe(true);
+    } finally {
+      // Not covered by the shared TEST_PREFIX cleanup — "Producto nuevo" is
+      // a fixed placeholder name, not fixture-prefixed, so this test cleans
+      // up its own row directly rather than polluting the local DB.
+      await admin.from("products").delete().eq("id", created.id);
+    }
+  });
+
+  it("createQuickProduct propagates rejection when the caller lacks the productos permission, without writing", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { createQuickProduct } = await import("./actions");
+
+    await expect(createQuickProduct()).rejects.toThrow();
+
+    const { data: rows } = await admin.from("products").select("id").eq("name", "Producto nuevo");
+    expect(rows).toHaveLength(0);
+  });
 });
