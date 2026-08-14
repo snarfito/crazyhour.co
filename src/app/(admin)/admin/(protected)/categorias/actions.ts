@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { verifySession } from "@/lib/supabase/dal";
+import { requirePermission } from "@/lib/supabase/dal";
 import { slugify } from "@/lib/slug";
 import { generateCoverImage } from "@/lib/gemini/enhance";
 
@@ -33,7 +33,7 @@ async function clearOtherFeatured(supabase: Awaited<ReturnType<typeof createClie
 }
 
 export async function createCategory(formData: FormData) {
-  await verifySession();
+  await requirePermission("categorias");
   const supabase = await createClient();
 
   const name = String(formData.get("name") ?? "").trim();
@@ -77,7 +77,7 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function updateCategory(id: string, formData: FormData) {
-  await verifySession();
+  await requirePermission("categorias");
   const supabase = await createClient();
 
   const name = String(formData.get("name") ?? "").trim();
@@ -112,7 +112,7 @@ export async function updateCategory(id: string, formData: FormData) {
 }
 
 export async function reorderCategories(orderedIds: string[]) {
-  await verifySession();
+  await requirePermission("categorias");
   const supabase = await createClient();
 
   // Not .upsert(): Supabase's upsert replaces the whole row via
@@ -132,7 +132,7 @@ export async function reorderCategories(orderedIds: string[]) {
 }
 
 export async function deleteCategory(id: string) {
-  await verifySession();
+  await requirePermission("categorias");
   const supabase = await createClient();
 
   const { error } = await supabase.from("categories").delete().eq("id", id);
@@ -142,7 +142,7 @@ export async function deleteCategory(id: string) {
 }
 
 export async function setCategoryCoverImage(categoryId: string, url: string) {
-  await verifySession();
+  await requirePermission("categorias");
   const supabase = await createClient();
 
   // Storage path is deterministic (categories/{id}/cover.*) so re-uploading
@@ -160,7 +160,7 @@ export async function setCategoryCoverImage(categoryId: string, url: string) {
 }
 
 export async function generateCategoryCoverImage(categoryId: string, prompt: string) {
-  await verifySession();
+  await requirePermission("categorias");
   const supabase = await createClient();
 
   const { imageBytes, mimeType } = await generateCoverImage({ prompt });

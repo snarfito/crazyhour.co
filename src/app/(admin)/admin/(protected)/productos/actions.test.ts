@@ -7,8 +7,10 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 const TEST_PREFIX = "zzfase2prod_";
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
+const mockRequirePermission = vi.fn();
+
 vi.mock("@/lib/supabase/dal", () => ({
-  verifySession: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
+  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -25,6 +27,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
   let categoryBId: string;
 
   beforeEach(async () => {
+    mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
     await admin.from("products").delete().like("name", TEST_PREFIX_LIKE);
     await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
 
@@ -147,5 +150,20 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
     expect(remaining).toHaveLength(0);
     const { data: links } = await admin.from("product_categories").select("*").eq("product_id", created!.id);
     expect(links).toHaveLength(0);
+  });
+
+  it("propagates rejection when the caller lacks the productos permission, without writing", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { createProduct } = await import("./actions");
+    const formData = new FormData();
+    formData.set("name", `${TEST_PREFIX}Producto rechazado`);
+    formData.set("description", "x");
+    formData.set("unit_price_cop", "1000");
+    formData.set("sku", "REJ-001");
+
+    await expect(createProduct(formData)).rejects.toThrow();
+
+    const { data: rows } = await admin.from("products").select("id").eq("name", `${TEST_PREFIX}Producto rechazado`);
+    expect(rows).toHaveLength(0);
   });
 });

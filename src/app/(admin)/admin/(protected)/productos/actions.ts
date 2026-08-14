@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { verifySession } from "@/lib/supabase/dal";
+import { requirePermission } from "@/lib/supabase/dal";
 
 function parseOptionalInt(value: FormDataEntryValue | null): number | null {
   const str = String(value ?? "").trim();
@@ -10,7 +10,7 @@ function parseOptionalInt(value: FormDataEntryValue | null): number | null {
 }
 
 export async function createProduct(formData: FormData) {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const categoryIds = formData.getAll("category_ids").map(String);
@@ -43,7 +43,7 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function updateProduct(id: string, formData: FormData) {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const categoryIds = formData.getAll("category_ids").map(String);
@@ -79,7 +79,7 @@ export async function updateProduct(id: string, formData: FormData) {
 }
 
 export async function toggleProductActive(id: string, isActive: boolean) {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const { error } = await supabase.from("products").update({ is_active: isActive }).eq("id", id);
@@ -89,7 +89,7 @@ export async function toggleProductActive(id: string, isActive: boolean) {
 }
 
 export async function deleteProduct(id: string) {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const { error } = await supabase.from("products").delete().eq("id", id);
@@ -99,7 +99,7 @@ export async function deleteProduct(id: string) {
 }
 
 export async function createProductImagePlaceholder(productId: string): Promise<{ id: string }> {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -113,7 +113,7 @@ export async function createProductImagePlaceholder(productId: string): Promise<
 }
 
 export async function setProductImageUrl(imageId: string, url: string) {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -126,7 +126,7 @@ export async function setProductImageUrl(imageId: string, url: string) {
 }
 
 export async function deleteProductImage(imageId: string) {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const { error } = await supabase.from("product_images").delete().eq("id", imageId);

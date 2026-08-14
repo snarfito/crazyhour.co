@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
-import { verifySession } from "@/lib/supabase/dal";
+import { requirePermission } from "@/lib/supabase/dal";
 
 export async function markOrderPaid(id: string) {
-  await verifySession();
+  await requirePermission("pedidos");
   const supabase = createServiceClient();
 
   // The .eq("status", "pending_whatsapp") guard is the whole point: it's

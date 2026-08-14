@@ -26,11 +26,12 @@ const TEST_PREFIX_SLUG = slugify(TEST_PREFIX);
 // lives inside likePattern() now — see src/test/db-prefix.ts.
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX_SLUG);
 
-// verifySession() normally redirects unauthenticated users — for these
-// tests we mock it to simulate an authenticated admin, since exercising
-// the real login flow here would test Task 4, not this task.
+// requirePermission() normally redirects a caller without the "categorias"
+// permission — for these tests we mock it to simulate an authorized admin.
+const mockRequirePermission = vi.fn();
+
 vi.mock("@/lib/supabase/dal", () => ({
-  verifySession: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
+  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -59,6 +60,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
   beforeEach(async () => {
+    mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
     await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
   });
 
@@ -376,5 +378,17 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
       .eq("id", created!.id)
       .single();
     expect(updated?.cover_image_url).toContain(`categories/${created!.id}/cover.png`);
+  });
+
+  it("propagates rejection when the caller lacks the categorias permission, without writing", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { createCategory } = await import("./actions");
+    const formData = new FormData();
+    formData.set("name", `${TEST_PREFIX}Rechazada`);
+
+    await expect(createCategory(formData)).rejects.toThrow();
+
+    const { data: rows } = await admin.from("categories").select("id").like("slug", TEST_PREFIX_LIKE);
+    expect(rows).toHaveLength(0);
   });
 });

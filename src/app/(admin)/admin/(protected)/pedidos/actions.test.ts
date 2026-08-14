@@ -7,8 +7,10 @@ const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "pla
 const TEST_PREFIX = "zzfase3pedidos_";
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
+const mockRequirePermission = vi.fn();
+
 vi.mock("@/lib/supabase/dal", () => ({
-  verifySession: vi.fn().mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" }),
+  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
 }));
 
 vi.mock("@/lib/supabase/service", () => ({
@@ -23,6 +25,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderPaid (aga
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
   beforeEach(async () => {
+    mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
     await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
   });
 
@@ -38,6 +41,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderPaid (aga
 
     const { data: updated } = await admin.from("orders").select("status").eq("id", order!.id).single();
     expect(updated?.status).toBe("paid");
+    expect(mockRequirePermission).toHaveBeenCalledWith("pedidos");
   });
 
   it("does not touch a pending_wompi order — Wompi orders confirm only via the webhook", async () => {
@@ -52,5 +56,20 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderPaid (aga
 
     const { data: updated } = await admin.from("orders").select("status").eq("id", order!.id).single();
     expect(updated?.status).toBe("pending_wompi");
+  });
+
+  it("propagates rejection when the caller lacks the pedidos permission, without writing", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "pending_whatsapp", total_cop: 20000, customer_name: `${TEST_PREFIX}Rechazado`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderPaid } = await import("./actions");
+
+    await expect(markOrderPaid(order!.id)).rejects.toThrow();
+
+    const { data: unchanged } = await admin.from("orders").select("status").eq("id", order!.id).single();
+    expect(unchanged?.status).toBe("pending_whatsapp");
   });
 });
