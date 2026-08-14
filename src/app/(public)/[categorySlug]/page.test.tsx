@@ -5,18 +5,7 @@ import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
-// Deliberately NOT "zzfase2catpage_" — categorias/actions.test.ts's rows go
-// through slugify(), which strips "_", so its cleanup pattern there ended
-// up unbounded ("zzfase2cat%", no delimiter) and matched this file's rows
-// too under parallel runs (real cross-file data loss, one-directional: this
-// file's own pattern never matched categorias' rows). Renaming to "pgcat"
-// (page+cat, swapped) breaks that literal-prefix relationship regardless of
-// how categorias' own pattern is built — see categorias/actions.test.ts for
-// the full diagnosis and its own fix (switched to a "-" prefix, which
-// survives slugify() unchanged and needs no escaping).
 const TEST_PREFIX = "zzfase2pgcat_";
-// Still escaped defensively — see src/test/db-prefix.ts for why "_" in
-// a LIKE pattern needs escaping in general, independent of this rename.
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
 const mockNotFound = vi.fn(() => {
@@ -27,8 +16,6 @@ vi.mock("next/navigation", () => ({
   notFound: mockNotFound,
 }));
 
-// settings.ts imports "server-only", which throws when loaded outside a
-// real Next.js server render (same fix as settings.test.ts/dal.test.ts).
 vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -43,9 +30,9 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
   beforeEach(async () => {
-    const { data: cats } = await admin.from("categories").select("id").like("slug", TEST_PREFIX_LIKE);
-    const ids = (cats ?? []).map((c) => c.id);
-    if (ids.length > 0) await admin.from("products").delete().in("category_id", ids);
+    // Products no longer FK to a single category, so they're scoped by
+    // their own prefixed name now, not by a prefixed category_id lookup.
+    await admin.from("products").delete().like("name", TEST_PREFIX_LIKE);
     await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
     mockNotFound.mockClear();
   });
@@ -59,35 +46,29 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
 
     const { data: activeProduct } = await admin
       .from("products")
-      .insert({
-        category_id: category!.id,
-        name: "Piñata estrella",
-        description: "x",
-        price_cop: 45000,
-        is_active: true,
-      })
+      .insert({ name: `${TEST_PREFIX}Piñata estrella`, description: "x", unit_price_cop: 45000, is_active: true })
       .select()
       .single();
+    await admin.from("product_categories").insert({ product_id: activeProduct!.id, category_id: category!.id });
     await admin.from("product_images").insert({
       product_id: activeProduct!.id,
       original_url: "https://example.com/original.jpg",
       enhanced_url: "https://example.com/enhanced.jpg",
     });
 
-    await admin.from("products").insert({
-      category_id: category!.id,
-      name: "Producto inactivo",
-      description: "x",
-      price_cop: 1000,
-      is_active: false,
-    });
+    const { data: inactiveProduct } = await admin
+      .from("products")
+      .insert({ name: `${TEST_PREFIX}Producto inactivo`, description: "x", unit_price_cop: 1000, is_active: false })
+      .select()
+      .single();
+    await admin.from("product_categories").insert({ product_id: inactiveProduct!.id, category_id: category!.id });
 
     const CategoryPage = (await import("./page")).default;
     const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}pinatas` }) });
     render(ui);
 
-    expect(screen.getByText("Piñata estrella")).toBeInTheDocument();
-    expect(screen.queryByText("Producto inactivo")).not.toBeInTheDocument();
+    expect(screen.getByText(`${TEST_PREFIX}Piñata estrella`)).toBeInTheDocument();
+    expect(screen.queryByText(`${TEST_PREFIX}Producto inactivo`)).not.toBeInTheDocument();
     expect(screen.getByAltText("")).toHaveAttribute("src", expect.stringContaining("enhanced.jpg"));
   });
 
@@ -101,22 +82,32 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
     const now = new Date();
     const twentyDaysAgo = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString();
 
-    await admin.from("products").insert({
-      category_id: category!.id,
-      name: "Producto reciente",
-      description: "x",
-      price_cop: 10000,
-      is_active: true,
-      created_at: now.toISOString(),
-    });
-    await admin.from("products").insert({
-      category_id: category!.id,
-      name: "Producto antiguo",
-      description: "x",
-      price_cop: 10000,
-      is_active: true,
-      created_at: twentyDaysAgo,
-    });
+    const { data: recent } = await admin
+      .from("products")
+      .insert({
+        name: `${TEST_PREFIX}Producto reciente`,
+        description: "x",
+        unit_price_cop: 10000,
+        is_active: true,
+        created_at: now.toISOString(),
+      })
+      .select()
+      .single();
+    const { data: old } = await admin
+      .from("products")
+      .insert({
+        name: `${TEST_PREFIX}Producto antiguo`,
+        description: "x",
+        unit_price_cop: 10000,
+        is_active: true,
+        created_at: twentyDaysAgo,
+      })
+      .select()
+      .single();
+    await admin.from("product_categories").insert([
+      { product_id: recent!.id, category_id: category!.id },
+      { product_id: old!.id, category_id: category!.id },
+    ]);
 
     const CategoryPage = (await import("./page")).default;
     const ui = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}pinatas` }) });
@@ -147,11 +138,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
   });
 
   it("uses the category's own animation_theme, overriding whatever the site-wide theme is", async () => {
-    // Uses "grados", not "carnaval"/"velitas" — those two are exercised by
-    // src/lib/theme-settings.test.ts against the same real theme_settings
-    // rows (no per-file prefix is possible for a table keyed by a fixed
-    // theme enum), and Vitest's file-level parallelism means that file's
-    // transient writes could otherwise leak into this assertion.
     await admin
       .from("categories")
       .insert({ name: `${TEST_PREFIX}Grados`, slug: `${TEST_PREFIX}grados`, sort_order: 1, animation_theme: "grados" });
@@ -207,5 +193,38 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Category page", ()
 
     expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: /escribir por whatsapp/i })).toBeInTheDocument();
+  });
+
+  it("shows a product on every category it's linked to, not just the first", async () => {
+    const { data: catA } = await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 })
+      .select()
+      .single();
+    const { data: catB } = await admin
+      .from("categories")
+      .insert({ name: `${TEST_PREFIX}Globos`, slug: `${TEST_PREFIX}globos`, sort_order: 2 })
+      .select()
+      .single();
+    const { data: product } = await admin
+      .from("products")
+      .insert({ name: `${TEST_PREFIX}Globo piñata`, description: "x", unit_price_cop: 15000, is_active: true })
+      .select()
+      .single();
+    await admin.from("product_categories").insert([
+      { product_id: product!.id, category_id: catA!.id },
+      { product_id: product!.id, category_id: catB!.id },
+    ]);
+
+    const CategoryPage = (await import("./page")).default;
+
+    const uiA = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}pinatas` }) });
+    const { unmount } = render(uiA);
+    expect(screen.getByText(`${TEST_PREFIX}Globo piñata`)).toBeInTheDocument();
+    unmount();
+
+    const uiB = await CategoryPage({ params: Promise.resolve({ categorySlug: `${TEST_PREFIX}globos` }) });
+    render(uiB);
+    expect(screen.getByText(`${TEST_PREFIX}Globo piñata`)).toBeInTheDocument();
   });
 });

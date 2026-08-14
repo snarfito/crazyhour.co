@@ -52,10 +52,16 @@ export default async function CategoryPage({
   ]);
   const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
+  // Products belonging to this category via product_categories (Task 1) —
+  // filtering on the embedded join restricts to a single category_id, so
+  // each matching product returns exactly one row (its PK prevents a
+  // duplicate (product_id, category_id) pair).
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, price_cop, created_at, product_images(original_url, enhanced_url)")
-    .eq("category_id", category.id)
+    .select(
+      "id, name, unit_price_cop, created_at, product_images(original_url, enhanced_url), product_categories!inner(category_id)"
+    )
+    .eq("product_categories.category_id", category.id)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
@@ -64,7 +70,7 @@ export default async function CategoryPage({
     const first = images.find((img) => img.enhanced_url || img.original_url);
     const imageUrl = first ? first.enhanced_url || first.original_url : null;
     const isNew = isRecentlyCreated(p.created_at);
-    return { id: p.id, name: p.name, price_cop: p.price_cop, imageUrl, isNew };
+    return { id: p.id, name: p.name, price_cop: p.unit_price_cop, imageUrl, isNew };
   });
 
   return (
