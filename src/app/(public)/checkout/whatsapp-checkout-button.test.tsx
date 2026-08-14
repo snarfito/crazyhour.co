@@ -12,7 +12,7 @@ vi.mock("./actions", () => ({
 function seedCart() {
   localStorage.setItem(
     "crazyhour_cart",
-    JSON.stringify([{ productId: "p1", name: "Piñata estrella", priceCop: 45000, imageUrl: null, quantity: 1 }])
+    JSON.stringify([{ productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 1 }])
   );
 }
 

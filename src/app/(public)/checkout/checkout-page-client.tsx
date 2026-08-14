@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/components/cart/cart-context";
 import { formatCOP } from "@/lib/format";
+import { calculateTieredPrice } from "@/lib/pricing";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { WompiCheckoutButton } from "./wompi-checkout-button";
@@ -36,7 +37,7 @@ export function CheckoutPageClient() {
             <span>
               {item.quantity}x <span>{item.name}</span>
             </span>
-            <span>{formatCOP(item.priceCop * item.quantity)}</span>
+            <span>{formatCOP(calculateTieredPrice(item, item.quantity).totalCop)}</span>
           </li>
         ))}
       </ul>

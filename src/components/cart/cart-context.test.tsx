@@ -9,10 +9,24 @@ function TestConsumer() {
     <div>
       <p data-testid="count">{itemCount}</p>
       <p data-testid="subtotal">{subtotalCop}</p>
-      <button onClick={() => addItem({ productId: "p1", name: "Piñata", priceCop: 45000, imageUrl: null }, 2)}>
+      <button
+        onClick={() =>
+          addItem(
+            { productId: "p1", name: "Piñata", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null },
+            2
+          )
+        }
+      >
         add p1
       </button>
-      <button onClick={() => addItem({ productId: "p1", name: "Piñata", priceCop: 45000, imageUrl: null }, 1)}>
+      <button
+        onClick={() =>
+          addItem(
+            { productId: "p1", name: "Piñata", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null },
+            1
+          )
+        }
+      >
         add p1 again
       </button>
       <button onClick={() => setQuantity("p1", 5)}>set p1 to 5</button>
@@ -33,7 +47,7 @@ describe("CartProvider / useCart", () => {
     localStorage.clear();
   });
 
-  it("adds items, merges quantity on repeat add, and computes totals", async () => {
+  it("adds items, merges quantity on repeat add, and computes totals via calculateTieredPrice", async () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
@@ -95,6 +109,38 @@ describe("CartProvider / useCart", () => {
     await user.click(screen.getByText("clear"));
 
     expect(screen.getByTestId("count")).toHaveTextContent("0");
+  });
+
+  it("computes subtotal across multiple price tiers via calculateTieredPrice", async () => {
+    function TieredConsumer() {
+      const { addItem, subtotalCop } = useCart();
+      return (
+        <div>
+          <p data-testid="subtotal">{subtotalCop}</p>
+          <button
+            onClick={() =>
+              addItem(
+                { productId: "p2", name: "Globo", unitPriceCop: 4000, pack1Qty: 10, pack1PriceCop: 3000, pack2Qty: 5, pack2PriceCop: 3500, imageUrl: null },
+                36
+              )
+            }
+          >
+            add p2 x36
+          </button>
+        </div>
+      );
+    }
+    const user = userEvent.setup();
+    render(
+      <CartProvider>
+        <TieredConsumer />
+      </CartProvider>
+    );
+
+    await user.click(screen.getByText("add p2 x36"));
+
+    // 30 @ 3000 + 5 @ 3500 + 1 @ 4000, same split as pricing.test.ts's qty=36 case.
+    expect(screen.getByTestId("subtotal")).toHaveTextContent(String(30 * 3000 + 5 * 3500 + 1 * 4000));
   });
 
   it("useCart throws outside a CartProvider", () => {

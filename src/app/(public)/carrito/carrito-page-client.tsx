@@ -6,6 +6,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { QuantityStepper } from "@/components/cart/quantity-stepper";
 import { EmptyState } from "@/components/catalog/empty-state";
 import { formatCOP } from "@/lib/format";
+import { calculateTieredPrice } from "@/lib/pricing";
 import { Button } from "@/components/ui/button";
 
 export function CarritoPageClient() {
@@ -39,7 +40,7 @@ export function CarritoPageClient() {
               </div>
               <div className="flex items-center justify-between">
                 <QuantityStepper quantity={item.quantity} onChange={(q) => setQuantity(item.productId, q)} />
-                <p className="font-heading font-bold">{formatCOP(item.priceCop * item.quantity)}</p>
+                <p className="font-heading font-bold">{formatCOP(calculateTieredPrice(item, item.quantity).totalCop)}</p>
               </div>
             </div>
           </li>

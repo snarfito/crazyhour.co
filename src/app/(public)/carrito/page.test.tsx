@@ -40,8 +40,8 @@ describe("CarritoPage", () => {
 
   it("lists items with quantity controls and a total, and lets you remove one", async () => {
     seedCart([
-      { productId: "p1", name: "Piñata estrella", priceCop: 45000, imageUrl: null, quantity: 2 },
-      { productId: "p2", name: "Globo metálico", priceCop: 5000, imageUrl: null, quantity: 1 },
+      { productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 2 },
+      { productId: "p2", name: "Globo metálico", unitPriceCop: 5000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 1 },
     ]);
     const user = userEvent.setup();
     render(
@@ -66,7 +66,7 @@ describe("CarritoPage", () => {
   });
 
   it("Continuar links to /checkout", async () => {
-    seedCart([{ productId: "p1", name: "Piñata estrella", priceCop: 45000, imageUrl: null, quantity: 1 }]);
+    seedCart([{ productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 1 }]);
     render(
       <CartProvider>
         {await CarritoPage()}

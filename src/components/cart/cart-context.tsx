@@ -1,11 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { calculateTieredPrice, type ProductPricing } from "@/lib/pricing";
 
-export type CartItem = {
+export type CartItem = ProductPricing & {
   productId: string;
   name: string;
-  priceCop: number;
   imageUrl: string | null;
   quantity: number;
 };
@@ -80,7 +80,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-  const subtotalCop = items.reduce((sum, i) => sum + i.priceCop * i.quantity, 0);
+  const subtotalCop = items.reduce((sum, i) => sum + calculateTieredPrice(i, i.quantity).totalCop, 0);
 
   return (
     <CartContext.Provider value={{ items, addItem, removeItem, setQuantity, clear, itemCount, subtotalCop }}>
