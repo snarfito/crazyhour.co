@@ -10,18 +10,21 @@ import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-set
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const [{ data: categories }, { data: activeProducts }, theme] = await Promise.all([
+  const [{ data: categories }, { data: activeProductLinks }, theme] = await Promise.all([
     supabase
       .from("categories")
       .select("id, name, slug, cover_image_url, description, is_featured")
       .order("sort_order"),
-    supabase.from("products").select("category_id").eq("is_active", true),
+    supabase
+      .from("product_categories")
+      .select("category_id, products!inner(is_active)")
+      .eq("products.is_active", true),
     getEffectiveEventTheme(),
   ]);
   const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
 
-  const counts = (activeProducts ?? []).reduce<Record<string, number>>((acc, p) => {
-    acc[p.category_id] = (acc[p.category_id] ?? 0) + 1;
+  const counts = (activeProductLinks ?? []).reduce<Record<string, number>>((acc, link) => {
+    acc[link.category_id] = (acc[link.category_id] ?? 0) + 1;
     return acc;
   }, {});
 

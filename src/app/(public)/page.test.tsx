@@ -59,14 +59,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => 
 
   beforeEach(async () => {
     forceEmpty = false;
-    // Products must go first: a plain categories delete silently no-ops on
-    // the FK constraint when a prefixed category still has products
-    // referencing it (Supabase's delete() doesn't throw on error), leaving
-    // stale rows for every later test in the run. See
-    // [categorySlug]/page.test.tsx for the same pattern.
-    const { data: cats } = await admin.from("categories").select("id").like("slug", TEST_PREFIX_LIKE);
-    const ids = (cats ?? []).map((c) => c.id);
-    if (ids.length > 0) await admin.from("products").delete().in("category_id", ids);
+    await admin.from("products").delete().like("name", TEST_PREFIX_LIKE);
     await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
   });
 
@@ -103,11 +96,17 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => 
       .insert({ name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 })
       .select()
       .single();
-    await admin.from("products").insert([
-      { category_id: category!.id, name: "A", description: "x", price_cop: 1000, is_active: true },
-      { category_id: category!.id, name: "B", description: "x", price_cop: 1000, is_active: true },
-      { category_id: category!.id, name: "C", description: "x", price_cop: 1000, is_active: false },
-    ]);
+    const { data: products } = await admin
+      .from("products")
+      .insert([
+        { name: `${TEST_PREFIX}A`, description: "x", unit_price_cop: 1000, is_active: true },
+        { name: `${TEST_PREFIX}B`, description: "x", unit_price_cop: 1000, is_active: true },
+        { name: `${TEST_PREFIX}C`, description: "x", unit_price_cop: 1000, is_active: false },
+      ])
+      .select();
+    await admin
+      .from("product_categories")
+      .insert((products ?? []).map((p) => ({ product_id: p.id, category_id: category!.id })));
 
     const HomePage = (await import("./page")).default;
     const ui = await HomePage();
