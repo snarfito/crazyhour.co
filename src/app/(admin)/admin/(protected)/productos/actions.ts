@@ -4,19 +4,40 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { verifySession } from "@/lib/supabase/dal";
 
+function parseOptionalInt(value: FormDataEntryValue | null): number | null {
+  const str = String(value ?? "").trim();
+  return str ? Number(str) : null;
+}
+
 export async function createProduct(formData: FormData) {
   await verifySession();
   const supabase = await createClient();
 
-  const { error } = await supabase.from("products").insert({
-    category_id: String(formData.get("category_id")),
-    name: String(formData.get("name") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim(),
-    price_cop: Number(formData.get("price_cop") ?? 0),
-    sku: String(formData.get("sku") ?? "").trim(),
-    is_active: true,
-  });
-  if (error) throw error;
+  const categoryIds = formData.getAll("category_ids").map(String);
+
+  const { data: product, error } = await supabase
+    .from("products")
+    .insert({
+      name: String(formData.get("name") ?? "").trim(),
+      description: String(formData.get("description") ?? "").trim(),
+      unit_price_cop: Number(formData.get("unit_price_cop") ?? 0),
+      pack1_qty: parseOptionalInt(formData.get("pack1_qty")),
+      pack1_price_cop: parseOptionalInt(formData.get("pack1_price_cop")),
+      pack2_qty: parseOptionalInt(formData.get("pack2_qty")),
+      pack2_price_cop: parseOptionalInt(formData.get("pack2_price_cop")),
+      sku: String(formData.get("sku") ?? "").trim(),
+      is_active: true,
+    })
+    .select("id")
+    .single();
+  if (error || !product) throw error ?? new Error("No se pudo crear el producto.");
+
+  if (categoryIds.length > 0) {
+    const { error: linkError } = await supabase
+      .from("product_categories")
+      .insert(categoryIds.map((categoryId) => ({ product_id: product.id, category_id: categoryId })));
+    if (linkError) throw linkError;
+  }
 
   revalidatePath("/admin/productos");
 }
@@ -25,17 +46,34 @@ export async function updateProduct(id: string, formData: FormData) {
   await verifySession();
   const supabase = await createClient();
 
+  const categoryIds = formData.getAll("category_ids").map(String);
+
   const { error } = await supabase
     .from("products")
     .update({
-      category_id: String(formData.get("category_id")),
       name: String(formData.get("name") ?? "").trim(),
       description: String(formData.get("description") ?? "").trim(),
-      price_cop: Number(formData.get("price_cop") ?? 0),
+      unit_price_cop: Number(formData.get("unit_price_cop") ?? 0),
+      pack1_qty: parseOptionalInt(formData.get("pack1_qty")),
+      pack1_price_cop: parseOptionalInt(formData.get("pack1_price_cop")),
+      pack2_qty: parseOptionalInt(formData.get("pack2_qty")),
+      pack2_price_cop: parseOptionalInt(formData.get("pack2_price_cop")),
       sku: String(formData.get("sku") ?? "").trim(),
     })
     .eq("id", id);
   if (error) throw error;
+
+  // Replace-all is simpler and correct here: the form always posts the
+  // full desired set of category_ids, there's no partial-update UI.
+  const { error: deleteError } = await supabase.from("product_categories").delete().eq("product_id", id);
+  if (deleteError) throw deleteError;
+
+  if (categoryIds.length > 0) {
+    const { error: linkError } = await supabase
+      .from("product_categories")
+      .insert(categoryIds.map((categoryId) => ({ product_id: id, category_id: categoryId })));
+    if (linkError) throw linkError;
+  }
 
   revalidatePath("/admin/productos");
 }
