@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, SquareMousePointer } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,14 +45,25 @@ export default async function ProductosPage({
           <h1 className="font-heading text-2xl font-extrabold text-foreground">Productos</h1>
           <p className="mt-1 text-sm text-muted-foreground">Catálogo de la tienda</p>
         </div>
-        <Button
-          render={
-            <Link href="/admin/productos/nuevo">
-              <Plus />
-              Nuevo producto
-            </Link>
-          }
-        />
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            render={
+              <Link href="/admin/productos/editor">
+                <SquareMousePointer />
+                Editor rápido
+              </Link>
+            }
+          />
+          <Button
+            render={
+              <Link href="/admin/productos/nuevo">
+                <Plus />
+                Nuevo producto
+              </Link>
+            }
+          />
+        </div>
       </div>
       <div className="mt-4">
         <CategoryFilter categories={categories ?? []} selectedCategoryId={categoria} />

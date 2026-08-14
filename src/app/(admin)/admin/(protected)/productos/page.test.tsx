@@ -89,4 +89,15 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Admin products lis
     expect(screen.getByText(`${TEST_PREFIX}Solo piñatas`)).toBeInTheDocument();
     expect(screen.queryByText(`${TEST_PREFIX}Solo globos`)).not.toBeInTheDocument();
   });
+
+  it("links to the quick editor", async () => {
+    const ProductosPage = (await import("./page")).default;
+    const ui = await ProductosPage({ searchParams: Promise.resolve({}) });
+    render(ui);
+
+    expect(screen.getByRole("link", { name: /editor rápido/i })).toHaveAttribute(
+      "href",
+      "/admin/productos/editor",
+    );
+  });
 });
