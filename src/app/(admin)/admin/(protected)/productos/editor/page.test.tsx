@@ -5,7 +5,7 @@ import { likePattern } from "@/test/db-prefix";
 
 const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
-const TEST_PREFIX = "zzeditorlive_";
+const TEST_PREFIX = "zzeditorpage_";
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
 
 const mockRequirePermission = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co" });
