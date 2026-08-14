@@ -50,7 +50,7 @@ export default async function ProductPage({
     .filter((url: string): url is string => Boolean(url))
     .map((url: string) => ({ url, alt: product.name }));
 
-  const categoryLinks = (product.product_categories ?? []) as {
+  const categoryLinks = (product.product_categories ?? []) as unknown as {
     categories: { id: string; name: string; slug: string } | null;
   }[];
   const category = categoryLinks[0]?.categories ?? null;
