@@ -21,16 +21,20 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/categorias",
+  useRouter: () => ({ push: mockPush }),
+}));
+
 describe("CategoriasLayout", () => {
-  it("lists every category, each linking to its own editor, alongside the children pane", async () => {
+  it("lists every category, each row navigating to its own editor, alongside the children pane", async () => {
     const CategoriasLayout = (await import("./layout")).default;
     const ui = await CategoriasLayout({ children: <p>editor</p> });
     render(ui);
 
     expect(screen.getByText("Piñatas")).toBeInTheDocument();
     expect(screen.getByText("Globos")).toBeInTheDocument();
-    const editLinks = screen.getAllByRole("link", { name: /Editar/ }).map((l) => l.getAttribute("href"));
-    expect(editLinks).toEqual(["/admin/categorias/1", "/admin/categorias/2"]);
     expect(screen.getByRole("link", { name: /Nueva/ })).toHaveAttribute("href", "/admin/categorias/nueva");
     expect(screen.getByText("editor")).toBeInTheDocument();
   });

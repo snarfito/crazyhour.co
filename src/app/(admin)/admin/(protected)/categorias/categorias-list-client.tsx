@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -19,9 +18,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { DeleteForm } from "@/components/admin/delete-form";
 import { computeNewOrder } from "@/lib/reorder";
 import { reorderCategories, deleteCategory } from "./actions";
@@ -31,10 +29,22 @@ type Category = { id: string; name: string; slug: string; sort_order: number };
 function SortableRow({ category, isActive }: { category: Category; isActive: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const router = useRouter();
+  const href = `/admin/categorias/${category.id}`;
 
   return (
-    <TableRow ref={setNodeRef} style={style} aria-current={isActive ? "page" : undefined} className={isActive ? "bg-primary/5" : undefined}>
-      <TableCell>
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      aria-current={isActive ? "page" : undefined}
+      tabIndex={0}
+      onClick={() => router.push(href)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") router.push(href);
+      }}
+      className={`cursor-pointer ${isActive ? "bg-primary/5" : ""}`}
+    >
+      <TableCell onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
           {...attributes}
@@ -48,18 +58,7 @@ function SortableRow({ category, isActive }: { category: Category; isActive: boo
       <TableCell className={isActive ? "font-semibold text-primary" : "font-medium text-foreground"}>
         {category.name}
       </TableCell>
-      <TableCell className="text-muted-foreground">{category.slug}</TableCell>
-      <TableCell className="flex gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          render={
-            <Link href={`/admin/categorias/${category.id}`}>
-              <Pencil />
-              Editar
-            </Link>
-          }
-        />
+      <TableCell onClick={(e) => e.stopPropagation()}>
         <DeleteForm
           action={deleteCategory.bind(null, category.id)}
           confirmMessage={`¿Eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`}
@@ -108,7 +107,6 @@ export function CategoriasListClient({ categories }: { categories: Category[] })
             <TableRow>
               <TableHead></TableHead>
               <TableHead>Nombre</TableHead>
-              <TableHead>Slug</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>

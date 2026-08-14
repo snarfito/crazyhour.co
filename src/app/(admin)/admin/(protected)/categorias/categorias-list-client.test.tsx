@@ -1,10 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { CategoriasListClient } from "./categorias-list-client";
 
 vi.mock("./actions", () => ({
   reorderCategories: vi.fn(),
   deleteCategory: vi.fn(),
+}));
+
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/categorias",
+  useRouter: () => ({ push: mockPush }),
 }));
 
 const CATEGORIES = [
@@ -21,5 +28,24 @@ describe("CategoriasListClient", () => {
     expect(rows[0]).toHaveTextContent("Piñatas");
     expect(rows[1]).toHaveTextContent("Globos");
     expect(rows[2]).toHaveTextContent("Decoración");
+  });
+
+  it("navigates to the category's editor when a row is clicked", async () => {
+    mockPush.mockClear();
+    render(<CategoriasListClient categories={CATEGORIES} />);
+
+    const rows = screen.getAllByRole("row").slice(1);
+    await userEvent.click(rows[1]);
+
+    expect(mockPush).toHaveBeenCalledWith("/admin/categorias/2");
+  });
+
+  it("does not navigate when the delete button inside a row is clicked", async () => {
+    mockPush.mockClear();
+    render(<CategoriasListClient categories={CATEGORIES} />);
+
+    await userEvent.click(screen.getAllByRole("button", { name: /eliminar/i })[0]);
+
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
