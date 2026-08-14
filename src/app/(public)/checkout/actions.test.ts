@@ -18,37 +18,44 @@ process.env.WOMPI_PUBLIC_KEY = "pub_test_xxx";
 
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
-  let categoryId: string;
   let activeProductId: string;
   let inactiveProductId: string;
+  let tieredProductId: string;
 
   beforeEach(async () => {
     await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
-    const { data: cats } = await admin.from("categories").select("id").like("slug", TEST_PREFIX_LIKE);
-    const catIds = (cats ?? []).map((c) => c.id);
-    if (catIds.length > 0) await admin.from("products").delete().in("category_id", catIds);
-    await admin.from("categories").delete().like("slug", TEST_PREFIX_LIKE);
-
-    const { data: category } = await admin
-      .from("categories")
-      .insert({ name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 })
-      .select()
-      .single();
-    categoryId = category!.id;
+    // Products no longer FK to a category — scoped by their own prefixed
+    // name now, cleaned up directly.
+    await admin.from("products").delete().like("name", TEST_PREFIX_LIKE);
 
     const { data: active } = await admin
       .from("products")
-      .insert({ category_id: categoryId, name: "Piñata estrella", price_cop: 45000, is_active: true })
+      .insert({ name: `${TEST_PREFIX}Piñata estrella`, unit_price_cop: 45000, is_active: true })
       .select()
       .single();
     activeProductId = active!.id;
 
     const { data: inactive } = await admin
       .from("products")
-      .insert({ category_id: categoryId, name: "Piñata descontinuada", price_cop: 30000, is_active: false })
+      .insert({ name: `${TEST_PREFIX}Piñata descontinuada`, unit_price_cop: 30000, is_active: false })
       .select()
       .single();
     inactiveProductId = inactive!.id;
+
+    const { data: tiered } = await admin
+      .from("products")
+      .insert({
+        name: `${TEST_PREFIX}Globo por mayor`,
+        unit_price_cop: 4000,
+        pack1_qty: 10,
+        pack1_price_cop: 3000,
+        pack2_qty: 5,
+        pack2_price_cop: 3500,
+        is_active: true,
+      })
+      .select()
+      .single();
+    tieredProductId = tiered!.id;
 
     await admin.from("settings").update({ whatsapp_number: "573000000000" }).eq("id", true);
   });
@@ -76,6 +83,34 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       const { data: items } = await admin.from("order_items").select("*").eq("order_id", result.orderId);
       expect(items).toHaveLength(1);
       expect(items?.[0].unit_price_cop).toBe(45000);
+    });
+
+    it("splits a quantity that crosses tiers into one order_items row per tier consumed", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder(
+        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        [{ productId: tieredProductId, quantity: 36 }]
+      );
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const expectedTotal = 30 * 3000 + 5 * 3500 + 1 * 4000;
+      expect(result.amountInCents).toBe(expectedTotal * 100);
+
+      const { data: order } = await admin.from("orders").select("total_cop").eq("id", result.orderId).single();
+      expect(order?.total_cop).toBe(expectedTotal);
+
+      const { data: items } = await admin
+        .from("order_items")
+        .select("quantity, unit_price_cop")
+        .eq("order_id", result.orderId)
+        .order("unit_price_cop");
+      expect(items).toEqual([
+        { quantity: 30, unit_price_cop: 3000 },
+        { quantity: 5, unit_price_cop: 3500 },
+        { quantity: 1, unit_price_cop: 4000 },
+      ]);
     });
 
     it("rejects and reports inactive products without creating an order", async () => {

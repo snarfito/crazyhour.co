@@ -1,6 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { calculateTieredPrice } from "@/lib/pricing";
 import { buildIntegritySignature } from "@/lib/wompi";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { getWhatsAppNumber } from "@/lib/settings";
@@ -14,7 +15,7 @@ const INVALID_PRODUCTS_ERROR = "Uno o más productos ya no están disponibles y 
 async function validateAndPriceItems(
   cartItems: CartItemInput[]
 ): Promise<
-  | { ok: true; items: { productId: string; name: string; quantity: number; unitPriceCop: number }[]; totalCop: number }
+  | { ok: true; lines: { productId: string; name: string; quantity: number; unitPriceCop: number }[]; totalCop: number }
   | { ok: false; invalidProductIds: string[] }
 > {
   if (cartItems.length === 0) return { ok: false, invalidProductIds: [] };
@@ -26,7 +27,10 @@ async function validateAndPriceItems(
 
   const supabase = createServiceClient();
   const ids = cartItems.map((i) => i.productId);
-  const { data: products, error } = await supabase.from("products").select("id, name, price_cop, is_active").in("id", ids);
+  const { data: products, error } = await supabase
+    .from("products")
+    .select("id, name, unit_price_cop, pack1_qty, pack1_price_cop, pack2_qty, pack2_price_cop, is_active")
+    .in("id", ids);
   if (error) throw error;
 
   const byId = new Map((products ?? []).map((p) => [p.id, p]));
@@ -38,12 +42,30 @@ async function validateAndPriceItems(
     return { ok: false, invalidProductIds };
   }
 
-  const items = cartItems.map((i) => {
+  // A line whose quantity crosses tiers becomes multiple `lines` entries,
+  // one per tier consumed (design spec section 4/5) — all sharing the same
+  // productId, which order_items doesn't need a "tier" column to represent.
+  const lines = cartItems.flatMap((i) => {
     const product = byId.get(i.productId)!;
-    return { productId: i.productId, name: product.name, quantity: i.quantity, unitPriceCop: product.price_cop };
+    const { breakdown } = calculateTieredPrice(
+      {
+        unitPriceCop: product.unit_price_cop,
+        pack1Qty: product.pack1_qty,
+        pack1PriceCop: product.pack1_price_cop,
+        pack2Qty: product.pack2_qty,
+        pack2PriceCop: product.pack2_price_cop,
+      },
+      i.quantity
+    );
+    return breakdown.map((line) => ({
+      productId: i.productId,
+      name: product.name,
+      quantity: line.quantity,
+      unitPriceCop: line.unitPriceCop,
+    }));
   });
-  const totalCop = items.reduce((sum, i) => sum + i.unitPriceCop * i.quantity, 0);
-  return { ok: true, items, totalCop };
+  const totalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.quantity, 0);
+  return { ok: true, lines, totalCop };
 }
 
 export type WompiOrderResult =
@@ -72,11 +94,11 @@ export async function createWompiOrder(
   if (orderError || !order) throw orderError ?? new Error("No se pudo crear el pedido.");
 
   const { error: itemsError } = await supabase.from("order_items").insert(
-    priced.items.map((i) => ({
+    priced.lines.map((l) => ({
       order_id: order.id,
-      product_id: i.productId,
-      quantity: i.quantity,
-      unit_price_cop: i.unitPriceCop,
+      product_id: l.productId,
+      quantity: l.quantity,
+      unit_price_cop: l.unitPriceCop,
     }))
   );
   if (itemsError) throw itemsError;
@@ -120,11 +142,11 @@ export async function createWhatsAppOrder(
   if (orderError || !order) throw orderError ?? new Error("No se pudo crear el pedido.");
 
   const { error: itemsError } = await supabase.from("order_items").insert(
-    priced.items.map((i) => ({
+    priced.lines.map((l) => ({
       order_id: order.id,
-      product_id: i.productId,
-      quantity: i.quantity,
-      unit_price_cop: i.unitPriceCop,
+      product_id: l.productId,
+      quantity: l.quantity,
+      unit_price_cop: l.unitPriceCop,
     }))
   );
   if (itemsError) throw itemsError;
@@ -132,7 +154,7 @@ export async function createWhatsAppOrder(
   const whatsappNumber = await getWhatsAppNumber();
   const message = buildWhatsAppMessage({
     customerName: customer.name,
-    items: priced.items.map((i) => ({ name: i.name, quantity: i.quantity, unitPriceCop: i.unitPriceCop })),
+    items: priced.lines,
     totalCop: priced.totalCop,
   });
 
