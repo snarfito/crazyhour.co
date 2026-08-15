@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,13 +21,24 @@ export function ImageUpload({
   onChange?: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      if (uploading) return;
+      const file = Array.from(e.clipboardData?.items ?? [])
+        .find((item) => item.type.startsWith("image/"))
+        ?.getAsFile();
+      if (file) uploadFile(file);
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, uploading]);
 
+  async function uploadFile(file: File) {
     setUploading(true);
     setError(null);
 
@@ -99,19 +110,44 @@ export function ImageUpload({
           </div>
         ))}
       </div>
-      <label
-        htmlFor="product-image-input"
-        className={cn(buttonVariants({ variant: "outline" }), "mt-3 cursor-pointer", uploading && "pointer-events-none opacity-50")}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) uploadFile(file);
+        }}
+        className={cn(
+          "mt-3 flex flex-col items-start gap-2 rounded-lg border-2 border-dashed border-transparent p-2",
+          dragOver && "border-primary bg-primary/5"
+        )}
       >
-        <Upload />
-        {uploading ? "Subiendo..." : "Subir foto"}
-      </label>
+        <label
+          htmlFor="product-image-input"
+          className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer", uploading && "pointer-events-none opacity-50")}
+        >
+          <Upload />
+          {uploading ? "Subiendo..." : "Subir foto"}
+        </label>
+        <p className="text-xs text-muted-foreground">
+          O arrastra una imagen aquí, o pégala con {"Cmd/Ctrl+V"}
+        </p>
+      </div>
       <input
         id="product-image-input"
         type="file"
         accept="image/*"
         className="sr-only"
-        onChange={handleUpload}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) uploadFile(file);
+          e.target.value = "";
+        }}
         disabled={uploading}
       />
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

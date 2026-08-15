@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -78,13 +78,24 @@ export function CoverUpload({
   currentUrl: string | null;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      if (uploading) return;
+      const file = Array.from(e.clipboardData?.items ?? [])
+        .find((item) => item.type.startsWith("image/"))
+        ?.getAsFile();
+      if (file) uploadFile(file);
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId, uploading]);
 
+  async function uploadFile(file: File) {
     setUploading(true);
     setError(null);
 
@@ -128,31 +139,56 @@ export function CoverUpload({
         )}
       </div>
       <div className="flex flex-1 flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
-          <label
-            htmlFor="cover-upload-input"
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "cursor-pointer",
-              uploading && "pointer-events-none opacity-50",
-            )}
-          >
-            <Upload />
-            {uploading ? "Subiendo..." : "Subir portada"}
-          </label>
-          <input
-            id="cover-upload-input"
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={handleUpload}
-            disabled={uploading}
-          />
-          <GenerateCoverButton
-            categoryId={categoryId}
-            categoryName={categoryName}
-            onGenerated={() => router.refresh()}
-          />
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) uploadFile(file);
+          }}
+          className={cn(
+            "flex flex-col items-start gap-2 rounded-lg border-2 border-dashed border-transparent p-2",
+            dragOver && "border-primary bg-primary/5",
+          )}
+        >
+          <div className="flex flex-wrap gap-2">
+            <label
+              htmlFor="cover-upload-input"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "cursor-pointer",
+                uploading && "pointer-events-none opacity-50",
+              )}
+            >
+              <Upload />
+              {uploading ? "Subiendo..." : "Subir portada"}
+            </label>
+            <input
+              id="cover-upload-input"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadFile(file);
+                e.target.value = "";
+              }}
+              disabled={uploading}
+            />
+            <GenerateCoverButton
+              categoryId={categoryId}
+              categoryName={categoryName}
+              onGenerated={() => router.refresh()}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            O arrastra una imagen aquí, o pégala con {"Cmd/Ctrl+V"}
+          </p>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
