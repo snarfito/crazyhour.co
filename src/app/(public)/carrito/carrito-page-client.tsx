@@ -6,7 +6,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { QuantityStepper } from "@/components/cart/quantity-stepper";
 import { EmptyState } from "@/components/catalog/empty-state";
 import { formatCOP } from "@/lib/format";
-import { calculateTieredPrice } from "@/lib/pricing";
+import { calculateTieredPrice, formatTierBreakdown } from "@/lib/pricing";
 import { Button } from "@/components/ui/button";
 
 export function CarritoPageClient() {
@@ -20,31 +20,38 @@ export function CarritoPageClient() {
     <div className="p-4">
       <h1 className="font-heading text-2xl font-extrabold">Tu carrito</h1>
       <ul className="mt-4 flex flex-col gap-4">
-        {items.map((item) => (
-          <li key={item.productId} className="flex gap-3 border-b border-border pb-4">
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-              {item.imageUrl && (
-                <Image src={item.imageUrl} alt={item.name} fill sizes="80px" className="object-cover" />
-              )}
-            </div>
-            <div className="flex flex-1 flex-col justify-between">
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-medium">{item.name}</p>
-                <button
-                  type="button"
-                  onClick={() => removeItem(item.productId)}
-                  className="text-sm text-destructive hover:underline"
-                >
-                  Quitar
-                </button>
+        {items.map((item) => {
+          const { totalCop, pack1Count, pack2Count, looseUnits } = calculateTieredPrice(item, item.quantity);
+          const hasTiers = item.pack1Qty != null || item.pack2Qty != null;
+          const breakdownText = formatTierBreakdown(pack1Count, pack2Count, looseUnits);
+
+          return (
+            <li key={item.productId} className="flex gap-3 border-b border-border pb-4">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+                {item.imageUrl && (
+                  <Image src={item.imageUrl} alt={item.name} fill sizes="80px" className="object-cover" />
+                )}
               </div>
-              <div className="flex items-center justify-between">
-                <QuantityStepper quantity={item.quantity} onChange={(q) => setQuantity(item.productId, q)} />
-                <p className="font-heading font-bold">{formatCOP(calculateTieredPrice(item, item.quantity).totalCop)}</p>
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium">{item.name}</p>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.productId)}
+                    className="text-sm text-destructive hover:underline"
+                  >
+                    Quitar
+                  </button>
+                </div>
+                {hasTiers && breakdownText && <p className="text-xs text-muted-foreground">{breakdownText}</p>}
+                <div className="flex items-center justify-between">
+                  <QuantityStepper quantity={item.quantity} onChange={(q) => setQuantity(item.productId, q)} />
+                  <p className="font-heading font-bold">{formatCOP(totalCop)}</p>
+                </div>
               </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
       <p className="mt-4 flex justify-between font-heading text-lg font-bold">
         <span>Total</span>

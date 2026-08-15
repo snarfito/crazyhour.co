@@ -33,4 +33,24 @@ describe("CategoryProductsFilter", () => {
 
     expect(screen.getByText(/no hay productos nuevos/i)).toBeInTheDocument();
   });
+
+  it("filters products by name within the category as the user types", async () => {
+    const user = userEvent.setup();
+    render(<CategoryProductsFilter products={PRODUCTS} />);
+
+    await user.type(screen.getByLabelText("Buscar en esta categoría"), "vieja");
+
+    expect(screen.getByText("Piñata vieja")).toBeInTheDocument();
+    expect(screen.queryByText("Piñata nueva")).not.toBeInTheDocument();
+  });
+
+  it("combines the text search with the Nuevo tab", async () => {
+    const user = userEvent.setup();
+    render(<CategoryProductsFilter products={PRODUCTS} />);
+
+    await user.click(screen.getByRole("radio", { name: "Nuevo" }));
+    await user.type(screen.getByLabelText("Buscar en esta categoría"), "vieja");
+
+    expect(screen.getByText(/no hay productos que coincidan/i)).toBeInTheDocument();
+  });
 });

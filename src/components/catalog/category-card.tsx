@@ -33,6 +33,7 @@ export function CategoryCard({
           seed={id}
           label={name}
           className="h-full w-full"
+          labelClassName="text-lg sm:text-xl"
           sizes={wide ? "(max-width: 768px) 100vw, 50vw" : "(max-width: 768px) 50vw, 25vw"}
         />
         <span

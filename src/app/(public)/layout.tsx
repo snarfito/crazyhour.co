@@ -7,6 +7,7 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { CartProvider } from "@/components/cart/cart-context";
 import { CartIcon } from "@/components/cart/cart-icon";
 import { Footer } from "@/components/catalog/footer";
+import { SiteSearch } from "@/components/catalog/site-search";
 
 export default async function PublicLayout({
   children,
@@ -17,11 +18,19 @@ export default async function PublicLayout({
   return (
     <div data-testid="public-theme-root" className={`${PUBLIC_THEME_CLASS} min-h-screen bg-background text-foreground`}>
       <CartProvider>
-        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
-          <Link href="/">
-            <Image src="/logo.webp" alt="Crazy Hour" width={996} height={848} className="h-20 w-auto" priority />
-          </Link>
-          <CartIcon />
+        <header className="sticky top-0 z-40 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/">
+              <Image src="/logo.webp" alt="Crazy Hour" width={996} height={848} className="h-20 w-auto" priority />
+            </Link>
+            <div className="hidden max-w-sm flex-1 sm:block">
+              <SiteSearch />
+            </div>
+            <CartIcon />
+          </div>
+          <div className="mt-3 sm:hidden">
+            <SiteSearch />
+          </div>
         </header>
         <main className="font-body pb-24">{children}</main>
         <Footer whatsappNumber={whatsappNumber} />

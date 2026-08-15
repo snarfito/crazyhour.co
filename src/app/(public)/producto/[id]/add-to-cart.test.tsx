@@ -39,6 +39,33 @@ describe("AddToCart", () => {
     });
   });
 
+  it("recalculates the total price as the quantity changes using pack pricing", async () => {
+    const user = userEvent.setup();
+    render(
+      <CartProvider>
+        <AddToCart
+          productId="p2"
+          name="Globo por mayor"
+          unitPriceCop={4000}
+          pack1Qty={10}
+          pack1PriceCop={3000}
+          pack2Qty={5}
+          pack2PriceCop={3500}
+          imageUrl={null}
+        />
+      </CartProvider>
+    );
+
+    expect(screen.getByText(/Total \(1 un\.\)/)).toHaveTextContent("$ 4.000");
+
+    const input = screen.getByLabelText("Cantidad");
+    await user.clear(input);
+    await user.type(input, "10");
+    await user.tab();
+
+    expect(screen.getByText(/Total \(10 un\.\)/)).toHaveTextContent("$ 30.000");
+  });
+
   it("shows a confirmation on the button after adding", async () => {
     const user = userEvent.setup();
     render(

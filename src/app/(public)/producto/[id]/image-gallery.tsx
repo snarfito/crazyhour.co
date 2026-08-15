@@ -15,7 +15,7 @@ export function ImageGallery({
 
   if (images.length === 0) {
     return (
-      <div className="aspect-square w-full overflow-hidden rounded-lg">
+      <div className="mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-lg">
         <BrandPlaceholder seed={productName} />
       </div>
     );
@@ -24,13 +24,13 @@ export function ImageGallery({
   const active = images[activeIndex];
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-sm">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg">
         <Image
           src={active.url}
           alt={active.alt}
           fill
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes="(max-width: 768px) 60vw, 50vw"
           className="object-cover"
           data-testid="gallery-main-image"
         />

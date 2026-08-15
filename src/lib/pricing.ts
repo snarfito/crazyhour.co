@@ -45,7 +45,7 @@ export function resolveEffectiveTiers(product: ProductPricing): {
 export function calculateTieredPrice(
   product: ProductPricing,
   qty: number
-): { breakdown: PriceBreakdownLine[]; totalCop: number } {
+): { breakdown: PriceBreakdownLine[]; totalCop: number; pack1Count: number; pack2Count: number; looseUnits: number } {
   const { unitPriceCop, pack1, pack2 } = resolveEffectiveTiers(product);
 
   const n1 = pack1 ? Math.floor(qty / pack1.qty) : 0;
@@ -59,5 +59,20 @@ export function calculateTieredPrice(
   if (rest2 > 0) breakdown.push({ quantity: rest2, unitPriceCop });
 
   const totalCop = breakdown.reduce((sum, line) => sum + line.quantity * line.unitPriceCop, 0);
-  return { breakdown, totalCop };
+  return { breakdown, totalCop, pack1Count: n1, pack2Count: n2, looseUnits: rest2 };
+}
+
+/**
+ * Human-readable composition of a quantity split, e.g. "3 pacas + 1 media
+ * paca + 1 unidad" — shared by the product page and the cart so both show
+ * the same wording for the same tiers.
+ */
+export function formatTierBreakdown(pack1Count: number, pack2Count: number, looseUnits: number): string {
+  return [
+    pack1Count > 0 && `${pack1Count} ${pack1Count === 1 ? "paca" : "pacas"}`,
+    pack2Count > 0 && `${pack2Count} ${pack2Count === 1 ? "media paca" : "medias pacas"}`,
+    looseUnits > 0 && `${looseUnits} ${looseUnits === 1 ? "unidad" : "unidades"}`,
+  ]
+    .filter(Boolean)
+    .join(" + ");
 }

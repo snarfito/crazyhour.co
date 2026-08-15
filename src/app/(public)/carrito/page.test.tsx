@@ -65,6 +65,41 @@ describe("CarritoPage", () => {
     expect(screen.getByTestId("cart-total")).toHaveTextContent("$ 90.000");
   });
 
+  it("shows the paca/media-paca/loose-unit breakdown for items with tiered pricing", async () => {
+    seedCart([
+      {
+        productId: "p1",
+        name: "Globo por mayor",
+        unitPriceCop: 4000,
+        pack1Qty: 10,
+        pack1PriceCop: 3000,
+        pack2Qty: 5,
+        pack2PriceCop: 3500,
+        imageUrl: null,
+        quantity: 16,
+      },
+    ]);
+    render(
+      <CartProvider>
+        {await CarritoPage()}
+      </CartProvider>
+    );
+
+    expect(await screen.findByText("1 paca + 1 media paca + 1 unidad")).toBeInTheDocument();
+  });
+
+  it("omits the breakdown line for items priced only per unit", async () => {
+    seedCart([{ productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 2 }]);
+    render(
+      <CartProvider>
+        {await CarritoPage()}
+      </CartProvider>
+    );
+
+    await screen.findByText("Piñata estrella");
+    expect(screen.queryByText(/paca|unidad/)).not.toBeInTheDocument();
+  });
+
   it("Continuar links to /checkout", async () => {
     seedCart([{ productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 1 }]);
     render(

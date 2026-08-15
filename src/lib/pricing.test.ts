@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateTieredPrice, resolveEffectiveTiers, type ProductPricing } from "./pricing";
+import { calculateTieredPrice, resolveEffectiveTiers, formatTierBreakdown, type ProductPricing } from "./pricing";
 
 const unitOnly: ProductPricing = {
   unitPriceCop: 4000,
@@ -100,5 +100,23 @@ describe("calculateTieredPrice", () => {
       { quantity: 2, unitPriceCop: 4000 },
     ]);
     expect(result.totalCop).toBe(5 * 3000 + 2 * 4000);
+  });
+
+  it("reports how many pacas/medias pacas/loose units the quantity splits into", () => {
+    const result = calculateTieredPrice(fullTiers, 36);
+    expect(result.pack1Count).toBe(3);
+    expect(result.pack2Count).toBe(1);
+    expect(result.looseUnits).toBe(1);
+  });
+});
+
+describe("formatTierBreakdown", () => {
+  it("pluralizes each part and joins them with +", () => {
+    expect(formatTierBreakdown(3, 1, 1)).toBe("3 pacas + 1 media paca + 1 unidad");
+    expect(formatTierBreakdown(1, 0, 2)).toBe("1 paca + 2 unidades");
+  });
+
+  it("omits parts that are zero", () => {
+    expect(formatTierBreakdown(0, 0, 5)).toBe("5 unidades");
   });
 });

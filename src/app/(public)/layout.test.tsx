@@ -5,6 +5,10 @@ vi.mock("@/lib/settings", () => ({
   getWhatsAppNumber: vi.fn().mockResolvedValue("573000000000"),
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+}));
+
 describe("public layout", () => {
   it("applies the dark theme class, renders the wordmark logo, and a sticky header", async () => {
     const PublicLayout = (await import("./layout")).default;
