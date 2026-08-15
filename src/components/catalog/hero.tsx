@@ -14,7 +14,7 @@ export function Hero() {
             empieza aquí.
           </h1>
           <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-            Piñatería y artículos de fiesta. Elige por imagen, no por menú.
+            Piñatería y artículos de fiesta para tu próxima celebración.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">
             <a
