@@ -21,7 +21,7 @@ export default async function PublicLayout({
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4">
             <Link href="/">
-              <Image src="/logo.webp" alt="Crazy Hour" width={996} height={848} className="h-20 w-auto" priority />
+              <Image src="/logo.png" alt="Crazy Hour" width={810} height={655} className="h-20 w-auto" priority />
             </Link>
             <div className="hidden max-w-sm flex-1 sm:block">
               <SiteSearch />

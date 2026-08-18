@@ -17,7 +17,7 @@ describe("public layout", () => {
 
     const root = screen.getByTestId("public-theme-root");
     expect(root).toHaveClass("theme-dark");
-    expect(screen.getByAltText("Crazy Hour")).toHaveAttribute("src", expect.stringContaining("logo.webp"));
+    expect(screen.getByAltText("Crazy Hour")).toHaveAttribute("src", expect.stringContaining("logo.png"));
     expect(screen.getByRole("banner")).toHaveClass("sticky");
   });
 

@@ -21,7 +21,7 @@ export default async function OpengraphImage() {
           background: "linear-gradient(135deg, #1C4170 0%, #102A49 100%)",
         }}
       >
-        <img src={logoSrc} width={820} height={698} alt="Crazy Hour" />
+        <img src={logoSrc} width={594} height={480} alt="Crazy Hour" />
       </div>
     ),
     size

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Crazy Hour",
   description: "Piñatería y artículos de fiesta",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.png",
   },
   openGraph: {
     title: "Crazy Hour",
