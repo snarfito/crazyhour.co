@@ -86,7 +86,7 @@ export default async function CategoryPage({
               <p className="mt-2 text-muted-foreground">{category.description}</p>
             )}
           </div>
-          <div className="relative aspect-video max-h-64 overflow-hidden rounded-2xl sm:max-h-72">
+          <div className="relative aspect-video max-h-[19rem] overflow-hidden rounded-2xl sm:max-h-[21.6rem]">
             {category.cover_image_url ? (
               <Image
                 src={category.cover_image_url}
