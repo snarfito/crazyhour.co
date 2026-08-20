@@ -93,7 +93,7 @@ export default async function CategoryPage({
                 alt=""
                 fill
                 sizes="(max-width: 640px) 100vw, 50vw"
-                className="object-cover"
+                className="object-contain"
               />
             ) : (
               <BrandPlaceholder seed={category.id} />
