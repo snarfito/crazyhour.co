@@ -1,33 +1,48 @@
 import { ClipboardList, Wallet, Clock } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/service";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { formatCOP } from "@/lib/format";
-import { markOrderPaid } from "./actions";
+import { resolveDateRange } from "./date-range";
+import { fetchFilteredOrders, fetchOrderItemsByOrderIds } from "./queries";
+import { OrderFilters } from "./order-filters";
+import { OrderRow } from "./order-row";
 
-const STATUS_LABEL: Record<string, string> = {
-  pending_whatsapp: "Por confirmar (WhatsApp)",
-  pending_wompi: "Por confirmar (Wompi)",
-  paid: "Pagado",
-  shipped: "Enviado",
-};
+const PENDING_STATUSES = ["pending_whatsapp", "pending_wompi"];
 
-export default async function PedidosPage() {
+export default async function PedidosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ rango?: string; desde?: string; hasta?: string; canal?: string; estado?: string; cliente?: string }>;
+}) {
+  const params = await searchParams;
   const supabase = createServiceClient();
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [{ data: orders }, { data: todayOrders }] = await Promise.all([
-    supabase.from("orders").select("*").order("created_at", { ascending: false }),
+  const { desde, hasta } = resolveDateRange(params.rango, params.desde, params.hasta);
+
+  const [orders, { data: todayOrders }, { count: pendingCount }] = await Promise.all([
+    fetchFilteredOrders(supabase, {
+      desde,
+      hasta,
+      canal: params.canal || null,
+      estado: params.estado || null,
+      cliente: params.cliente || null,
+    }),
     supabase.from("orders").select("total_cop, status").gte("created_at", startOfToday.toISOString()),
+    supabase.from("orders").select("id", { count: "exact", head: true }).in("status", PENDING_STATUSES),
   ]);
+
+  const itemsByOrderId = await fetchOrderItemsByOrderIds(
+    supabase,
+    orders.map((o) => o.id)
+  );
 
   const ordersToday = todayOrders?.length ?? 0;
   const revenueToday = (todayOrders ?? [])
     .filter((o) => o.status === "paid")
     .reduce((sum, o) => sum + o.total_cop, 0);
-  const pendingCount = (orders ?? []).filter((o) => o.status === "pending_whatsapp" || o.status === "pending_wompi").length;
 
   return (
     <div>
@@ -62,12 +77,15 @@ export default async function PedidosPage() {
             </span>
             <div>
               <p className="text-sm text-muted-foreground">Por confirmar</p>
-              <p className="font-heading text-2xl font-extrabold text-foreground">{pendingCount}</p>
+              <p className="font-heading text-2xl font-extrabold text-foreground">{pendingCount ?? 0}</p>
             </div>
           </CardContent>
         </Card>
       </div>
-      <Card className="mt-6 overflow-x-auto py-0">
+      <div className="mt-6">
+        <OrderFilters initial={params} />
+      </div>
+      <Card className="mt-4 overflow-x-auto py-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -80,28 +98,15 @@ export default async function PedidosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(orders ?? []).map((o) => (
-              <TableRow key={o.id}>
-                <TableCell className="text-muted-foreground">
-                  {new Date(o.created_at).toLocaleString("es-CO")}
-                </TableCell>
-                <TableCell className="font-medium text-foreground">
-                  {o.customer_name} · {o.customer_phone}
-                </TableCell>
-                <TableCell className="capitalize">{o.channel}</TableCell>
-                <TableCell>{formatCOP(o.total_cop)}</TableCell>
-                <TableCell>{STATUS_LABEL[o.status] ?? o.status}</TableCell>
-                <TableCell>
-                  {o.status === "pending_whatsapp" && (
-                    <form action={markOrderPaid.bind(null, o.id)}>
-                      <Button type="submit" variant="outline" size="sm">
-                        Marcar como pagado
-                      </Button>
-                    </form>
-                  )}
-                </TableCell>
+            {orders.length === 0 ? (
+              <TableRow>
+                <TableHead colSpan={6} className="py-6 text-center font-normal text-muted-foreground">
+                  Ningún pedido coincide con estos filtros.
+                </TableHead>
               </TableRow>
-            ))}
+            ) : (
+              orders.map((o) => <OrderRow key={o.id} order={o} items={itemsByOrderId[o.id] ?? []} />)
+            )}
           </TableBody>
         </Table>
       </Card>

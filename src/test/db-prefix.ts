@@ -20,6 +20,7 @@ export const REGISTERED_PREFIXES = [
   "zzfase3checkout_",
   "zzfase3webhook_",
   "zzfase3pedidos_",
+  "zzfase4pedidosquery_",
   "zzpricingschema_",
   "zzeditorlive_",
   "zzeditorpage_",
