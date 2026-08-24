@@ -1,0 +1,4 @@
+# Never let local secrets/local-Supabase config override Vercel's own
+# environment variables during a deploy — see 24 ago staging incident.
+.env*
+!.env.local.example
