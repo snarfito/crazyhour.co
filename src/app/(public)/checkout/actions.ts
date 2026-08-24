@@ -73,7 +73,7 @@ export type WompiOrderResult =
   | ValidationError;
 
 export async function createWompiOrder(
-  customer: { name: string; phone: string },
+  customer: { name: string; phone: string; email: string; address: string; city: string },
   cartItems: CartItemInput[]
 ): Promise<WompiOrderResult> {
   const priced = await validateAndPriceItems(cartItems);
@@ -88,6 +88,9 @@ export async function createWompiOrder(
       total_cop: priced.totalCop,
       customer_name: customer.name,
       customer_phone: customer.phone,
+      customer_email: customer.email,
+      shipping_address: customer.address,
+      shipping_city: customer.city,
     })
     .select("id")
     .single();
@@ -121,7 +124,7 @@ export async function createWompiOrder(
 export type WhatsAppOrderResult = { ok: true; orderId: string; whatsappUrl: string } | ValidationError;
 
 export async function createWhatsAppOrder(
-  customer: { name: string; phone: string },
+  customer: { name: string; phone: string; email: string; address: string; city: string },
   cartItems: CartItemInput[]
 ): Promise<WhatsAppOrderResult> {
   const priced = await validateAndPriceItems(cartItems);
@@ -136,6 +139,9 @@ export async function createWhatsAppOrder(
       total_cop: priced.totalCop,
       customer_name: customer.name,
       customer_phone: customer.phone,
+      customer_email: customer.email,
+      shipping_address: customer.address,
+      shipping_city: customer.city,
     })
     .select("id")
     .single();
@@ -156,6 +162,8 @@ export async function createWhatsAppOrder(
     customerName: customer.name,
     items: priced.lines,
     totalCop: priced.totalCop,
+    address: customer.address,
+    city: customer.city,
   });
 
   return { ok: true, orderId: order.id, whatsappUrl: buildWhatsAppUrl(whatsappNumber, message) };

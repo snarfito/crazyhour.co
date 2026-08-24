@@ -6,6 +6,13 @@ const TEST_SUPABASE_URL = "http://127.0.0.1:54321";
 const TEST_SERVICE_ROLE_KEY = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY || "placeholder-key-suite-is-skipped";
 const TEST_PREFIX = "zzfase3checkout_";
 const TEST_PREFIX_LIKE = likePattern(TEST_PREFIX);
+const TEST_CUSTOMER = {
+  name: `${TEST_PREFIX}Ana`,
+  phone: "3000000000",
+  email: "ana@example.com",
+  address: "Calle 1 # 2-34",
+  city: "Bogotá",
+};
 
 vi.mock("server-only", () => ({}));
 
@@ -65,7 +72,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       const { createWompiOrder } = await import("./actions");
 
       const result = await createWompiOrder(
-        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        TEST_CUSTOMER,
         [{ productId: activeProductId, quantity: 2 }]
       );
 
@@ -79,6 +86,9 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(order?.status).toBe("pending_wompi");
       expect(order?.channel).toBe("wompi");
       expect(order?.total_cop).toBe(90000);
+      expect(order?.customer_email).toBe("ana@example.com");
+      expect(order?.shipping_address).toBe("Calle 1 # 2-34");
+      expect(order?.shipping_city).toBe("Bogotá");
 
       const { data: items } = await admin.from("order_items").select("*").eq("order_id", result.orderId);
       expect(items).toHaveLength(1);
@@ -89,7 +99,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       const { createWompiOrder } = await import("./actions");
 
       const result = await createWompiOrder(
-        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        TEST_CUSTOMER,
         [{ productId: tieredProductId, quantity: 36 }]
       );
 
@@ -117,7 +127,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       const { createWompiOrder } = await import("./actions");
 
       const result = await createWompiOrder(
-        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        TEST_CUSTOMER,
         [{ productId: activeProductId, quantity: 1 }, { productId: inactiveProductId, quantity: 1 }]
       );
 
@@ -133,7 +143,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       const { createWompiOrder } = await import("./actions");
 
       const zeroResult = await createWompiOrder(
-        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        TEST_CUSTOMER,
         [{ productId: activeProductId, quantity: 0 }]
       );
       expect(zeroResult.ok).toBe(false);
@@ -141,7 +151,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(zeroResult.invalidProductIds).toEqual([activeProductId]);
 
       const negativeResult = await createWompiOrder(
-        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        TEST_CUSTOMER,
         [{ productId: activeProductId, quantity: -1 }]
       );
       expect(negativeResult.ok).toBe(false);
@@ -155,7 +165,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
     it("rejects an empty cart without creating an order", async () => {
       const { createWompiOrder } = await import("./actions");
 
-      const result = await createWompiOrder({ name: `${TEST_PREFIX}Ana`, phone: "3000000000" }, []);
+      const result = await createWompiOrder(TEST_CUSTOMER, []);
 
       expect(result.ok).toBe(false);
       if (result.ok) return;
@@ -171,7 +181,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       const { createWhatsAppOrder } = await import("./actions");
 
       const result = await createWhatsAppOrder(
-        { name: `${TEST_PREFIX}Ana`, phone: "3000000000" },
+        TEST_CUSTOMER,
         [{ productId: activeProductId, quantity: 3 }]
       );
 
@@ -183,6 +193,10 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(order?.status).toBe("pending_whatsapp");
       expect(order?.channel).toBe("whatsapp");
       expect(order?.total_cop).toBe(135000);
+      expect(order?.customer_email).toBe("ana@example.com");
+      expect(order?.shipping_address).toBe("Calle 1 # 2-34");
+      expect(order?.shipping_city).toBe("Bogotá");
+      expect(decodeURIComponent(result.whatsappUrl)).toContain("Dirección de envío: Calle 1 # 2-34, Bogotá");
     });
   });
 });
