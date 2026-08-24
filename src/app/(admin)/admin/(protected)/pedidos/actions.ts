@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requirePermission } from "@/lib/supabase/dal";
+import { sendOrderShippedEmail } from "@/lib/order-emails";
 
 export async function markOrderPaid(id: string) {
   await requirePermission("pedidos");
@@ -33,13 +34,32 @@ export async function markOrderShipped(id: string, formData: FormData) {
 
   const carrierChoice = formData.get("shipping_carrier") as string;
   const carrier = carrierChoice === "otro" ? (formData.get("shipping_carrier_other") as string) : carrierChoice;
+  const trackingNumber = formData.get("tracking_number") as string;
 
-  const { error } = await supabase
+  // .select(...) without .single() is deliberate: the .eq("status", "alistando")
+  // guard means an order in the wrong status matches 0 rows, and .single()
+  // would turn that into a thrown error instead of the silent no-op the
+  // guard is designed to produce.
+  const { data: updated, error } = await supabase
     .from("orders")
-    .update({ status: "shipped", shipping_carrier: carrier, tracking_number: formData.get("tracking_number") as string })
+    .update({ status: "shipped", shipping_carrier: carrier, tracking_number: trackingNumber })
     .eq("id", id)
-    .eq("status", "alistando");
+    .eq("status", "alistando")
+    .select("customer_name, customer_email");
   if (error) throw error;
+
+  if (updated && updated.length > 0) {
+    try {
+      await sendOrderShippedEmail({
+        customerName: updated[0].customer_name,
+        customerEmail: updated[0].customer_email,
+        carrier,
+        trackingNumber,
+      });
+    } catch (emailError) {
+      console.error("[resend]", emailError);
+    }
+  }
 
   revalidatePath("/admin/pedidos");
 }

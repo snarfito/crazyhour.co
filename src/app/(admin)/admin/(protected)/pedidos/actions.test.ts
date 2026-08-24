@@ -21,6 +21,11 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
+const mockSendOrderShippedEmail = vi.fn();
+vi.mock("@/lib/order-emails", () => ({
+  sendOrderShippedEmail: (...args: unknown[]) => mockSendOrderShippedEmail(...args),
+}));
+
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderPaid (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
@@ -132,13 +137,22 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderShipped (
 
   beforeEach(async () => {
     mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
+    mockSendOrderShippedEmail.mockReset();
+    mockSendOrderShippedEmail.mockResolvedValue(undefined);
     await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
   });
 
   it("marks an alistando order as shipped with the selected carrier and tracking number", async () => {
     const { data: order } = await admin
       .from("orders")
-      .insert({ channel: "whatsapp", status: "alistando", total_cop: 20000, customer_name: `${TEST_PREFIX}Ana`, customer_phone: "3000000000" })
+      .insert({
+        channel: "whatsapp",
+        status: "alistando",
+        total_cop: 20000,
+        customer_name: `${TEST_PREFIX}Ana`,
+        customer_phone: "3000000000",
+        customer_email: "ana@example.com",
+      })
       .select("id")
       .single();
     const { markOrderShipped } = await import("./actions");
@@ -154,6 +168,38 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderShipped (
     expect(updated?.shipping_carrier).toBe("Servientrega");
     expect(updated?.tracking_number).toBe("SV123456789");
     expect(mockRequirePermission).toHaveBeenCalledWith("pedidos");
+    expect(mockSendOrderShippedEmail).toHaveBeenCalledWith({
+      customerName: `${TEST_PREFIX}Ana`,
+      customerEmail: "ana@example.com",
+      carrier: "Servientrega",
+      trackingNumber: "SV123456789",
+    });
+  });
+
+  it("still marks the order shipped when the shipped-email send fails", async () => {
+    mockSendOrderShippedEmail.mockRejectedValueOnce(new Error("Resend is down"));
+    const { data: order } = await admin
+      .from("orders")
+      .insert({
+        channel: "whatsapp",
+        status: "alistando",
+        total_cop: 20000,
+        customer_name: `${TEST_PREFIX}Ana`,
+        customer_phone: "3000000000",
+        customer_email: "ana@example.com",
+      })
+      .select("id")
+      .single();
+    const { markOrderShipped } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("shipping_carrier", "TCC");
+    formData.set("tracking_number", "TCC-1");
+
+    await markOrderShipped(order!.id, formData);
+
+    const { data: updated } = await admin.from("orders").select("status").eq("id", order!.id).single();
+    expect(updated?.status).toBe("shipped");
   });
 
   it("uses the free-text carrier when 'otro' is selected", async () => {
