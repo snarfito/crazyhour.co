@@ -5,13 +5,17 @@ export function buildWhatsAppMessage({
   items,
   totalCop,
   address,
+  neighborhood,
   city,
+  extra,
 }: {
   customerName: string;
   items: { name: string; quantity: number; unitPriceCop: number }[];
   totalCop: number;
   address: string;
+  neighborhood: string;
   city: string;
+  extra?: string;
 }): string {
   const lines = [
     `Hola, soy ${customerName} y quiero hacer este pedido:`,
@@ -20,7 +24,8 @@ export function buildWhatsAppMessage({
     "",
     `Total: ${formatCOP(totalCop)}`,
     "",
-    `Dirección de envío: ${address}, ${city}`,
+    `Dirección de envío: ${address}, ${neighborhood}, ${city}`,
+    ...(extra ? [`Información adicional: ${extra}`] : []),
   ];
   return lines.join("\n");
 }

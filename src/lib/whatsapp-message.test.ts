@@ -11,6 +11,7 @@ describe("buildWhatsAppMessage", () => {
       ],
       totalCop: 115000,
       address: "Calle 1 # 2-34",
+      neighborhood: "Chapinero",
       city: "Bogotá",
     });
 
@@ -20,16 +21,45 @@ describe("buildWhatsAppMessage", () => {
     expect(message).toContain("Total: $ 115.000");
   });
 
-  it("includes the shipping address", () => {
+  it("includes the shipping address with neighborhood and city", () => {
     const message = buildWhatsAppMessage({
       customerName: "Ana",
       items: [{ name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 }],
       totalCop: 90000,
       address: "Calle 1 # 2-34",
+      neighborhood: "Chapinero",
       city: "Bogotá",
     });
 
-    expect(message).toContain("Dirección de envío: Calle 1 # 2-34, Bogotá");
+    expect(message).toContain("Dirección de envío: Calle 1 # 2-34, Chapinero, Bogotá");
+  });
+
+  it("includes additional info when provided", () => {
+    const message = buildWhatsAppMessage({
+      customerName: "Ana",
+      items: [{ name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 }],
+      totalCop: 90000,
+      address: "Calle 1 # 2-34",
+      neighborhood: "Chapinero",
+      city: "Bogotá",
+      extra: "Apto 502, torre 3",
+    });
+
+    expect(message).toContain("Información adicional: Apto 502, torre 3");
+  });
+
+  it("omits the additional info line when not provided", () => {
+    const message = buildWhatsAppMessage({
+      customerName: "Ana",
+      items: [{ name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 }],
+      totalCop: 90000,
+      address: "Calle 1 # 2-34",
+      neighborhood: "Chapinero",
+      city: "Bogotá",
+      extra: "",
+    });
+
+    expect(message).not.toContain("Información adicional");
   });
 });
 
