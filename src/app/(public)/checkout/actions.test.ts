@@ -100,9 +100,12 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(order?.shipping_neighborhood).toBe("Chapinero");
       expect(order?.shipping_city).toBe("Bogotá");
       expect(order?.shipping_extra).toBe("Apto 502");
+      expect(typeof result.orderNumber).toBe("number");
+      expect(order?.order_number).toBe(result.orderNumber);
       expect(mockSendOrderReceivedEmail).toHaveBeenCalledWith({
         customerName: TEST_CUSTOMER.name,
         customerEmail: TEST_CUSTOMER.email,
+        orderNumber: result.orderNumber,
         items: [{ productId: activeProductId, name: `${TEST_PREFIX}Piñata estrella`, quantity: 2, unitPriceCop: 45000 }],
         totalCop: 90000,
         address: TEST_CUSTOMER.address,
@@ -230,9 +233,13 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(order?.shipping_extra).toBe("Apto 502");
       expect(decodeURIComponent(result.whatsappUrl)).toContain("Dirección de envío: Calle 1 # 2-34, Chapinero, Bogotá");
       expect(decodeURIComponent(result.whatsappUrl)).toContain("Información adicional: Apto 502");
+      expect(typeof result.orderNumber).toBe("number");
+      expect(order?.order_number).toBe(result.orderNumber);
+      expect(decodeURIComponent(result.whatsappUrl)).toContain(`Pedido #${result.orderNumber}`);
       expect(mockSendOrderReceivedEmail).toHaveBeenCalledWith({
         customerName: TEST_CUSTOMER.name,
         customerEmail: TEST_CUSTOMER.email,
+        orderNumber: result.orderNumber,
         items: [{ productId: activeProductId, name: `${TEST_PREFIX}Piñata estrella`, quantity: 3, unitPriceCop: 45000 }],
         totalCop: 135000,
         address: TEST_CUSTOMER.address,

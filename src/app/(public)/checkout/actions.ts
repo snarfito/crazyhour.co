@@ -72,7 +72,7 @@ async function validateAndPriceItems(
 }
 
 export type WompiOrderResult =
-  | { ok: true; orderId: string; reference: string; amountInCents: number; currency: string; signature: string; publicKey: string }
+  | { ok: true; orderId: string; orderNumber: number; reference: string; amountInCents: number; currency: string; signature: string; publicKey: string }
   | ValidationError;
 
 export async function createWompiOrder(
@@ -99,7 +99,7 @@ export async function createWompiOrder(
       shipping_city: customer.city,
       shipping_extra: customer.extra || null,
     })
-    .select("id")
+    .select("id, order_number")
     .single();
   if (orderError || !order) throw orderError ?? new Error("No se pudo crear el pedido.");
 
@@ -117,6 +117,7 @@ export async function createWompiOrder(
     await sendOrderReceivedEmail({
       customerName: customer.name,
       customerEmail: customer.email,
+      orderNumber: order.order_number,
       items: priced.lines,
       totalCop: priced.totalCop,
       address: customer.address,
@@ -135,6 +136,7 @@ export async function createWompiOrder(
   return {
     ok: true,
     orderId: order.id,
+    orderNumber: order.order_number,
     reference: order.id,
     amountInCents,
     currency,
@@ -143,7 +145,7 @@ export async function createWompiOrder(
   };
 }
 
-export type WhatsAppOrderResult = { ok: true; orderId: string; whatsappUrl: string } | ValidationError;
+export type WhatsAppOrderResult = { ok: true; orderId: string; orderNumber: number; whatsappUrl: string } | ValidationError;
 
 export async function createWhatsAppOrder(
   customer: { name: string; phone: string; email: string; address: string; neighborhood: string; city: string; extra?: string },
@@ -169,7 +171,7 @@ export async function createWhatsAppOrder(
       shipping_city: customer.city,
       shipping_extra: customer.extra || null,
     })
-    .select("id")
+    .select("id, order_number")
     .single();
   if (orderError || !order) throw orderError ?? new Error("No se pudo crear el pedido.");
 
@@ -187,6 +189,7 @@ export async function createWhatsAppOrder(
     await sendOrderReceivedEmail({
       customerName: customer.name,
       customerEmail: customer.email,
+      orderNumber: order.order_number,
       items: priced.lines,
       totalCop: priced.totalCop,
       address: customer.address,
@@ -201,6 +204,7 @@ export async function createWhatsAppOrder(
   const whatsappNumber = await getWhatsAppNumber();
   const message = buildWhatsAppMessage({
     customerName: customer.name,
+    orderNumber: order.order_number,
     items: priced.lines,
     totalCop: priced.totalCop,
     address: customer.address,
@@ -209,5 +213,5 @@ export async function createWhatsAppOrder(
     extra: customer.extra,
   });
 
-  return { ok: true, orderId: order.id, whatsappUrl: buildWhatsAppUrl(whatsappNumber, message) };
+  return { ok: true, orderId: order.id, orderNumber: order.order_number, whatsappUrl: buildWhatsAppUrl(whatsappNumber, message) };
 }
