@@ -23,6 +23,7 @@ function emailShell(title: string, bodyHtml: string): string {
 
 export function buildOrderReceivedEmail({
   customerName,
+  orderNumber,
   items,
   totalCop,
   address,
@@ -31,6 +32,7 @@ export function buildOrderReceivedEmail({
   extra,
 }: {
   customerName: string;
+  orderNumber: number;
   items: { name: string; quantity: number; unitPriceCop: number }[];
   totalCop: number;
   address: string;
@@ -46,7 +48,7 @@ export function buildOrderReceivedEmail({
   return emailShell(
     "¡Gracias por tu pedido!",
     `
-      <p>Hola ${customerName}, recibimos tu pedido con estos productos:</p>
+      <p>Hola ${customerName}, recibimos tu pedido <strong>#${orderNumber}</strong> con estos productos:</p>
       <ul>${itemsHtml}</ul>
       <p style="color:#FC6000;font-weight:bold;">Total: ${formatCOP(totalCop)}</p>
       <p>Dirección de envío: ${fullAddress}</p>
@@ -56,17 +58,19 @@ export function buildOrderReceivedEmail({
 
 export function buildOrderShippedEmail({
   customerName,
+  orderNumber,
   carrier,
   trackingNumber,
 }: {
   customerName: string;
+  orderNumber: number;
   carrier: string;
   trackingNumber: string;
 }): string {
   return emailShell(
     "¡Tu pedido va en camino!",
     `
-      <p>Hola ${customerName}, tu pedido fue despachado.</p>
+      <p>Hola ${customerName}, tu pedido <strong>#${orderNumber}</strong> fue despachado.</p>
       <p>Transportadora: ${carrier}</p>
       <p>Número de guía: ${trackingNumber}</p>
     `
@@ -76,6 +80,7 @@ export function buildOrderShippedEmail({
 export async function sendOrderReceivedEmail(params: {
   customerName: string;
   customerEmail: string;
+  orderNumber: number;
   items: { name: string; quantity: number; unitPriceCop: number }[];
   totalCop: number;
   address: string;
@@ -90,7 +95,7 @@ export async function sendOrderReceivedEmail(params: {
       from: FROM,
       to: params.customerEmail,
       replyTo: contactEmail || undefined,
-      subject: "Recibimos tu pedido — Crazy Hour",
+      subject: `Recibimos tu pedido #${params.orderNumber} — Crazy Hour`,
       html: buildOrderReceivedEmail(params),
     });
   } catch (error) {
@@ -98,7 +103,13 @@ export async function sendOrderReceivedEmail(params: {
   }
 }
 
-export async function sendOrderShippedEmail(params: { customerName: string; customerEmail: string; carrier: string; trackingNumber: string }) {
+export async function sendOrderShippedEmail(params: {
+  customerName: string;
+  customerEmail: string;
+  orderNumber: number;
+  carrier: string;
+  trackingNumber: string;
+}) {
   try {
     const { contactEmail } = await getSettings();
     const resend = createResendClient();
@@ -106,7 +117,7 @@ export async function sendOrderShippedEmail(params: { customerName: string; cust
       from: FROM,
       to: params.customerEmail,
       replyTo: contactEmail || undefined,
-      subject: "Tu pedido va en camino — Crazy Hour",
+      subject: `Tu pedido #${params.orderNumber} va en camino — Crazy Hour`,
       html: buildOrderShippedEmail(params),
     });
   } catch (error) {

@@ -2,6 +2,7 @@ import { formatCOP } from "@/lib/format";
 
 export function buildWhatsAppMessage({
   customerName,
+  orderNumber,
   items,
   totalCop,
   address,
@@ -10,6 +11,7 @@ export function buildWhatsAppMessage({
   extra,
 }: {
   customerName: string;
+  orderNumber: number;
   items: { name: string; quantity: number; unitPriceCop: number }[];
   totalCop: number;
   address: string;
@@ -18,6 +20,7 @@ export function buildWhatsAppMessage({
   extra?: string;
 }): string {
   const lines = [
+    `Pedido #${orderNumber}`,
     `Hola, soy ${customerName} y quiero hacer este pedido:`,
     "",
     ...items.map((item) => `${item.quantity}x ${item.name} (${formatCOP(item.unitPriceCop)} c/u)`),

@@ -5,6 +5,7 @@ describe("buildWhatsAppMessage", () => {
   it("lists items with quantity and unit price, and a total", () => {
     const message = buildWhatsAppMessage({
       customerName: "Ana",
+      orderNumber: 1042,
       items: [
         { name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 },
         { name: "Globo metálico", quantity: 5, unitPriceCop: 5000 },
@@ -15,6 +16,7 @@ describe("buildWhatsAppMessage", () => {
       city: "Bogotá",
     });
 
+    expect(message).toContain("Pedido #1042");
     expect(message).toContain("Ana");
     expect(message).toContain("2x Piñata estrella ($ 45.000 c/u)");
     expect(message).toContain("5x Globo metálico ($ 5.000 c/u)");
@@ -24,6 +26,7 @@ describe("buildWhatsAppMessage", () => {
   it("includes the shipping address with neighborhood and city", () => {
     const message = buildWhatsAppMessage({
       customerName: "Ana",
+      orderNumber: 1042,
       items: [{ name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 }],
       totalCop: 90000,
       address: "Calle 1 # 2-34",
@@ -37,6 +40,7 @@ describe("buildWhatsAppMessage", () => {
   it("includes additional info when provided", () => {
     const message = buildWhatsAppMessage({
       customerName: "Ana",
+      orderNumber: 1042,
       items: [{ name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 }],
       totalCop: 90000,
       address: "Calle 1 # 2-34",
@@ -51,6 +55,7 @@ describe("buildWhatsAppMessage", () => {
   it("omits the additional info line when not provided", () => {
     const message = buildWhatsAppMessage({
       customerName: "Ana",
+      orderNumber: 1042,
       items: [{ name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 }],
       totalCop: 90000,
       address: "Calle 1 # 2-34",
