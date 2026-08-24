@@ -28,6 +28,7 @@ export function WhatsAppCheckoutButton({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<number | null>(null);
 
   async function handleClick() {
     setPending(true);
@@ -52,6 +53,7 @@ export function WhatsAppCheckoutButton({
       }
       clear();
       window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
+      setOrderNumber(result.orderNumber);
       setSent(true);
     } catch {
       setError("No se pudo crear el pedido. Intenta de nuevo.");
@@ -61,7 +63,11 @@ export function WhatsAppCheckoutButton({
   }
 
   if (sent) {
-    return <p className="text-sm text-muted-foreground">¡Listo! Te esperamos en WhatsApp para coordinar el pago.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        ¡Listo! Tu número de pedido es #{orderNumber}. Te esperamos en WhatsApp para coordinar el pago.
+      </p>
+    );
   }
 
   return (

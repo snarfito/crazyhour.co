@@ -32,7 +32,12 @@ describe("WhatsAppCheckoutButton", () => {
 
   it("creates the order, opens wa.me, and clears the cart", async () => {
     seedCart();
-    mockCreateWhatsAppOrder.mockResolvedValue({ ok: true, orderId: "order-1", whatsappUrl: "https://wa.me/573000000000?text=hola" });
+    mockCreateWhatsAppOrder.mockResolvedValue({
+      ok: true,
+      orderId: "order-1",
+      orderNumber: 1042,
+      whatsappUrl: "https://wa.me/573000000000?text=hola",
+    });
     const user = userEvent.setup();
     render(
       <CartProvider>
@@ -53,6 +58,7 @@ describe("WhatsAppCheckoutButton", () => {
 
     await waitFor(() => expect(window.open).toHaveBeenCalledWith("https://wa.me/573000000000?text=hola", "_blank", "noopener,noreferrer"));
     await waitFor(() => expect(screen.getByText(/te esperamos en whatsapp/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/número de pedido es #1042/i)).toBeInTheDocument());
   });
 
   it("shows the validation error without opening WhatsApp when the order fails", async () => {

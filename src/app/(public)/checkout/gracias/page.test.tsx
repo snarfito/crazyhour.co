@@ -18,16 +18,16 @@ vi.mock("@/lib/theme-settings", () => ({
 }));
 
 describe("GraciasPage", () => {
-  it("shows a generic processing message and the reference when there's no status", async () => {
-    const ui = await GraciasPage({ searchParams: Promise.resolve({ ref: "order-123" }) });
+  it("shows a generic processing message and the order number when there's no status", async () => {
+    const ui = await GraciasPage({ searchParams: Promise.resolve({ ref: "order-123", orderNumber: "1042" }) });
     render(ui);
 
     expect(screen.getByText(/gracias por tu compra/i)).toBeInTheDocument();
     expect(screen.getByText(/pago está siendo procesado/i)).toBeInTheDocument();
-    expect(screen.getByText(/order-123/)).toBeInTheDocument();
+    expect(screen.getByText(/1042/)).toBeInTheDocument();
   });
 
-  it("renders without a reference too", async () => {
+  it("renders without an order number too", async () => {
     const ui = await GraciasPage({ searchParams: Promise.resolve({}) });
     render(ui);
 

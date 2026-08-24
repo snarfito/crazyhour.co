@@ -36,6 +36,7 @@ describe("WompiCheckoutButton", () => {
     mockCreateWompiOrder.mockResolvedValue({
       ok: true,
       orderId: "order-1",
+      orderNumber: 1042,
       reference: "order-1",
       amountInCents: 4500000,
       currency: "COP",
@@ -75,7 +76,7 @@ describe("WompiCheckoutButton", () => {
       )
     );
     await waitFor(() => expect(window.WidgetCheckout).toHaveBeenCalled());
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/checkout/gracias?ref=order-1&status=APPROVED"));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/checkout/gracias?ref=order-1&status=APPROVED&orderNumber=1042"));
     expect(JSON.parse(localStorage.getItem("crazyhour_cart")!)).toEqual([]);
   });
 
@@ -87,6 +88,7 @@ describe("WompiCheckoutButton", () => {
     mockCreateWompiOrder.mockResolvedValue({
       ok: true,
       orderId: "order-1",
+      orderNumber: 1042,
       reference: "order-1",
       amountInCents: 4500000,
       currency: "COP",

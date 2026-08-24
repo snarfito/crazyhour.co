@@ -5,9 +5,9 @@ import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-set
 export default async function GraciasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string; status?: string }>;
+  searchParams: Promise<{ ref?: string; status?: string; orderNumber?: string }>;
 }) {
-  const [{ ref, status }, theme] = await Promise.all([searchParams, getEffectiveEventTheme()]);
+  const [{ status, orderNumber }, theme] = await Promise.all([searchParams, getEffectiveEventTheme()]);
   const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
   const approved = status === "APPROVED";
 
@@ -20,10 +20,10 @@ export default async function GraciasPage({
         </h1>
         <p className="mt-4 text-muted-foreground">
           {approved
-            ? "Ya estamos alistando tu pedido. Te avisaremos por WhatsApp con los detalles del envío."
-            : "Tu pago está siendo procesado. Te avisaremos por WhatsApp cuando esté confirmado."}
+            ? "Ya estamos alistando tu pedido. Te avisaremos por correo con los detalles del envío."
+            : "Tu pago está siendo procesado. Te avisaremos por correo cuando esté confirmado."}
         </p>
-        {ref && <p className="mt-2 text-xs text-muted-foreground">Referencia: {ref}</p>}
+        {orderNumber && <p className="mt-2 text-xs text-muted-foreground">N° de pedido: {orderNumber}</p>}
       </div>
     </>
   );
