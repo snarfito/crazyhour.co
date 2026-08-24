@@ -25,7 +25,14 @@ export async function fetchFilteredOrders(supabase: SupabaseClient<any>, filters
   if (filters.cliente) {
     // Escape ilike wildcards in user input so "_"/"%" in a name/phone don't match extra rows.
     const term = `%${filters.cliente.replace(/([\\%_])/g, "\\$1")}%`;
-    query = query.or(`customer_name.ilike.${term},customer_phone.ilike.${term}`);
+    const orConditions = [`customer_name.ilike.${term}`, `customer_phone.ilike.${term}`];
+    // Cap at Postgres's int4 max so a numeric-looking search (e.g. a 10-digit
+    // phone number) can't overflow the order_number column's integer type.
+    const trimmed = filters.cliente.trim();
+    if (/^\d+$/.test(trimmed) && Number(trimmed) <= 2147483647) {
+      orConditions.push(`order_number.eq.${trimmed}`);
+    }
+    query = query.or(orConditions.join(","));
   }
   const { data, error } = await query;
   if (error) throw error;

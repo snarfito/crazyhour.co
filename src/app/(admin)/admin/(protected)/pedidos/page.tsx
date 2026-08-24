@@ -90,6 +90,7 @@ export default async function PedidosPage({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>N° Pedido</TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Canal</TableHead>
@@ -101,7 +102,7 @@ export default async function PedidosPage({
           <TableBody>
             {orders.length === 0 ? (
               <TableRow>
-                <TableHead colSpan={6} className="py-6 text-center font-normal text-muted-foreground">
+                <TableHead colSpan={7} className="py-6 text-center font-normal text-muted-foreground">
                   Ningún pedido coincide con estos filtros.
                 </TableHead>
               </TableRow>

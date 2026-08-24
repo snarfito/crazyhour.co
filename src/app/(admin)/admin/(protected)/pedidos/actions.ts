@@ -45,7 +45,7 @@ export async function markOrderShipped(id: string, formData: FormData) {
     .update({ status: "shipped", shipping_carrier: carrier, tracking_number: trackingNumber })
     .eq("id", id)
     .eq("status", "alistando")
-    .select("customer_name, customer_email");
+    .select("order_number, customer_name, customer_email");
   if (error) throw error;
 
   if (updated && updated.length > 0) {
@@ -53,6 +53,7 @@ export async function markOrderShipped(id: string, formData: FormData) {
       await sendOrderShippedEmail({
         customerName: updated[0].customer_name,
         customerEmail: updated[0].customer_email,
+        orderNumber: updated[0].order_number,
         carrier,
         trackingNumber,
       });

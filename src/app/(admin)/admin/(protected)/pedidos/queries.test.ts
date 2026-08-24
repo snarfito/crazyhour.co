@@ -75,6 +75,20 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("pedidos queries (a
       expect(byPhone.map((o) => o.customer_phone)).toContain("3222222222");
     });
 
+    it("matches by order number when the search term is numeric", async () => {
+      const order = await insertOrder({ customer_name: `${TEST_PREFIX}ConNumero` });
+
+      const result = await fetchFilteredOrders(admin, {
+        desde: null,
+        hasta: null,
+        canal: null,
+        estado: null,
+        cliente: String(order.order_number),
+      });
+
+      expect(result.map((o) => o.id)).toContain(order.id);
+    });
+
     it("filters by date range", async () => {
       const inRange = await insertOrder({ customer_name: `${TEST_PREFIX}EnRango` });
       const desde = new Date(inRange.created_at);

@@ -27,6 +27,7 @@ export function OrderRow({
 }: {
   order: {
     id: string;
+    order_number: number;
     created_at: string;
     customer_name: string;
     customer_phone: string;
@@ -51,6 +52,7 @@ export function OrderRow({
         nativeButton={false}
         render={
           <TableRow className="cursor-pointer">
+            <TableCell className="font-medium text-foreground">#{order.order_number}</TableCell>
             <TableCell className="text-muted-foreground">
               {new Date(order.created_at).toLocaleString("es-CO")}
             </TableCell>
@@ -84,6 +86,8 @@ export function OrderRow({
           <DialogTitle>Pedido de {order.customer_name}</DialogTitle>
         </DialogHeader>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+          <dt className="text-muted-foreground">N° de pedido</dt>
+          <dd className="text-foreground">#{order.order_number}</dd>
           <dt className="text-muted-foreground">Fecha</dt>
           <dd className="text-foreground">{new Date(order.created_at).toLocaleString("es-CO")}</dd>
           <dt className="text-muted-foreground">Canal</dt>

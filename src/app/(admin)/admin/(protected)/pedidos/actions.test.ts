@@ -171,6 +171,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderShipped (
     expect(mockSendOrderShippedEmail).toHaveBeenCalledWith({
       customerName: `${TEST_PREFIX}Ana`,
       customerEmail: "ana@example.com",
+      orderNumber: updated?.order_number,
       carrier: "Servientrega",
       trackingNumber: "SV123456789",
     });
