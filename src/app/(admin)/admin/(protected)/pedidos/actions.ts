@@ -17,6 +17,33 @@ export async function markOrderPaid(id: string) {
   revalidatePath("/admin/pedidos");
 }
 
+export async function markOrderPreparing(id: string) {
+  await requirePermission("pedidos");
+  const supabase = createServiceClient();
+
+  const { error } = await supabase.from("orders").update({ status: "alistando" }).eq("id", id).eq("status", "paid");
+  if (error) throw error;
+
+  revalidatePath("/admin/pedidos");
+}
+
+export async function markOrderShipped(id: string, formData: FormData) {
+  await requirePermission("pedidos");
+  const supabase = createServiceClient();
+
+  const carrierChoice = formData.get("shipping_carrier") as string;
+  const carrier = carrierChoice === "otro" ? (formData.get("shipping_carrier_other") as string) : carrierChoice;
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ status: "shipped", shipping_carrier: carrier, tracking_number: formData.get("tracking_number") as string })
+    .eq("id", id)
+    .eq("status", "alistando");
+  if (error) throw error;
+
+  revalidatePath("/admin/pedidos");
+}
+
 export async function updateCustomerDetails(id: string, formData: FormData) {
   await requirePermission("pedidos");
   const supabase = createServiceClient();

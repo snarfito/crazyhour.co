@@ -74,6 +74,145 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderPaid (aga
   });
 });
 
+describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderPreparing (against local Supabase)", () => {
+  const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
+
+  beforeEach(async () => {
+    mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
+    await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
+  });
+
+  it("marks a paid order as alistando", async () => {
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "paid", total_cop: 20000, customer_name: `${TEST_PREFIX}Ana`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderPreparing } = await import("./actions");
+
+    await markOrderPreparing(order!.id);
+
+    const { data: updated } = await admin.from("orders").select("status").eq("id", order!.id).single();
+    expect(updated?.status).toBe("alistando");
+    expect(mockRequirePermission).toHaveBeenCalledWith("pedidos");
+  });
+
+  it("does not touch a pending_whatsapp order — only paid orders can move to alistando", async () => {
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "pending_whatsapp", total_cop: 20000, customer_name: `${TEST_PREFIX}Ana`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderPreparing } = await import("./actions");
+
+    await markOrderPreparing(order!.id);
+
+    const { data: updated } = await admin.from("orders").select("status").eq("id", order!.id).single();
+    expect(updated?.status).toBe("pending_whatsapp");
+  });
+
+  it("propagates rejection when the caller lacks the pedidos permission, without writing", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "paid", total_cop: 20000, customer_name: `${TEST_PREFIX}Rechazado`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderPreparing } = await import("./actions");
+
+    await expect(markOrderPreparing(order!.id)).rejects.toThrow();
+
+    const { data: unchanged } = await admin.from("orders").select("status").eq("id", order!.id).single();
+    expect(unchanged?.status).toBe("paid");
+  });
+});
+
+describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderShipped (against local Supabase)", () => {
+  const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
+
+  beforeEach(async () => {
+    mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
+    await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
+  });
+
+  it("marks an alistando order as shipped with the selected carrier and tracking number", async () => {
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "alistando", total_cop: 20000, customer_name: `${TEST_PREFIX}Ana`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderShipped } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("shipping_carrier", "Servientrega");
+    formData.set("tracking_number", "SV123456789");
+
+    await markOrderShipped(order!.id, formData);
+
+    const { data: updated } = await admin.from("orders").select("*").eq("id", order!.id).single();
+    expect(updated?.status).toBe("shipped");
+    expect(updated?.shipping_carrier).toBe("Servientrega");
+    expect(updated?.tracking_number).toBe("SV123456789");
+    expect(mockRequirePermission).toHaveBeenCalledWith("pedidos");
+  });
+
+  it("uses the free-text carrier when 'otro' is selected", async () => {
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "alistando", total_cop: 20000, customer_name: `${TEST_PREFIX}Ana`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderShipped } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("shipping_carrier", "otro");
+    formData.set("shipping_carrier_other", "Mensajería del barrio");
+    formData.set("tracking_number", "MB-01");
+
+    await markOrderShipped(order!.id, formData);
+
+    const { data: updated } = await admin.from("orders").select("shipping_carrier").eq("id", order!.id).single();
+    expect(updated?.shipping_carrier).toBe("Mensajería del barrio");
+  });
+
+  it("does not touch a paid order — only alistando orders can be marked shipped", async () => {
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "paid", total_cop: 20000, customer_name: `${TEST_PREFIX}Ana`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderShipped } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("shipping_carrier", "TCC");
+    formData.set("tracking_number", "TCC-1");
+
+    await markOrderShipped(order!.id, formData);
+
+    const { data: updated } = await admin.from("orders").select("status").eq("id", order!.id).single();
+    expect(updated?.status).toBe("paid");
+  });
+
+  it("propagates rejection when the caller lacks the pedidos permission, without writing", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "alistando", total_cop: 20000, customer_name: `${TEST_PREFIX}Rechazado`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { markOrderShipped } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("shipping_carrier", "TCC");
+    formData.set("tracking_number", "TCC-1");
+
+    await expect(markOrderShipped(order!.id, formData)).rejects.toThrow();
+
+    const { data: unchanged } = await admin.from("orders").select("status").eq("id", order!.id).single();
+    expect(unchanged?.status).toBe("alistando");
+  });
+});
+
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateCustomerDetails (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 
