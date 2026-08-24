@@ -5,6 +5,7 @@ import { calculateTieredPrice } from "@/lib/pricing";
 import { buildIntegritySignature } from "@/lib/wompi";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { getWhatsAppNumber } from "@/lib/settings";
+import { sendOrderReceivedEmail } from "@/lib/order-emails";
 
 export type CartItemInput = { productId: string; quantity: number };
 
@@ -112,6 +113,21 @@ export async function createWompiOrder(
   );
   if (itemsError) throw itemsError;
 
+  try {
+    await sendOrderReceivedEmail({
+      customerName: customer.name,
+      customerEmail: customer.email,
+      items: priced.lines,
+      totalCop: priced.totalCop,
+      address: customer.address,
+      neighborhood: customer.neighborhood,
+      city: customer.city,
+      extra: customer.extra,
+    });
+  } catch (error) {
+    console.error("[resend]", error);
+  }
+
   const amountInCents = priced.totalCop * 100;
   const currency = "COP";
   const signature = buildIntegritySignature({ reference: order.id, amountInCents, currency });
@@ -166,6 +182,21 @@ export async function createWhatsAppOrder(
     }))
   );
   if (itemsError) throw itemsError;
+
+  try {
+    await sendOrderReceivedEmail({
+      customerName: customer.name,
+      customerEmail: customer.email,
+      items: priced.lines,
+      totalCop: priced.totalCop,
+      address: customer.address,
+      neighborhood: customer.neighborhood,
+      city: customer.city,
+      extra: customer.extra,
+    });
+  } catch (error) {
+    console.error("[resend]", error);
+  }
 
   const whatsappNumber = await getWhatsAppNumber();
   const message = buildWhatsAppMessage({
