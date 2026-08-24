@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/components/cart/cart-context";
 import { createWompiOrder } from "./actions";
@@ -12,6 +13,7 @@ declare global {
 }
 
 const WOMPI_WIDGET_SRC = "https://checkout.wompi.co/widget.js";
+const SUCCESSFUL_STATUSES = new Set(["APPROVED", "PENDING"]);
 
 function loadWompiScript(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -43,6 +45,7 @@ export function WompiCheckoutButton({
   disabled?: boolean;
 }) {
   const { items, removeItem, clear } = useCart();
+  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,8 +71,16 @@ export function WompiCheckoutButton({
         signature: { integrity: result.signature },
         redirectUrl: `${window.location.origin}/checkout/gracias?ref=${result.reference}`,
       });
-      clear();
-      checkout.open(() => {});
+      checkout.open((widgetResult) => {
+        const status = (widgetResult as { transaction?: { status?: string } } | undefined)?.transaction?.status;
+        // Only clear the cart and navigate once Wompi confirms the transaction went
+        // through (or is pending bank confirmation) — a declined or abandoned
+        // checkout must leave the cart intact so the customer can retry.
+        if (status && SUCCESSFUL_STATUSES.has(status)) {
+          clear();
+          router.push(`/checkout/gracias?ref=${result.reference}`);
+        }
+      });
     } catch {
       setError("No se pudo iniciar el pago con Wompi. Intenta de nuevo.");
     } finally {

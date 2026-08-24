@@ -9,6 +9,11 @@ vi.mock("./actions", () => ({
   createWompiOrder: (...args: unknown[]) => mockCreateWompiOrder(...args),
 }));
 
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 function seedCart() {
   localStorage.setItem(
     "crazyhour_cart",
@@ -20,12 +25,13 @@ describe("WompiCheckoutButton", () => {
   beforeEach(() => {
     localStorage.clear();
     mockCreateWompiOrder.mockReset();
+    mockPush.mockReset();
     window.WidgetCheckout = vi.fn().mockImplementation(function () {
       return { open: (cb: (r: unknown) => void) => cb({ transaction: { status: "APPROVED" } }) };
     });
   });
 
-  it("creates the order, then opens the Wompi widget and clears the cart", async () => {
+  it("creates the order, then opens the Wompi widget, clears the cart, and redirects to /checkout/gracias once approved", async () => {
     seedCart();
     mockCreateWompiOrder.mockResolvedValue({
       ok: true,
@@ -48,6 +54,37 @@ describe("WompiCheckoutButton", () => {
 
     await waitFor(() => expect(mockCreateWompiOrder).toHaveBeenCalledWith({ name: "Ana", phone: "3000000000" }, [{ productId: "p1", quantity: 1 }]));
     await waitFor(() => expect(window.WidgetCheckout).toHaveBeenCalled());
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/checkout/gracias?ref=order-1"));
+    expect(JSON.parse(localStorage.getItem("crazyhour_cart")!)).toEqual([]);
+  });
+
+  it("keeps the cart and does not redirect when the transaction is declined", async () => {
+    window.WidgetCheckout = vi.fn().mockImplementation(function () {
+      return { open: (cb: (r: unknown) => void) => cb({ transaction: { status: "DECLINED" } }) };
+    });
+    seedCart();
+    mockCreateWompiOrder.mockResolvedValue({
+      ok: true,
+      orderId: "order-1",
+      reference: "order-1",
+      amountInCents: 4500000,
+      currency: "COP",
+      signature: "sig",
+      publicKey: "pub_test_xxx",
+    });
+    const user = userEvent.setup();
+    render(
+      <CartProvider>
+        <WompiCheckoutButton customerName="Ana" customerPhone="3000000000" />
+      </CartProvider>
+    );
+    await screen.findByText("Pagar con Wompi");
+
+    await user.click(screen.getByText("Pagar con Wompi"));
+
+    await waitFor(() => expect(window.WidgetCheckout).toHaveBeenCalled());
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem("crazyhour_cart")!)).toHaveLength(1);
   });
 
   it("shows the validation error and does not open the widget when the order fails", async () => {

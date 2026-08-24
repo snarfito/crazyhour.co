@@ -8,6 +8,10 @@ vi.mock("./actions", () => ({
   createWhatsAppOrder: vi.fn(),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 vi.mock("@/lib/settings", () => ({
   getActiveEventTheme: vi.fn().mockResolvedValue("none"),
 }));
