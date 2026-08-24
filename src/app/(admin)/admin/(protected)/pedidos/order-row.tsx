@@ -1,18 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SELECT_CLASSES } from "@/lib/admin-ui";
 import { formatCOP } from "@/lib/format";
-import { markOrderPaid, updateCustomerDetails } from "./actions";
+import { markOrderPaid, markOrderPreparing, markOrderShipped, updateCustomerDetails } from "./actions";
 import type { OrderLineItem } from "./queries";
+
+const CARRIER_OPTIONS = ["Inter Rapidísimo", "Coordinadora", "Servientrega", "Envía", "TCC"];
 
 const STATUS_LABEL: Record<string, string> = {
   pending_whatsapp: "Por confirmar (WhatsApp)",
   pending_wompi: "Por confirmar (Wompi)",
   paid: "Pagado",
+  alistando: "Alistando",
   shipped: "Enviado",
 };
 
@@ -30,12 +35,16 @@ export function OrderRow({
     shipping_neighborhood: string | null;
     shipping_city: string | null;
     shipping_extra: string | null;
+    shipping_carrier: string | null;
+    tracking_number: string | null;
     channel: string;
     total_cop: number;
     status: string;
   };
   items: OrderLineItem[];
 }) {
+  const [carrier, setCarrier] = useState(CARRIER_OPTIONS[0]);
+
   return (
     <Dialog>
       <DialogTrigger
@@ -59,6 +68,13 @@ export function OrderRow({
                   </Button>
                 </form>
               )}
+              {order.status === "paid" && (
+                <form action={markOrderPreparing.bind(null, order.id)}>
+                  <Button type="submit" variant="outline" size="sm">
+                    Marcar en alistamiento
+                  </Button>
+                </form>
+              )}
             </TableCell>
           </TableRow>
         }
@@ -74,6 +90,14 @@ export function OrderRow({
           <dd className="text-foreground capitalize">{order.channel}</dd>
           <dt className="text-muted-foreground">Estado</dt>
           <dd className="text-foreground">{STATUS_LABEL[order.status] ?? order.status}</dd>
+          {order.shipping_carrier && (
+            <>
+              <dt className="text-muted-foreground">Transportadora</dt>
+              <dd className="text-foreground">{order.shipping_carrier}</dd>
+              <dt className="text-muted-foreground">Guía</dt>
+              <dd className="text-foreground">{order.tracking_number}</dd>
+            </>
+          )}
         </dl>
         <form action={updateCustomerDetails.bind(null, order.id)} className="grid grid-cols-2 gap-3 border-t border-border pt-3">
           <div>
@@ -126,6 +150,45 @@ export function OrderRow({
             </Button>
           </div>
         </form>
+        {order.status === "alistando" && (
+          <form
+            action={markOrderShipped.bind(null, order.id)}
+            className="grid grid-cols-2 gap-3 border-t border-border pt-3"
+          >
+            <div>
+              <Label htmlFor={`shipping_carrier-${order.id}`}>Transportadora</Label>
+              <select
+                id={`shipping_carrier-${order.id}`}
+                name="shipping_carrier"
+                value={carrier}
+                onChange={(e) => setCarrier(e.target.value)}
+                className={SELECT_CLASSES}
+              >
+                {CARRIER_OPTIONS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor={`tracking_number-${order.id}`}>Número de guía</Label>
+              <Input id={`tracking_number-${order.id}`} name="tracking_number" required />
+            </div>
+            {carrier === "otro" && (
+              <div className="col-span-2">
+                <Label htmlFor={`shipping_carrier_other-${order.id}`}>Nombre de la transportadora</Label>
+                <Input id={`shipping_carrier_other-${order.id}`} name="shipping_carrier_other" required />
+              </div>
+            )}
+            <div className="col-span-2">
+              <Button type="submit" variant="outline" size="sm">
+                Marcar como enviado
+              </Button>
+            </div>
+          </form>
+        )}
         <div>
           <p className="mb-2 text-sm font-medium text-foreground">Productos</p>
           {items.length === 0 ? (

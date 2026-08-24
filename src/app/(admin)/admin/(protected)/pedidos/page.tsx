@@ -9,6 +9,7 @@ import { OrderFilters } from "./order-filters";
 import { OrderRow } from "./order-row";
 
 const PENDING_STATUSES = ["pending_whatsapp", "pending_wompi"];
+const PAID_STATUSES = ["paid", "alistando", "shipped"];
 
 export default async function PedidosPage({
   searchParams,
@@ -41,7 +42,7 @@ export default async function PedidosPage({
 
   const ordersToday = todayOrders?.length ?? 0;
   const revenueToday = (todayOrders ?? [])
-    .filter((o) => o.status === "paid")
+    .filter((o) => PAID_STATUSES.includes(o.status))
     .reduce((sum, o) => sum + o.total_cop, 0);
 
   return (

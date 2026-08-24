@@ -25,6 +25,7 @@ const ESTADO_OPTIONS = [
   { value: "pending_whatsapp", label: "Por confirmar (WhatsApp)" },
   { value: "pending_wompi", label: "Por confirmar (Wompi)" },
   { value: "paid", label: "Pagado" },
+  { value: "alistando", label: "Alistando" },
   { value: "shipped", label: "Enviado" },
 ];
 
