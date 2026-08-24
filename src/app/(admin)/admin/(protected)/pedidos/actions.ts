@@ -28,7 +28,9 @@ export async function updateCustomerDetails(id: string, formData: FormData) {
       customer_phone: formData.get("customer_phone") as string,
       customer_email: formData.get("customer_email") as string,
       shipping_address: formData.get("shipping_address") as string,
+      shipping_neighborhood: formData.get("shipping_neighborhood") as string,
       shipping_city: formData.get("shipping_city") as string,
+      shipping_extra: (formData.get("shipping_extra") as string) || null,
     })
     .eq("id", id);
   if (error) throw error;

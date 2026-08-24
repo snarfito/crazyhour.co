@@ -101,7 +101,9 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateCustomerDeta
     formData.set("customer_phone", "3000000001");
     formData.set("customer_email", "ana2@example.com");
     formData.set("shipping_address", "Calle 2 # 3-45");
+    formData.set("shipping_neighborhood", "Laureles");
     formData.set("shipping_city", "Medellín");
+    formData.set("shipping_extra", "Casa 2");
 
     await updateCustomerDetails(order!.id, formData);
 
@@ -110,8 +112,39 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateCustomerDeta
     expect(updated?.customer_phone).toBe("3000000001");
     expect(updated?.customer_email).toBe("ana2@example.com");
     expect(updated?.shipping_address).toBe("Calle 2 # 3-45");
+    expect(updated?.shipping_neighborhood).toBe("Laureles");
     expect(updated?.shipping_city).toBe("Medellín");
+    expect(updated?.shipping_extra).toBe("Casa 2");
     expect(mockRequirePermission).toHaveBeenCalledWith("pedidos");
+  });
+
+  it("stores a blank additional-info field as null", async () => {
+    const { data: order } = await admin
+      .from("orders")
+      .insert({
+        channel: "whatsapp",
+        status: "pending_whatsapp",
+        total_cop: 20000,
+        customer_name: `${TEST_PREFIX}SinExtra`,
+        customer_phone: "3000000000",
+      })
+      .select("id")
+      .single();
+    const { updateCustomerDetails } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("customer_name", `${TEST_PREFIX}SinExtra`);
+    formData.set("customer_phone", "3000000000");
+    formData.set("customer_email", "sin@example.com");
+    formData.set("shipping_address", "Calle 2 # 3-45");
+    formData.set("shipping_neighborhood", "Laureles");
+    formData.set("shipping_city", "Medellín");
+    formData.set("shipping_extra", "");
+
+    await updateCustomerDetails(order!.id, formData);
+
+    const { data: updated } = await admin.from("orders").select("shipping_extra").eq("id", order!.id).single();
+    expect(updated?.shipping_extra).toBeNull();
   });
 
   it("propagates rejection when the caller lacks the pedidos permission, without writing", async () => {

@@ -27,7 +27,9 @@ export function OrderRow({
     customer_phone: string;
     customer_email: string | null;
     shipping_address: string | null;
+    shipping_neighborhood: string | null;
     shipping_city: string | null;
+    shipping_extra: string | null;
     channel: string;
     total_cop: number;
     status: string;
@@ -93,6 +95,15 @@ export function OrderRow({
             />
           </div>
           <div>
+            <Label htmlFor={`shipping_neighborhood-${order.id}`}>Barrio</Label>
+            <Input
+              id={`shipping_neighborhood-${order.id}`}
+              name="shipping_neighborhood"
+              defaultValue={order.shipping_neighborhood ?? ""}
+              required
+            />
+          </div>
+          <div>
             <Label htmlFor={`shipping_city-${order.id}`}>Ciudad</Label>
             <Input id={`shipping_city-${order.id}`} name="shipping_city" defaultValue={order.shipping_city ?? ""} required />
           </div>
@@ -104,6 +115,10 @@ export function OrderRow({
               defaultValue={order.shipping_address ?? ""}
               required
             />
+          </div>
+          <div className="col-span-2">
+            <Label htmlFor={`shipping_extra-${order.id}`}>Información adicional (apto, casa, torre, etc.)</Label>
+            <Input id={`shipping_extra-${order.id}`} name="shipping_extra" defaultValue={order.shipping_extra ?? ""} />
           </div>
           <div className="col-span-2">
             <Button type="submit" variant="outline" size="sm">
