@@ -36,7 +36,13 @@ describe("WhatsAppCheckoutButton", () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <WhatsAppCheckoutButton customerName="Ana" customerPhone="3000000000" />
+        <WhatsAppCheckoutButton
+          customerName="Ana"
+          customerPhone="3000000000"
+          customerEmail="ana@example.com"
+          customerAddress="Calle 1 # 2-34"
+          customerCity="Bogotá"
+        />
       </CartProvider>
     );
     await screen.findByText("Pedir por WhatsApp");
@@ -57,7 +63,13 @@ describe("WhatsAppCheckoutButton", () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <WhatsAppCheckoutButton customerName="Ana" customerPhone="3000000000" />
+        <WhatsAppCheckoutButton
+          customerName="Ana"
+          customerPhone="3000000000"
+          customerEmail="ana@example.com"
+          customerAddress="Calle 1 # 2-34"
+          customerCity="Bogotá"
+        />
       </CartProvider>
     );
     await screen.findByText("Pedir por WhatsApp");

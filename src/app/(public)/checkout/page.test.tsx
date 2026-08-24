@@ -60,5 +60,8 @@ describe("CheckoutPage", () => {
     expect(screen.getByTestId("checkout-total")).toHaveTextContent("$ 90.000");
     expect(screen.getByText("Pagar con Wompi")).toBeInTheDocument();
     expect(screen.getByText("Pedir por WhatsApp")).toBeInTheDocument();
+    expect(screen.getByLabelText("Correo")).toBeInTheDocument();
+    expect(screen.getByLabelText("Dirección")).toBeInTheDocument();
+    expect(screen.getByLabelText("Ciudad")).toBeInTheDocument();
   });
 });

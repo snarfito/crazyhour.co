@@ -14,6 +14,9 @@ export function CheckoutPageClient() {
   const { items, subtotalCop } = useCart();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
 
   if (items.length === 0) {
     return (
@@ -26,7 +29,12 @@ export function CheckoutPageClient() {
     );
   }
 
-  const canSubmit = name.trim().length > 0 && phone.trim().length > 0;
+  const canSubmit =
+    name.trim().length > 0 &&
+    phone.trim().length > 0 &&
+    email.trim().length > 0 &&
+    address.trim().length > 0 &&
+    city.trim().length > 0;
 
   return (
     <div className="mx-auto max-w-md p-4">
@@ -54,10 +62,36 @@ export function CheckoutPageClient() {
           <Label htmlFor="customer_phone">Teléfono</Label>
           <Input id="customer_phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
         </div>
+        <div>
+          <Label htmlFor="customer_email">Correo</Label>
+          <Input id="customer_email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="shipping_address">Dirección</Label>
+          <Input id="shipping_address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="shipping_city">Ciudad</Label>
+          <Input id="shipping_city" value={city} onChange={(e) => setCity(e.target.value)} required />
+        </div>
       </div>
       <div className="mt-6 flex flex-col gap-3">
-        <WompiCheckoutButton customerName={name} customerPhone={phone} disabled={!canSubmit} />
-        <WhatsAppCheckoutButton customerName={name} customerPhone={phone} disabled={!canSubmit} />
+        <WompiCheckoutButton
+          customerName={name}
+          customerPhone={phone}
+          customerEmail={email}
+          customerAddress={address}
+          customerCity={city}
+          disabled={!canSubmit}
+        />
+        <WhatsAppCheckoutButton
+          customerName={name}
+          customerPhone={phone}
+          customerEmail={email}
+          customerAddress={address}
+          customerCity={city}
+          disabled={!canSubmit}
+        />
       </div>
     </div>
   );

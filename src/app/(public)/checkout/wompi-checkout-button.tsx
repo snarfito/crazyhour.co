@@ -38,10 +38,16 @@ function loadWompiScript(): Promise<void> {
 export function WompiCheckoutButton({
   customerName,
   customerPhone,
+  customerEmail,
+  customerAddress,
+  customerCity,
   disabled,
 }: {
   customerName: string;
   customerPhone: string;
+  customerEmail: string;
+  customerAddress: string;
+  customerCity: string;
   disabled?: boolean;
 }) {
   const { items, removeItem, clear } = useCart();
@@ -54,7 +60,7 @@ export function WompiCheckoutButton({
     setError(null);
     try {
       const result = await createWompiOrder(
-        { name: customerName, phone: customerPhone },
+        { name: customerName, phone: customerPhone, email: customerEmail, address: customerAddress, city: customerCity },
         items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
       );
       if (!result.ok) {

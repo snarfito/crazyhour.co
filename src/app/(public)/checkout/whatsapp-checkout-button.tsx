@@ -8,10 +8,16 @@ import { createWhatsAppOrder } from "./actions";
 export function WhatsAppCheckoutButton({
   customerName,
   customerPhone,
+  customerEmail,
+  customerAddress,
+  customerCity,
   disabled,
 }: {
   customerName: string;
   customerPhone: string;
+  customerEmail: string;
+  customerAddress: string;
+  customerCity: string;
   disabled?: boolean;
 }) {
   const { items, removeItem, clear } = useCart();
@@ -24,7 +30,7 @@ export function WhatsAppCheckoutButton({
     setError(null);
     try {
       const result = await createWhatsAppOrder(
-        { name: customerName, phone: customerPhone },
+        { name: customerName, phone: customerPhone, email: customerEmail, address: customerAddress, city: customerCity },
         items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
       );
       if (!result.ok) {

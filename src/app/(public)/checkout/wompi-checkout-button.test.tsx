@@ -45,14 +45,25 @@ describe("WompiCheckoutButton", () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <WompiCheckoutButton customerName="Ana" customerPhone="3000000000" />
+        <WompiCheckoutButton
+          customerName="Ana"
+          customerPhone="3000000000"
+          customerEmail="ana@example.com"
+          customerAddress="Calle 1 # 2-34"
+          customerCity="Bogotá"
+        />
       </CartProvider>
     );
     await screen.findByText("Pagar con Wompi"); // wait for cart hydration
 
     await user.click(screen.getByText("Pagar con Wompi"));
 
-    await waitFor(() => expect(mockCreateWompiOrder).toHaveBeenCalledWith({ name: "Ana", phone: "3000000000" }, [{ productId: "p1", quantity: 1 }]));
+    await waitFor(() =>
+      expect(mockCreateWompiOrder).toHaveBeenCalledWith(
+        { name: "Ana", phone: "3000000000", email: "ana@example.com", address: "Calle 1 # 2-34", city: "Bogotá" },
+        [{ productId: "p1", quantity: 1 }]
+      )
+    );
     await waitFor(() => expect(window.WidgetCheckout).toHaveBeenCalled());
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/checkout/gracias?ref=order-1&status=APPROVED"));
     expect(JSON.parse(localStorage.getItem("crazyhour_cart")!)).toEqual([]);
@@ -75,7 +86,13 @@ describe("WompiCheckoutButton", () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <WompiCheckoutButton customerName="Ana" customerPhone="3000000000" />
+        <WompiCheckoutButton
+          customerName="Ana"
+          customerPhone="3000000000"
+          customerEmail="ana@example.com"
+          customerAddress="Calle 1 # 2-34"
+          customerCity="Bogotá"
+        />
       </CartProvider>
     );
     await screen.findByText("Pagar con Wompi");
@@ -97,7 +114,13 @@ describe("WompiCheckoutButton", () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <WompiCheckoutButton customerName="Ana" customerPhone="3000000000" />
+        <WompiCheckoutButton
+          customerName="Ana"
+          customerPhone="3000000000"
+          customerEmail="ana@example.com"
+          customerAddress="Calle 1 # 2-34"
+          customerCity="Bogotá"
+        />
       </CartProvider>
     );
     await screen.findByText("Pagar con Wompi");
