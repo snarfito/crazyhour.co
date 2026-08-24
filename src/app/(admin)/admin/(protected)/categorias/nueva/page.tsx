@@ -2,7 +2,7 @@ import { createCategory } from "../actions";
 import { buildThemeOptions } from "@/lib/event-themes";
 import { getAllThemeMotionSettings } from "@/lib/theme-settings";
 import { SELECT_CLASSES } from "@/lib/admin-ui";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/admin/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,9 +51,7 @@ export default async function NuevaCategoriaPage() {
                 Solo una categoría puede estar destacada — activarla aquí quita la marca a cualquier otra.
               </p>
             </div>
-            <Button type="submit" className="self-start">
-              Crear
-            </Button>
+            <SubmitButton className="self-start">Crear</SubmitButton>
           </form>
         </CardContent>
       </Card>

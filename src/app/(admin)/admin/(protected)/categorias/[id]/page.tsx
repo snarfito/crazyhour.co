@@ -4,7 +4,7 @@ import { updateCategory } from "../actions";
 import { buildThemeOptions } from "@/lib/event-themes";
 import { getAllThemeMotionSettings } from "@/lib/theme-settings";
 import { SELECT_CLASSES } from "@/lib/admin-ui";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/admin/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,9 +80,7 @@ export default async function EditarCategoriaPage({
                 Solo una categoría puede estar destacada — activarla aquí quita la marca a cualquier otra.
               </p>
             </div>
-            <Button type="submit" className="self-start">
-              Guardar
-            </Button>
+            <SubmitButton className="self-start">Guardar</SubmitButton>
           </form>
         </CardContent>
       </Card>

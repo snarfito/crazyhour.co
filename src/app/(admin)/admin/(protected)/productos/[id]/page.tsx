@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateProduct } from "../actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/admin/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,9 +108,7 @@ export default async function EditarProductoPage({
               <Label htmlFor="sku">SKU</Label>
               <Input id="sku" name="sku" defaultValue={product.sku ?? ""} />
             </div>
-            <Button type="submit" className="self-start">
-              Guardar
-            </Button>
+            <SubmitButton className="self-start">Guardar</SubmitButton>
           </form>
         </CardContent>
       </Card>

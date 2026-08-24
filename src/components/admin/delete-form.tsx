@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/admin/submit-button";
 
 export function DeleteForm({
   action,
@@ -19,10 +19,10 @@ export function DeleteForm({
         if (!confirm(confirmMessage)) e.preventDefault();
       }}
     >
-      <Button type="submit" variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+      <SubmitButton variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
         <Trash2 />
         {children}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

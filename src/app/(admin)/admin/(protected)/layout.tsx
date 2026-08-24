@@ -1,7 +1,7 @@
 import { verifySession } from "@/lib/supabase/dal";
 import { signOut } from "../login/actions";
 import { AdminNav } from "./admin-nav";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/admin/submit-button";
 
 export default async function ProtectedAdminLayout({
   children,
@@ -26,9 +26,9 @@ export default async function ProtectedAdminLayout({
             </span>
           </div>
           <form action={signOut}>
-            <Button type="submit" variant="outline" size="sm">
+            <SubmitButton variant="outline" size="sm">
               Cerrar sesión
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </header>

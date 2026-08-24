@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DeleteForm } from "@/components/admin/delete-form";
+import { SubmitButton } from "@/components/admin/submit-button";
 import { SELECT_CLASSES } from "@/lib/admin-ui";
 import { formatCOP } from "@/lib/format";
 import { deleteOrder, markOrderPaid, markOrderPreparing, markOrderShipped, updateCustomerDetails } from "./actions";
@@ -66,16 +66,16 @@ export function OrderRow({
             <TableCell onClick={(e) => e.stopPropagation()}>
               {order.status === "pending_whatsapp" && (
                 <form action={markOrderPaid.bind(null, order.id)}>
-                  <Button type="submit" variant="outline" size="sm">
+                  <SubmitButton variant="outline" size="sm">
                     Marcar como pagado
-                  </Button>
+                  </SubmitButton>
                 </form>
               )}
               {order.status === "paid" && (
                 <form action={markOrderPreparing.bind(null, order.id)}>
-                  <Button type="submit" variant="outline" size="sm">
+                  <SubmitButton variant="outline" size="sm">
                     Marcar en alistamiento
-                  </Button>
+                  </SubmitButton>
                 </form>
               )}
             </TableCell>
@@ -150,9 +150,9 @@ export function OrderRow({
             <Input id={`shipping_extra-${order.id}`} name="shipping_extra" defaultValue={order.shipping_extra ?? ""} />
           </div>
           <div className="col-span-2">
-            <Button type="submit" variant="outline" size="sm">
+            <SubmitButton variant="outline" size="sm">
               Guardar cambios
-            </Button>
+            </SubmitButton>
           </div>
         </form>
         {order.status === "alistando" && (
@@ -188,9 +188,9 @@ export function OrderRow({
               </div>
             )}
             <div className="col-span-2">
-              <Button type="submit" variant="outline" size="sm">
+              <SubmitButton variant="outline" size="sm">
                 Marcar como enviado
-              </Button>
+              </SubmitButton>
             </div>
           </form>
         )}

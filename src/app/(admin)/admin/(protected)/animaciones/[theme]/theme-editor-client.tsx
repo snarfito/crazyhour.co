@@ -4,7 +4,7 @@ import { useState } from "react";
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/admin/submit-button";
 import type { ThemeMotionSettings } from "@/lib/theme-settings";
 import type { EventTheme } from "@/lib/event-themes";
 import { updateThemeSettingsAction } from "./actions";
@@ -137,7 +137,7 @@ export function ThemeEditorClient({
           </p>
         </div>
 
-        <Button type="submit">Guardar</Button>
+        <SubmitButton>Guardar</SubmitButton>
       </form>
 
       <div className="shrink-0 lg:w-80">

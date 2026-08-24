@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createProduct } from "../actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/admin/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,9 +69,7 @@ export default async function NuevoProductoPage() {
               <Label htmlFor="sku">SKU</Label>
               <Input id="sku" name="sku" />
             </div>
-            <Button type="submit" className="self-start">
-              Crear
-            </Button>
+            <SubmitButton className="self-start">Crear</SubmitButton>
           </form>
         </CardContent>
       </Card>
