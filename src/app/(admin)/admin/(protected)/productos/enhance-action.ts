@@ -2,11 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { verifySession } from "@/lib/supabase/dal";
+import { requirePermission } from "@/lib/supabase/dal";
 import { enhanceImage } from "@/lib/gemini/enhance";
 
+// original_url is only ever set from getPublicUrl() on this bucket (see
+// image-upload.tsx) — enforcing that prefix before fetching it server-side
+// stops an admin from pointing this at an arbitrary host (SSRF) by writing
+// a crafted URL into product_images.original_url.
+const CATALOG_IMAGE_URL_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/catalog-images/`;
+
 export async function enhanceProductImage(imageId: string, prompt: string) {
-  await verifySession();
+  await requirePermission("productos");
   const supabase = await createClient();
 
   const { data: image } = await supabase
@@ -15,6 +21,9 @@ export async function enhanceProductImage(imageId: string, prompt: string) {
     .eq("id", imageId)
     .single();
   if (!image) throw new Error("Imagen no encontrada.");
+  if (!image.original_url.startsWith(CATALOG_IMAGE_URL_PREFIX)) {
+    throw new Error("URL de imagen no válida.");
+  }
 
   const originalResponse = await fetch(image.original_url);
   const originalBytes = Buffer.from(await originalResponse.arrayBuffer());
