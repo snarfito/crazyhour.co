@@ -57,15 +57,32 @@ describe("verifyWebhookSignature", () => {
     const timestamp = 1700000000;
     const transaction = { id: "txn-1", status: "APPROVED", reference: "order-123", amount_in_cents: 4500000 };
     const checksum = createHash("sha256")
-      .update(`${transaction.id}${transaction.status}${transaction.amount_in_cents}${timestamp}test-events-secret`)
+      .update(`${transaction.id}${transaction.status}${transaction.reference}${transaction.amount_in_cents}${timestamp}test-events-secret`)
       .digest("hex");
     return {
       event: "transaction.updated",
       data: { transaction },
-      signature: { properties: ["transaction.id", "transaction.status", "transaction.amount_in_cents"], checksum },
+      signature: {
+        properties: ["transaction.id", "transaction.status", "transaction.reference", "transaction.amount_in_cents"],
+        checksum,
+      },
       timestamp,
     };
   }
+
+  it("rejects a swapped `reference` even if `signature.properties` claims reference wasn't signed", async () => {
+    const { verifyWebhookSignature } = await import("./wompi");
+    const payload = buildValidPayload();
+    // Simulates replaying a genuinely-signed webhook (for a real, cheap
+    // transaction) against a different order: an attacker swaps `reference`
+    // and lies about `properties` to try to make the handler treat
+    // `reference` as unsigned. The signed-fields list is fixed server-side
+    // (SIGNED_PROPERTIES), so this must still fail.
+    payload.data.transaction.reference = "order-456";
+    payload.signature.properties = ["transaction.id", "transaction.status", "transaction.amount_in_cents"];
+
+    expect(verifyWebhookSignature(payload)).toBe(false);
+  });
 
   it("accepts a correctly-signed payload", async () => {
     const { verifyWebhookSignature } = await import("./wompi");

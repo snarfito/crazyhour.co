@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { requirePermission } from "@/lib/supabase/dal";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { CategoriasListClient } from "./categorias-list-client";
 export default async function CategoriasLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  await requirePermission("categorias");
   const supabase = await createClient();
   const { data: categories } = await supabase
     .from("categories")

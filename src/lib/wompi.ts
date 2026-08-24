@@ -1,5 +1,5 @@
 import "server-only";
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 
 export type WompiWebhookPayload = {
   event: string;
@@ -39,17 +39,22 @@ function getByPath(data: WompiWebhookPayload["data"], path: string): string {
   return String(value ?? "");
 }
 
+// Fixed, not read from the request: `payload.signature.properties` is attacker-controlled,
+// and trusting it would let a replayed webhook omit `reference`/`amount_in_cents` from what
+// gets hashed, decoupling the signature from which order it confirms and for how much.
+const SIGNED_PROPERTIES = ["transaction.id", "transaction.status", "transaction.reference", "transaction.amount_in_cents"];
+
 export function verifyWebhookSignature(payload: WompiWebhookPayload): boolean {
   const secret = process.env.WOMPI_EVENTS_SECRET;
   if (!secret) return false;
 
   try {
-    const concatenatedValues = payload.signature.properties.map((path) => getByPath(payload.data, path)).join("");
+    const concatenatedValues = SIGNED_PROPERTIES.map((path) => getByPath(payload.data, path)).join("");
     const expected = createHash("sha256")
       .update(`${concatenatedValues}${payload.timestamp}${secret}`)
       .digest("hex");
 
-    return expected.toLowerCase() === payload.signature.checksum.toLowerCase();
+    return timingSafeEqual(Buffer.from(expected.toLowerCase()), Buffer.from(payload.signature.checksum.toLowerCase()));
   } catch {
     return false;
   }

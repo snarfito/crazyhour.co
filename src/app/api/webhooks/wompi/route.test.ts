@@ -139,6 +139,17 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("POST /api/webhooks
     expect(order?.status).toBe("pending_wompi");
   });
 
+  it("rejects an APPROVED transaction whose amount doesn't match the order total", async () => {
+    const { POST } = await import("./route");
+    const payload = signPayload({ id: "txn-5", status: "APPROVED", reference: orderId, amount_in_cents: 100 });
+
+    const response = await POST(new Request("http://localhost/api/webhooks/wompi", { method: "POST", body: JSON.stringify(payload) }));
+
+    expect(response.status).toBe(401);
+    const { data: order } = await admin.from("orders").select("status").eq("id", orderId).single();
+    expect(order?.status).toBe("pending_wompi");
+  });
+
   it("does not re-process an order that's already paid (idempotent)", async () => {
     const { POST } = await import("./route");
     await admin.from("orders").update({ status: "paid", wompi_transaction_id: "txn-original" }).eq("id", orderId);

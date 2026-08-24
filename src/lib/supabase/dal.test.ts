@@ -124,4 +124,38 @@ describe("requirePermission", () => {
 
     await expect(requirePermission("usuarios")).rejects.toThrow("REDIRECT:/admin/pedidos");
   });
+
+  it("redirects to the caller's first granted section, not a hardcoded one, when pedidos is also denied", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "admin@crazyhour.co" } },
+      error: null,
+    });
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        can_pedidos: false, can_productos: true, can_categorias: false,
+        can_ajustes: false, can_animaciones: false, can_usuarios: false,
+      },
+      error: null,
+    });
+    const { requirePermission } = await import("@/lib/supabase/dal");
+
+    await expect(requirePermission("pedidos")).rejects.toThrow("REDIRECT:/admin/productos");
+  });
+
+  it("redirects to /admin/login when the caller has no granted sections at all (no redirect loop)", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "admin@crazyhour.co" } },
+      error: null,
+    });
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        can_pedidos: false, can_productos: false, can_categorias: false,
+        can_ajustes: false, can_animaciones: false, can_usuarios: false,
+      },
+      error: null,
+    });
+    const { requirePermission } = await import("@/lib/supabase/dal");
+
+    await expect(requirePermission("pedidos")).rejects.toThrow("REDIRECT:/admin/login");
+  });
 });

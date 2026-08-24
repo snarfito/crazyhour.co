@@ -6,6 +6,11 @@ import { render, screen } from "@testing-library/react";
 // outside a real Next.js server render (same fix as the animaciones layout test).
 vi.mock("server-only", () => ({}));
 
+const mockRequirePermission = vi.fn().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co" });
+vi.mock("@/lib/supabase/dal", () => ({
+  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+}));
+
 const mockCategories = [
   { id: "1", name: "Piñatas", slug: "pinatas", sort_order: 0 },
   { id: "2", name: "Globos", slug: "globos", sort_order: 1 },
@@ -37,5 +42,13 @@ describe("CategoriasLayout", () => {
     expect(screen.getByText("Globos")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Nueva/ })).toHaveAttribute("href", "/admin/categorias/nueva");
     expect(screen.getByText("editor")).toBeInTheDocument();
+  });
+
+  it("redirects when the caller lacks the categorias permission", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const CategoriasLayout = (await import("./layout")).default;
+
+    await expect(CategoriasLayout({ children: <p>editor</p> })).rejects.toThrow("REDIRECT:/admin/pedidos");
+    expect(mockRequirePermission).toHaveBeenCalledWith("categorias");
   });
 });

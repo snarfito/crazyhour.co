@@ -14,9 +14,15 @@ export async function POST(request: Request) {
     return new Response("Invalid signature", { status: 401 });
   }
 
-  const { status, reference, id } = payload.data.transaction;
+  const { status, reference, id, amount_in_cents } = payload.data.transaction;
   if (status === "APPROVED") {
     const supabase = createServiceClient();
+
+    const { data: order } = await supabase.from("orders").select("total_cop").eq("id", reference).single();
+    if (!order || order.total_cop * 100 !== amount_in_cents) {
+      return new Response("Amount mismatch", { status: 401 });
+    }
+
     // The .eq("status", "pending_wompi") guard makes this idempotent against
     // Wompi's webhook retries: a second APPROVED event for an already-paid
     // order matches zero rows instead of overwriting wompi_transaction_id

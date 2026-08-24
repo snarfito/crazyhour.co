@@ -57,10 +57,26 @@ export const verifySession = cache(async () => {
   return { userId: user.id, email: user.email ?? "", permissions: adminPermissionsFromRow(adminUser) };
 });
 
+const SECTION_PATHS: Array<[keyof AdminPermissions, string]> = [
+  ["pedidos", "/admin/pedidos"],
+  ["productos", "/admin/productos"],
+  ["categorias", "/admin/categorias"],
+  ["ajustes", "/admin/ajustes"],
+  ["animaciones", "/admin/animaciones"],
+  ["usuarios", "/admin/usuarios"],
+];
+
+// Falls back to the admin's first granted section instead of a hardcoded path,
+// so this can't redirect a permission failure back into a loop on that same section.
+export function firstAllowedPath(permissions: AdminPermissions): string {
+  const match = SECTION_PATHS.find(([key]) => permissions[key]);
+  return match ? match[1] : "/admin/login";
+}
+
 export async function requirePermission(permission: keyof AdminPermissions) {
   const session = await verifySession();
   if (!session.permissions[permission]) {
-    redirect("/admin/pedidos");
+    redirect(firstAllowedPath(session.permissions));
   }
   return session;
 }

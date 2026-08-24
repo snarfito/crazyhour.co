@@ -1,4 +1,5 @@
 import { ClipboardList, Wallet, Clock } from "lucide-react";
+import { requirePermission } from "@/lib/supabase/dal";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,7 @@ export default async function PedidosPage({
 }: {
   searchParams: Promise<{ rango?: string; desde?: string; hasta?: string; canal?: string; estado?: string; cliente?: string }>;
 }) {
+  await requirePermission("pedidos");
   const params = await searchParams;
   const supabase = createServiceClient();
   const startOfToday = new Date();
