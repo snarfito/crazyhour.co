@@ -54,7 +54,7 @@ describe("WompiCheckoutButton", () => {
 
     await waitFor(() => expect(mockCreateWompiOrder).toHaveBeenCalledWith({ name: "Ana", phone: "3000000000" }, [{ productId: "p1", quantity: 1 }]));
     await waitFor(() => expect(window.WidgetCheckout).toHaveBeenCalled());
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/checkout/gracias?ref=order-1"));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/checkout/gracias?ref=order-1&status=APPROVED"));
     expect(JSON.parse(localStorage.getItem("crazyhour_cart")!)).toEqual([]);
   });
 

@@ -78,7 +78,7 @@ export function WompiCheckoutButton({
         // checkout must leave the cart intact so the customer can retry.
         if (status && SUCCESSFUL_STATUSES.has(status)) {
           clear();
-          router.push(`/checkout/gracias?ref=${result.reference}`);
+          router.push(`/checkout/gracias?ref=${result.reference}&status=${status}`);
         }
       });
     } catch {
