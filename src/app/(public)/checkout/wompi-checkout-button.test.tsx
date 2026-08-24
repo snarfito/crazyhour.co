@@ -50,7 +50,9 @@ describe("WompiCheckoutButton", () => {
           customerPhone="3000000000"
           customerEmail="ana@example.com"
           customerAddress="Calle 1 # 2-34"
+          customerNeighborhood="Chapinero"
           customerCity="Bogotá"
+          customerExtra="Apto 502"
         />
       </CartProvider>
     );
@@ -60,7 +62,15 @@ describe("WompiCheckoutButton", () => {
 
     await waitFor(() =>
       expect(mockCreateWompiOrder).toHaveBeenCalledWith(
-        { name: "Ana", phone: "3000000000", email: "ana@example.com", address: "Calle 1 # 2-34", city: "Bogotá" },
+        {
+          name: "Ana",
+          phone: "3000000000",
+          email: "ana@example.com",
+          address: "Calle 1 # 2-34",
+          neighborhood: "Chapinero",
+          city: "Bogotá",
+          extra: "Apto 502",
+        },
         [{ productId: "p1", quantity: 1 }]
       )
     );
@@ -91,7 +101,9 @@ describe("WompiCheckoutButton", () => {
           customerPhone="3000000000"
           customerEmail="ana@example.com"
           customerAddress="Calle 1 # 2-34"
+          customerNeighborhood="Chapinero"
           customerCity="Bogotá"
+          customerExtra="Apto 502"
         />
       </CartProvider>
     );
@@ -119,7 +131,9 @@ describe("WompiCheckoutButton", () => {
           customerPhone="3000000000"
           customerEmail="ana@example.com"
           customerAddress="Calle 1 # 2-34"
+          customerNeighborhood="Chapinero"
           customerCity="Bogotá"
+          customerExtra="Apto 502"
         />
       </CartProvider>
     );

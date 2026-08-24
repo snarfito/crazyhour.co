@@ -10,14 +10,18 @@ export function WhatsAppCheckoutButton({
   customerPhone,
   customerEmail,
   customerAddress,
+  customerNeighborhood,
   customerCity,
+  customerExtra,
   disabled,
 }: {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
   customerAddress: string;
+  customerNeighborhood: string;
   customerCity: string;
+  customerExtra?: string;
   disabled?: boolean;
 }) {
   const { items, removeItem, clear } = useCart();
@@ -30,7 +34,15 @@ export function WhatsAppCheckoutButton({
     setError(null);
     try {
       const result = await createWhatsAppOrder(
-        { name: customerName, phone: customerPhone, email: customerEmail, address: customerAddress, city: customerCity },
+        {
+          name: customerName,
+          phone: customerPhone,
+          email: customerEmail,
+          address: customerAddress,
+          neighborhood: customerNeighborhood,
+          city: customerCity,
+          extra: customerExtra,
+        },
         items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
       );
       if (!result.ok) {

@@ -16,7 +16,9 @@ export function CheckoutPageClient() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
   const [city, setCity] = useState("");
+  const [extra, setExtra] = useState("");
 
   if (items.length === 0) {
     return (
@@ -34,6 +36,7 @@ export function CheckoutPageClient() {
     phone.trim().length > 0 &&
     email.trim().length > 0 &&
     address.trim().length > 0 &&
+    neighborhood.trim().length > 0 &&
     city.trim().length > 0;
 
   return (
@@ -71,8 +74,16 @@ export function CheckoutPageClient() {
           <Input id="shipping_address" value={address} onChange={(e) => setAddress(e.target.value)} required />
         </div>
         <div>
+          <Label htmlFor="shipping_neighborhood">Barrio</Label>
+          <Input id="shipping_neighborhood" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} required />
+        </div>
+        <div>
           <Label htmlFor="shipping_city">Ciudad</Label>
           <Input id="shipping_city" value={city} onChange={(e) => setCity(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="shipping_extra">Información adicional (apto, casa, torre, etc.)</Label>
+          <Input id="shipping_extra" value={extra} onChange={(e) => setExtra(e.target.value)} />
         </div>
       </div>
       <div className="mt-6 flex flex-col gap-3">
@@ -81,7 +92,9 @@ export function CheckoutPageClient() {
           customerPhone={phone}
           customerEmail={email}
           customerAddress={address}
+          customerNeighborhood={neighborhood}
           customerCity={city}
+          customerExtra={extra}
           disabled={!canSubmit}
         />
         <WhatsAppCheckoutButton
@@ -89,7 +102,9 @@ export function CheckoutPageClient() {
           customerPhone={phone}
           customerEmail={email}
           customerAddress={address}
+          customerNeighborhood={neighborhood}
           customerCity={city}
+          customerExtra={extra}
           disabled={!canSubmit}
         />
       </div>

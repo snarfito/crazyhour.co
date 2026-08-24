@@ -62,6 +62,8 @@ describe("CheckoutPage", () => {
     expect(screen.getByText("Pedir por WhatsApp")).toBeInTheDocument();
     expect(screen.getByLabelText("Correo")).toBeInTheDocument();
     expect(screen.getByLabelText("Dirección")).toBeInTheDocument();
+    expect(screen.getByLabelText("Barrio")).toBeInTheDocument();
     expect(screen.getByLabelText("Ciudad")).toBeInTheDocument();
+    expect(screen.getByLabelText(/información adicional/i)).toBeInTheDocument();
   });
 });

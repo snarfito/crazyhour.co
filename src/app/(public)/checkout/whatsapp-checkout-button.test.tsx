@@ -41,7 +41,9 @@ describe("WhatsAppCheckoutButton", () => {
           customerPhone="3000000000"
           customerEmail="ana@example.com"
           customerAddress="Calle 1 # 2-34"
+          customerNeighborhood="Chapinero"
           customerCity="Bogotá"
+          customerExtra="Apto 502"
         />
       </CartProvider>
     );
@@ -68,7 +70,9 @@ describe("WhatsAppCheckoutButton", () => {
           customerPhone="3000000000"
           customerEmail="ana@example.com"
           customerAddress="Calle 1 # 2-34"
+          customerNeighborhood="Chapinero"
           customerCity="Bogotá"
+          customerExtra="Apto 502"
         />
       </CartProvider>
     );
