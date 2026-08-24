@@ -30,7 +30,7 @@ export function CartIcon() {
 
   return (
     <Link href="/carrito" className="relative flex items-center gap-1.5 text-foreground">
-      <ShoppingCart className={`h-5 w-5 ${bump ? "animate-cart-bump" : ""}`} />
+      <ShoppingCart id="cart-icon-target" className={`h-5 w-5 ${bump ? "animate-cart-bump" : ""}`} />
       <span className="text-sm font-semibold">Carrito</span>
       {itemCount > 0 && (
         <span

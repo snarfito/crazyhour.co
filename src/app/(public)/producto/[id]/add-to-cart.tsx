@@ -6,6 +6,7 @@ import { QuantityStepper } from "@/components/cart/quantity-stepper";
 import { useCart } from "@/components/cart/cart-context";
 import { calculateTieredPrice, formatTierBreakdown } from "@/lib/pricing";
 import { formatCOP } from "@/lib/format";
+import { flyToCart } from "@/lib/fly-to-cart";
 
 export function AddToCart({
   productId,
@@ -38,8 +39,9 @@ export function AddToCart({
   const hasTiers = pack1Qty != null || pack2Qty != null;
   const breakdownText = formatTierBreakdown(pack1Count, pack2Count, looseUnits);
 
-  function handleAdd() {
+  function handleAdd(button: HTMLElement) {
     addItem({ productId, name, unitPriceCop, pack1Qty, pack1PriceCop, pack2Qty, pack2PriceCop, imageUrl }, quantity);
+    flyToCart(button);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }
@@ -48,7 +50,7 @@ export function AddToCart({
     <div className="mt-6">
       <div className="flex items-center gap-4">
         <QuantityStepper quantity={quantity} onChange={setQuantity} />
-        <Button type="button" onClick={handleAdd} className="flex-1">
+        <Button type="button" onClick={(e) => handleAdd(e.currentTarget)} className="flex-1">
           {added ? "Agregado ✓" : "Agregar al carrito"}
         </Button>
       </div>
