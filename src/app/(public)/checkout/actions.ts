@@ -113,21 +113,9 @@ export async function createWompiOrder(
   );
   if (itemsError) throw itemsError;
 
-  try {
-    await sendOrderReceivedEmail({
-      customerName: customer.name,
-      customerEmail: customer.email,
-      orderNumber: order.order_number,
-      items: priced.lines,
-      totalCop: priced.totalCop,
-      address: customer.address,
-      neighborhood: customer.neighborhood,
-      city: customer.city,
-      extra: customer.extra,
-    });
-  } catch (error) {
-    console.error("[resend]", error);
-  }
+  // No "order received" email here — a Wompi order isn't confirmed yet at
+  // creation time (the widget hasn't even opened). The webhook sends it
+  // once Wompi confirms the payment (see /api/webhooks/wompi/route.ts).
 
   const amountInCents = priced.totalCop * 100;
   const currency = "COP";

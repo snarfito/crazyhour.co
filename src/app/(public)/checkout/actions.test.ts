@@ -102,30 +102,14 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(order?.shipping_extra).toBe("Apto 502");
       expect(typeof result.orderNumber).toBe("number");
       expect(order?.order_number).toBe(result.orderNumber);
-      expect(mockSendOrderReceivedEmail).toHaveBeenCalledWith({
-        customerName: TEST_CUSTOMER.name,
-        customerEmail: TEST_CUSTOMER.email,
-        orderNumber: result.orderNumber,
-        items: [{ productId: activeProductId, name: `${TEST_PREFIX}Piñata estrella`, quantity: 2, unitPriceCop: 45000 }],
-        totalCop: 90000,
-        address: TEST_CUSTOMER.address,
-        neighborhood: TEST_CUSTOMER.neighborhood,
-        city: TEST_CUSTOMER.city,
-        extra: TEST_CUSTOMER.extra,
-      });
+      // Wompi orders aren't confirmed yet at creation time — the
+      // received email only goes out once the webhook confirms payment
+      // (see route.ts), so it must NOT fire here.
+      expect(mockSendOrderReceivedEmail).not.toHaveBeenCalled();
 
       const { data: items } = await admin.from("order_items").select("*").eq("order_id", result.orderId);
       expect(items).toHaveLength(1);
       expect(items?.[0].unit_price_cop).toBe(45000);
-    });
-
-    it("still creates the order when the received-email send fails", async () => {
-      mockSendOrderReceivedEmail.mockRejectedValueOnce(new Error("Resend is down"));
-      const { createWompiOrder } = await import("./actions");
-
-      const result = await createWompiOrder(TEST_CUSTOMER, [{ productId: activeProductId, quantity: 1 }]);
-
-      expect(result.ok).toBe(true);
     });
 
     it("splits a quantity that crosses tiers into one order_items row per tier consumed", async () => {

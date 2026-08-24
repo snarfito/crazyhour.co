@@ -15,6 +15,11 @@ vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
 }));
 
+const mockSendOrderReceivedEmail = vi.fn();
+vi.mock("@/lib/order-emails", () => ({
+  sendOrderReceivedEmail: (...args: unknown[]) => mockSendOrderReceivedEmail(...args),
+}));
+
 function signPayload(transaction: { id: string; status: string; reference: string; amount_in_cents: number }) {
   const timestamp = 1700000000;
   const properties = ["transaction.id", "transaction.status", "transaction.reference", "transaction.amount_in_cents"];
@@ -27,10 +32,22 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("POST /api/webhooks
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
   const ORIGINAL_SECRET = process.env.WOMPI_EVENTS_SECRET;
   let orderId: string;
+  let productId: string;
 
   beforeEach(async () => {
     process.env.WOMPI_EVENTS_SECRET = EVENTS_SECRET;
+    mockSendOrderReceivedEmail.mockReset();
+    mockSendOrderReceivedEmail.mockResolvedValue(undefined);
     await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
+    await admin.from("products").delete().like("name", TEST_PREFIX_LIKE);
+
+    const { data: product } = await admin
+      .from("products")
+      .insert({ name: `${TEST_PREFIX}Piñata estrella`, unit_price_cop: 45000, is_active: true })
+      .select()
+      .single();
+    productId = product!.id;
+
     const { data: order } = await admin
       .from("orders")
       .insert({
@@ -39,10 +56,15 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("POST /api/webhooks
         total_cop: 45000,
         customer_name: `${TEST_PREFIX}Ana`,
         customer_phone: "3000000000",
+        customer_email: "ana@example.com",
+        shipping_address: "Calle 1 # 2-34",
+        shipping_neighborhood: "Chapinero",
+        shipping_city: "Bogotá",
       })
       .select("id")
       .single();
     orderId = order!.id;
+    await admin.from("order_items").insert({ order_id: orderId, product_id: productId, quantity: 1, unit_price_cop: 45000 });
   });
 
   afterEach(() => {
@@ -56,9 +78,32 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("POST /api/webhooks
     const response = await POST(new Request("http://localhost/api/webhooks/wompi", { method: "POST", body: JSON.stringify(payload) }));
 
     expect(response.status).toBe(200);
-    const { data: order } = await admin.from("orders").select("status, wompi_transaction_id").eq("id", orderId).single();
+    const { data: order } = await admin.from("orders").select("status, wompi_transaction_id, order_number").eq("id", orderId).single();
     expect(order?.status).toBe("paid");
     expect(order?.wompi_transaction_id).toBe("txn-1");
+    expect(mockSendOrderReceivedEmail).toHaveBeenCalledWith({
+      customerName: `${TEST_PREFIX}Ana`,
+      customerEmail: "ana@example.com",
+      orderNumber: order?.order_number,
+      items: [{ name: `${TEST_PREFIX}Piñata estrella`, quantity: 1, unitPriceCop: 45000 }],
+      totalCop: 45000,
+      address: "Calle 1 # 2-34",
+      neighborhood: "Chapinero",
+      city: "Bogotá",
+      extra: undefined,
+    });
+  });
+
+  it("still marks the order paid when the received-email send fails", async () => {
+    mockSendOrderReceivedEmail.mockRejectedValueOnce(new Error("Resend is down"));
+    const { POST } = await import("./route");
+    const payload = signPayload({ id: "txn-1b", status: "APPROVED", reference: orderId, amount_in_cents: 4500000 });
+
+    const response = await POST(new Request("http://localhost/api/webhooks/wompi", { method: "POST", body: JSON.stringify(payload) }));
+
+    expect(response.status).toBe(200);
+    const { data: order } = await admin.from("orders").select("status").eq("id", orderId).single();
+    expect(order?.status).toBe("paid");
   });
 
   it("rejects an invalid signature and leaves the order untouched", async () => {
@@ -103,5 +148,6 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("POST /api/webhooks
 
     const { data: order } = await admin.from("orders").select("wompi_transaction_id").eq("id", orderId).single();
     expect(order?.wompi_transaction_id).toBe("txn-original"); // untouched, not overwritten by the resend
+    expect(mockSendOrderReceivedEmail).not.toHaveBeenCalled(); // no duplicate email on a webhook retry
   });
 });
