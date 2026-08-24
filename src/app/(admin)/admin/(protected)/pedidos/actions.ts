@@ -16,3 +16,22 @@ export async function markOrderPaid(id: string) {
 
   revalidatePath("/admin/pedidos");
 }
+
+export async function updateCustomerDetails(id: string, formData: FormData) {
+  await requirePermission("pedidos");
+  const supabase = createServiceClient();
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      customer_name: formData.get("customer_name") as string,
+      customer_phone: formData.get("customer_phone") as string,
+      customer_email: formData.get("customer_email") as string,
+      shipping_address: formData.get("shipping_address") as string,
+      shipping_city: formData.get("shipping_city") as string,
+    })
+    .eq("id", id);
+  if (error) throw error;
+
+  revalidatePath("/admin/pedidos");
+}

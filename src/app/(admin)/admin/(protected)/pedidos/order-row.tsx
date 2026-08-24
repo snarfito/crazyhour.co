@@ -3,8 +3,10 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatCOP } from "@/lib/format";
-import { markOrderPaid } from "./actions";
+import { markOrderPaid, updateCustomerDetails } from "./actions";
 import type { OrderLineItem } from "./queries";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -23,6 +25,9 @@ export function OrderRow({
     created_at: string;
     customer_name: string;
     customer_phone: string;
+    customer_email: string | null;
+    shipping_address: string | null;
+    shipping_city: string | null;
     channel: string;
     total_cop: number;
     status: string;
@@ -63,13 +68,49 @@ export function OrderRow({
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
           <dt className="text-muted-foreground">Fecha</dt>
           <dd className="text-foreground">{new Date(order.created_at).toLocaleString("es-CO")}</dd>
-          <dt className="text-muted-foreground">Teléfono</dt>
-          <dd className="text-foreground">{order.customer_phone}</dd>
           <dt className="text-muted-foreground">Canal</dt>
           <dd className="text-foreground capitalize">{order.channel}</dd>
           <dt className="text-muted-foreground">Estado</dt>
           <dd className="text-foreground">{STATUS_LABEL[order.status] ?? order.status}</dd>
         </dl>
+        <form action={updateCustomerDetails.bind(null, order.id)} className="grid grid-cols-2 gap-3 border-t border-border pt-3">
+          <div>
+            <Label htmlFor={`customer_name-${order.id}`}>Nombre</Label>
+            <Input id={`customer_name-${order.id}`} name="customer_name" defaultValue={order.customer_name} required />
+          </div>
+          <div>
+            <Label htmlFor={`customer_phone-${order.id}`}>Teléfono</Label>
+            <Input id={`customer_phone-${order.id}`} name="customer_phone" defaultValue={order.customer_phone} required />
+          </div>
+          <div>
+            <Label htmlFor={`customer_email-${order.id}`}>Correo</Label>
+            <Input
+              id={`customer_email-${order.id}`}
+              name="customer_email"
+              type="email"
+              defaultValue={order.customer_email ?? ""}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor={`shipping_city-${order.id}`}>Ciudad</Label>
+            <Input id={`shipping_city-${order.id}`} name="shipping_city" defaultValue={order.shipping_city ?? ""} required />
+          </div>
+          <div className="col-span-2">
+            <Label htmlFor={`shipping_address-${order.id}`}>Dirección</Label>
+            <Input
+              id={`shipping_address-${order.id}`}
+              name="shipping_address"
+              defaultValue={order.shipping_address ?? ""}
+              required
+            />
+          </div>
+          <div className="col-span-2">
+            <Button type="submit" variant="outline" size="sm">
+              Guardar cambios
+            </Button>
+          </div>
+        </form>
         <div>
           <p className="mb-2 text-sm font-medium text-foreground">Productos</p>
           {items.length === 0 ? (

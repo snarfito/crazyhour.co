@@ -73,3 +73,72 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderPaid (aga
     expect(unchanged?.status).toBe("pending_whatsapp");
   });
 });
+
+describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateCustomerDetails (against local Supabase)", () => {
+  const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
+
+  beforeEach(async () => {
+    mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
+    await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
+  });
+
+  it("updates the customer's name, phone, email, and shipping address", async () => {
+    const { data: order } = await admin
+      .from("orders")
+      .insert({
+        channel: "whatsapp",
+        status: "pending_whatsapp",
+        total_cop: 20000,
+        customer_name: `${TEST_PREFIX}Ana`,
+        customer_phone: "3000000000",
+      })
+      .select("id")
+      .single();
+    const { updateCustomerDetails } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("customer_name", `${TEST_PREFIX}Ana Editada`);
+    formData.set("customer_phone", "3000000001");
+    formData.set("customer_email", "ana2@example.com");
+    formData.set("shipping_address", "Calle 2 # 3-45");
+    formData.set("shipping_city", "Medellín");
+
+    await updateCustomerDetails(order!.id, formData);
+
+    const { data: updated } = await admin.from("orders").select("*").eq("id", order!.id).single();
+    expect(updated?.customer_name).toBe(`${TEST_PREFIX}Ana Editada`);
+    expect(updated?.customer_phone).toBe("3000000001");
+    expect(updated?.customer_email).toBe("ana2@example.com");
+    expect(updated?.shipping_address).toBe("Calle 2 # 3-45");
+    expect(updated?.shipping_city).toBe("Medellín");
+    expect(mockRequirePermission).toHaveBeenCalledWith("pedidos");
+  });
+
+  it("propagates rejection when the caller lacks the pedidos permission, without writing", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { data: order } = await admin
+      .from("orders")
+      .insert({
+        channel: "whatsapp",
+        status: "pending_whatsapp",
+        total_cop: 20000,
+        customer_name: `${TEST_PREFIX}Rechazado`,
+        customer_phone: "3000000000",
+      })
+      .select("id")
+      .single();
+    const { updateCustomerDetails } = await import("./actions");
+
+    const formData = new FormData();
+    formData.set("customer_name", `${TEST_PREFIX}Cambiado`);
+    formData.set("customer_phone", "3000000001");
+    formData.set("customer_email", "x@example.com");
+    formData.set("shipping_address", "Calle 2 # 3-45");
+    formData.set("shipping_city", "Medellín");
+
+    await expect(updateCustomerDetails(order!.id, formData)).rejects.toThrow();
+
+    const { data: unchanged } = await admin.from("orders").select("customer_name").eq("id", order!.id).single();
+    expect(unchanged?.customer_name).toBe(`${TEST_PREFIX}Rechazado`);
+  });
+});

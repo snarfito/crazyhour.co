@@ -10,6 +10,8 @@ describe("buildWhatsAppMessage", () => {
         { name: "Globo metálico", quantity: 5, unitPriceCop: 5000 },
       ],
       totalCop: 115000,
+      address: "Calle 1 # 2-34",
+      city: "Bogotá",
     });
 
     expect(message).toContain("Ana");
