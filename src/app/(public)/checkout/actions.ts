@@ -11,6 +11,8 @@ export type CartItemInput = { productId: string; quantity: number };
 type ValidationError = { ok: false; error: string; invalidProductIds: string[] };
 
 const INVALID_PRODUCTS_ERROR = "Uno o más productos ya no están disponibles y se quitaron de tu carrito.";
+const INVALID_EMAIL_ERROR = "El correo no tiene un formato válido.";
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function validateAndPriceItems(
   cartItems: CartItemInput[]
@@ -73,9 +75,11 @@ export type WompiOrderResult =
   | ValidationError;
 
 export async function createWompiOrder(
-  customer: { name: string; phone: string; email: string; address: string; city: string },
+  customer: { name: string; phone: string; email: string; address: string; neighborhood: string; city: string; extra?: string },
   cartItems: CartItemInput[]
 ): Promise<WompiOrderResult> {
+  if (!EMAIL_PATTERN.test(customer.email)) return { ok: false, error: INVALID_EMAIL_ERROR, invalidProductIds: [] };
+
   const priced = await validateAndPriceItems(cartItems);
   if (!priced.ok) return { ok: false, error: INVALID_PRODUCTS_ERROR, invalidProductIds: priced.invalidProductIds };
 
@@ -90,7 +94,9 @@ export async function createWompiOrder(
       customer_phone: customer.phone,
       customer_email: customer.email,
       shipping_address: customer.address,
+      shipping_neighborhood: customer.neighborhood,
       shipping_city: customer.city,
+      shipping_extra: customer.extra || null,
     })
     .select("id")
     .single();
@@ -124,9 +130,11 @@ export async function createWompiOrder(
 export type WhatsAppOrderResult = { ok: true; orderId: string; whatsappUrl: string } | ValidationError;
 
 export async function createWhatsAppOrder(
-  customer: { name: string; phone: string; email: string; address: string; city: string },
+  customer: { name: string; phone: string; email: string; address: string; neighborhood: string; city: string; extra?: string },
   cartItems: CartItemInput[]
 ): Promise<WhatsAppOrderResult> {
+  if (!EMAIL_PATTERN.test(customer.email)) return { ok: false, error: INVALID_EMAIL_ERROR, invalidProductIds: [] };
+
   const priced = await validateAndPriceItems(cartItems);
   if (!priced.ok) return { ok: false, error: INVALID_PRODUCTS_ERROR, invalidProductIds: priced.invalidProductIds };
 
@@ -141,7 +149,9 @@ export async function createWhatsAppOrder(
       customer_phone: customer.phone,
       customer_email: customer.email,
       shipping_address: customer.address,
+      shipping_neighborhood: customer.neighborhood,
       shipping_city: customer.city,
+      shipping_extra: customer.extra || null,
     })
     .select("id")
     .single();
@@ -163,7 +173,9 @@ export async function createWhatsAppOrder(
     items: priced.lines,
     totalCop: priced.totalCop,
     address: customer.address,
+    neighborhood: customer.neighborhood,
     city: customer.city,
+    extra: customer.extra,
   });
 
   return { ok: true, orderId: order.id, whatsappUrl: buildWhatsAppUrl(whatsappNumber, message) };

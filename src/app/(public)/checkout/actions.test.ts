@@ -11,7 +11,9 @@ const TEST_CUSTOMER = {
   phone: "3000000000",
   email: "ana@example.com",
   address: "Calle 1 # 2-34",
+  neighborhood: "Chapinero",
   city: "Bogotá",
+  extra: "Apto 502",
 };
 
 vi.mock("server-only", () => ({}));
@@ -88,7 +90,9 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(order?.total_cop).toBe(90000);
       expect(order?.customer_email).toBe("ana@example.com");
       expect(order?.shipping_address).toBe("Calle 1 # 2-34");
+      expect(order?.shipping_neighborhood).toBe("Chapinero");
       expect(order?.shipping_city).toBe("Bogotá");
+      expect(order?.shipping_extra).toBe("Apto 502");
 
       const { data: items } = await admin.from("order_items").select("*").eq("order_id", result.orderId);
       expect(items).toHaveLength(1);
@@ -195,8 +199,45 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(order?.total_cop).toBe(135000);
       expect(order?.customer_email).toBe("ana@example.com");
       expect(order?.shipping_address).toBe("Calle 1 # 2-34");
+      expect(order?.shipping_neighborhood).toBe("Chapinero");
       expect(order?.shipping_city).toBe("Bogotá");
-      expect(decodeURIComponent(result.whatsappUrl)).toContain("Dirección de envío: Calle 1 # 2-34, Bogotá");
+      expect(order?.shipping_extra).toBe("Apto 502");
+      expect(decodeURIComponent(result.whatsappUrl)).toContain("Dirección de envío: Calle 1 # 2-34, Chapinero, Bogotá");
+      expect(decodeURIComponent(result.whatsappUrl)).toContain("Información adicional: Apto 502");
+    });
+  });
+
+  describe("email format validation", () => {
+    it("rejects createWompiOrder with a malformed email, without creating an order", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder(
+        { ...TEST_CUSTOMER, email: "not-an-email" },
+        [{ productId: activeProductId, quantity: 1 }]
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toMatch(/correo/i);
+
+      const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
+      expect(orders).toHaveLength(0);
+    });
+
+    it("rejects createWhatsAppOrder with a malformed email, without creating an order", async () => {
+      const { createWhatsAppOrder } = await import("./actions");
+
+      const result = await createWhatsAppOrder(
+        { ...TEST_CUSTOMER, email: "not-an-email" },
+        [{ productId: activeProductId, quantity: 1 }]
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toMatch(/correo/i);
+
+      const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
+      expect(orders).toHaveLength(0);
     });
   });
 });
