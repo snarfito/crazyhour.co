@@ -207,6 +207,22 @@
   animation-delay: var(--stagger-delay, 0ms);
 }
 
+@keyframes cart-bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-cart-bump {
+  animation: cart-bump 300ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-stagger-in {
     animation: none;
