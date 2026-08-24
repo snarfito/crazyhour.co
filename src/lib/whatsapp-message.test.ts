@@ -17,6 +17,18 @@ describe("buildWhatsAppMessage", () => {
     expect(message).toContain("5x Globo metálico ($ 5.000 c/u)");
     expect(message).toContain("Total: $ 115.000");
   });
+
+  it("includes the shipping address", () => {
+    const message = buildWhatsAppMessage({
+      customerName: "Ana",
+      items: [{ name: "Piñata estrella", quantity: 2, unitPriceCop: 45000 }],
+      totalCop: 90000,
+      address: "Calle 1 # 2-34",
+      city: "Bogotá",
+    });
+
+    expect(message).toContain("Dirección de envío: Calle 1 # 2-34, Bogotá");
+  });
 });
 
 describe("buildWhatsAppUrl", () => {
