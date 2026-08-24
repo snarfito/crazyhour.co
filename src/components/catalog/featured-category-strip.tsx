@@ -24,7 +24,7 @@ export function FeaturedCategoryStrip({
           )}
         </div>
         <div>
-          <span className="font-heading text-sm font-bold uppercase tracking-wide text-primary">{name}</span>
+          <span className="block font-heading text-sm font-bold uppercase tracking-wide text-primary">{name}</span>
           {description && <p className="mt-2 text-base text-muted-foreground">{description}</p>}
           <Link
             href={`/${slug}`}

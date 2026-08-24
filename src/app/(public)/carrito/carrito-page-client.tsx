@@ -57,7 +57,10 @@ export function CarritoPageClient() {
         <span>Total</span>
         <span data-testid="cart-total">{formatCOP(subtotalCop)}</span>
       </p>
-      <Button render={<Link href="/checkout">Continuar</Link>} className="mt-4 w-full" />
+      <Button
+        render={<Link href="/checkout">Continuar</Link>}
+        className="mt-4 w-full font-heading text-base font-extrabold"
+      />
     </div>
   );
 }

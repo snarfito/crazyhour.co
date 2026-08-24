@@ -8,8 +8,9 @@ export function CartIcon() {
   const { itemCount } = useCart();
 
   return (
-    <Link href="/carrito" aria-label="Carrito" className="relative">
-      <ShoppingCart className="h-5 w-5 text-muted-foreground" />
+    <Link href="/carrito" className="relative flex items-center gap-1.5 text-foreground">
+      <ShoppingCart className="h-5 w-5" />
+      <span className="text-sm font-semibold">Carrito</span>
       {itemCount > 0 && (
         <span
           data-testid="cart-count"

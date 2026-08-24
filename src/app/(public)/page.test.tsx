@@ -41,6 +41,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/settings", () => ({
   getActiveEventTheme: vi.fn().mockResolvedValue("none"),
+  getWhatsAppNumber: vi.fn().mockResolvedValue("573000000000"),
 }));
 
 vi.mock("@/lib/theme-settings", () => ({

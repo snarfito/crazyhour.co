@@ -7,10 +7,12 @@ import { EmptyState } from "@/components/catalog/empty-state";
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
 import { getThemeMotionSettings, DEFAULT_MOTION_SETTINGS } from "@/lib/theme-settings";
+import { getWhatsAppNumber } from "@/lib/settings";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-message";
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const [{ data: categories }, { data: activeProductLinks }, theme] = await Promise.all([
+  const [{ data: categories }, { data: activeProductLinks }, theme, whatsappNumber] = await Promise.all([
     supabase
       .from("categories")
       .select("id, name, slug, cover_image_url, description, is_featured")
@@ -20,8 +22,10 @@ export default async function HomePage() {
       .select("category_id, products!inner(is_active)")
       .eq("products.is_active", true),
     getEffectiveEventTheme(),
+    getWhatsAppNumber(),
   ]);
   const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
+  const whatsappUrl = buildWhatsAppUrl(whatsappNumber, "Hola, quiero hacer un pedido.");
 
   const counts = (activeProductLinks ?? []).reduce<Record<string, number>>((acc, link) => {
     acc[link.category_id] = (acc[link.category_id] ?? 0) + 1;
@@ -32,7 +36,7 @@ export default async function HomePage() {
     return (
       <>
         <EventAnimation theme={theme} settings={settings} />
-        <Hero />
+        <Hero whatsappUrl={whatsappUrl} />
         <EmptyState message="Estamos armando el catálogo — vuelve pronto." />
         <HowItWorks />
       </>
@@ -44,7 +48,7 @@ export default async function HomePage() {
   return (
     <>
       <EventAnimation theme={theme} settings={settings} />
-      <Hero />
+      <Hero whatsappUrl={whatsappUrl} />
       <div id="catalogo" className="p-4">
         <CategoryGrid
           categories={categories.map((c) => ({

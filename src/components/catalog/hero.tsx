@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export function Hero() {
+export function Hero({ whatsappUrl }: { whatsappUrl: string }) {
   return (
     <section className="px-4 pb-10 pt-8 sm:px-6 sm:pb-14 sm:pt-12">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-8 sm:flex-row sm:items-center sm:justify-between">
@@ -23,12 +23,14 @@ export function Hero() {
             >
               Ver catálogo →
             </a>
-            <button
-              type="button"
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="rounded-lg bg-brand-whatsapp px-6 py-3 font-heading text-sm font-extrabold text-white transition-transform duration-150 ease-out active:scale-[0.97]"
             >
               Pedir por WhatsApp
-            </button>
+            </a>
           </div>
           <p className="mt-6 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             Catálogo renovado cada 15 días

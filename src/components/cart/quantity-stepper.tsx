@@ -38,6 +38,7 @@ export function QuantityStepper({
         size="icon-sm"
         aria-label="Restar"
         onClick={() => onChange(Math.max(min, quantity - 1))}
+        className="border-white/30 bg-card text-base font-bold hover:bg-card/70"
       >
         −
       </Button>
@@ -52,9 +53,16 @@ export function QuantityStepper({
           if (e.key === "Enter") commit(e.currentTarget.value);
         }}
         aria-label="Cantidad"
-        className="w-16 text-center"
+        className="w-16 border-white/30 bg-card text-center font-semibold"
       />
-      <Button type="button" variant="outline" size="icon-sm" aria-label="Sumar" onClick={() => onChange(quantity + 1)}>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-sm"
+        aria-label="Sumar"
+        onClick={() => onChange(quantity + 1)}
+        className="border-white/30 bg-card text-base font-bold hover:bg-card/70"
+      >
         +
       </Button>
     </div>
