@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DeleteForm } from "@/components/admin/delete-form";
 import { SELECT_CLASSES } from "@/lib/admin-ui";
 import { formatCOP } from "@/lib/format";
-import { markOrderPaid, markOrderPreparing, markOrderShipped, updateCustomerDetails } from "./actions";
+import { deleteOrder, markOrderPaid, markOrderPreparing, markOrderShipped, updateCustomerDetails } from "./actions";
 import type { OrderLineItem } from "./queries";
 
 const CARRIER_OPTIONS = ["Inter Rapidísimo", "Coordinadora", "Servientrega", "Envía", "TCC"];
@@ -213,6 +214,14 @@ export function OrderRow({
         <div className="flex items-center justify-between border-t border-border pt-3 text-sm font-medium">
           <span className="text-foreground">Total</span>
           <span className="text-foreground">{formatCOP(order.total_cop)}</span>
+        </div>
+        <div className="flex justify-end border-t border-border pt-3">
+          <DeleteForm
+            action={deleteOrder.bind(null, order.id)}
+            confirmMessage={`¿Eliminar el pedido #${order.order_number}? Esta acción no se puede deshacer y no afecta el catálogo de productos.`}
+          >
+            Eliminar pedido
+          </DeleteForm>
         </div>
       </DialogContent>
     </Dialog>

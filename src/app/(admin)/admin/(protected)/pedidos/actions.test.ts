@@ -260,6 +260,56 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("markOrderShipped (
   });
 });
 
+describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("deleteOrder (against local Supabase)", () => {
+  const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
+
+  beforeEach(async () => {
+    mockRequirePermission.mockResolvedValue({ userId: "test-admin", email: "test@crazyhour.co" });
+    await admin.from("orders").delete().like("customer_name", TEST_PREFIX_LIKE);
+    await admin.from("products").delete().like("name", TEST_PREFIX_LIKE);
+  });
+
+  it("deletes the order and cascades to its order_items, without touching the product", async () => {
+    const { data: product } = await admin
+      .from("products")
+      .insert({ name: `${TEST_PREFIX}Producto`, unit_price_cop: 5000, is_active: true })
+      .select("id")
+      .single();
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "pending_whatsapp", total_cop: 5000, customer_name: `${TEST_PREFIX}Ana`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    await admin.from("order_items").insert({ order_id: order!.id, product_id: product!.id, quantity: 1, unit_price_cop: 5000 });
+    const { deleteOrder } = await import("./actions");
+
+    await deleteOrder(order!.id);
+
+    const { data: remainingOrder } = await admin.from("orders").select("id").eq("id", order!.id).maybeSingle();
+    expect(remainingOrder).toBeNull();
+    const { data: remainingItems } = await admin.from("order_items").select("id").eq("order_id", order!.id);
+    expect(remainingItems).toHaveLength(0);
+    const { data: untouchedProduct } = await admin.from("products").select("id").eq("id", product!.id).maybeSingle();
+    expect(untouchedProduct).not.toBeNull();
+    expect(mockRequirePermission).toHaveBeenCalledWith("pedidos");
+  });
+
+  it("propagates rejection when the caller lacks the pedidos permission, without deleting", async () => {
+    mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
+    const { data: order } = await admin
+      .from("orders")
+      .insert({ channel: "whatsapp", status: "pending_whatsapp", total_cop: 5000, customer_name: `${TEST_PREFIX}Rechazado`, customer_phone: "3000000000" })
+      .select("id")
+      .single();
+    const { deleteOrder } = await import("./actions");
+
+    await expect(deleteOrder(order!.id)).rejects.toThrow();
+
+    const { data: unchanged } = await admin.from("orders").select("id").eq("id", order!.id).maybeSingle();
+    expect(unchanged).not.toBeNull();
+  });
+});
+
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateCustomerDetails (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
 

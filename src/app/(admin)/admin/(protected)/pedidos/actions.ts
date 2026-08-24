@@ -65,6 +65,18 @@ export async function markOrderShipped(id: string, formData: FormData) {
   revalidatePath("/admin/pedidos");
 }
 
+export async function deleteOrder(id: string) {
+  await requirePermission("pedidos");
+  const supabase = createServiceClient();
+
+  // order_items cascades via the FK's ON DELETE CASCADE (migration 0007).
+  // Only touches orders/order_items — never products or categories.
+  const { error } = await supabase.from("orders").delete().eq("id", id);
+  if (error) throw error;
+
+  revalidatePath("/admin/pedidos");
+}
+
 export async function updateCustomerDetails(id: string, formData: FormData) {
   await requirePermission("pedidos");
   const supabase = createServiceClient();
