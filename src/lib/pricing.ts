@@ -36,43 +36,46 @@ export function resolveEffectiveTiers(product: ProductPricing): {
   return { unitPriceCop: product.unitPriceCop, pack1, pack2 };
 }
 
+export type AppliedTier = "pack1" | "pack2" | "unit";
+
 /**
- * Greedy "coin change" split of a line's quantity across the resolved tiers
- * (design spec section 4): largest tier first, remainder into the next
- * tier, final remainder at unit_price_cop. `breakdown` maps 1:1 onto the
- * order_items rows a checkout confirmation inserts.
+ * Threshold pricing: once qty reaches a tier's minimum, that tier's price
+ * applies to the ENTIRE quantity (client clarification, 25 ago) — this is
+ * not a split of qty across tiers. pack1 (paca completa) is checked before
+ * pack2 (media paca) since the DB enforces pack1_qty > pack2_qty.
+ * `breakdown` stays a single-line array so it still maps onto an
+ * order_items row a checkout confirmation inserts.
  */
 export function calculateTieredPrice(
   product: ProductPricing,
   qty: number
-): { breakdown: PriceBreakdownLine[]; totalCop: number; pack1Count: number; pack2Count: number; looseUnits: number } {
+): { breakdown: PriceBreakdownLine[]; totalCop: number; appliedTier: AppliedTier } {
   const { unitPriceCop, pack1, pack2 } = resolveEffectiveTiers(product);
 
-  const n1 = pack1 ? Math.floor(qty / pack1.qty) : 0;
-  const rest1 = qty - n1 * (pack1?.qty ?? 0);
-  const n2 = pack2 ? Math.floor(rest1 / pack2.qty) : 0;
-  const rest2 = rest1 - n2 * (pack2?.qty ?? 0);
+  let appliedTier: AppliedTier = "unit";
+  let price = unitPriceCop;
+  if (pack1 && qty >= pack1.qty) {
+    appliedTier = "pack1";
+    price = pack1.unitPriceCop;
+  } else if (pack2 && qty >= pack2.qty) {
+    appliedTier = "pack2";
+    price = pack2.unitPriceCop;
+  }
 
-  const breakdown: PriceBreakdownLine[] = [];
-  if (n1 > 0) breakdown.push({ quantity: n1 * pack1!.qty, unitPriceCop: pack1!.unitPriceCop });
-  if (n2 > 0) breakdown.push({ quantity: n2 * pack2!.qty, unitPriceCop: pack2!.unitPriceCop });
-  if (rest2 > 0) breakdown.push({ quantity: rest2, unitPriceCop });
-
-  const totalCop = breakdown.reduce((sum, line) => sum + line.quantity * line.unitPriceCop, 0);
-  return { breakdown, totalCop, pack1Count: n1, pack2Count: n2, looseUnits: rest2 };
+  return {
+    breakdown: [{ quantity: qty, unitPriceCop: price }],
+    totalCop: qty * price,
+    appliedTier,
+  };
 }
 
 /**
- * Human-readable composition of a quantity split, e.g. "3 pacas + 1 media
- * paca + 1 unidad" — shared by the product page and the cart so both show
- * the same wording for the same tiers.
+ * Label for which wholesale tier kicked in — shared by the product page and
+ * the cart so both show the same wording. Nothing to call out at the base
+ * unit price.
  */
-export function formatTierBreakdown(pack1Count: number, pack2Count: number, looseUnits: number): string {
-  return [
-    pack1Count > 0 && `${pack1Count} ${pack1Count === 1 ? "paca" : "pacas"}`,
-    pack2Count > 0 && `${pack2Count} ${pack2Count === 1 ? "media paca" : "medias pacas"}`,
-    looseUnits > 0 && `${looseUnits} ${looseUnits === 1 ? "unidad" : "unidades"}`,
-  ]
-    .filter(Boolean)
-    .join(" + ");
+export function formatTierBreakdown(appliedTier: AppliedTier): string {
+  if (appliedTier === "pack1") return "Precio por paca completa";
+  if (appliedTier === "pack2") return "Precio por media paca";
+  return "";
 }

@@ -21,9 +21,9 @@ export function CarritoPageClient() {
       <h1 className="font-heading text-2xl font-extrabold">Tu carrito</h1>
       <ul className="mt-4 flex flex-col gap-4">
         {items.map((item) => {
-          const { totalCop, pack1Count, pack2Count, looseUnits } = calculateTieredPrice(item, item.quantity);
+          const { totalCop, appliedTier } = calculateTieredPrice(item, item.quantity);
           const hasTiers = item.pack1Qty != null || item.pack2Qty != null;
-          const breakdownText = formatTierBreakdown(pack1Count, pack2Count, looseUnits);
+          const breakdownText = formatTierBreakdown(appliedTier);
 
           return (
             <li key={item.productId} className="flex gap-3 border-b border-border pb-4">

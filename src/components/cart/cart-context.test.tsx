@@ -111,7 +111,7 @@ describe("CartProvider / useCart", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("0");
   });
 
-  it("computes subtotal across multiple price tiers via calculateTieredPrice", async () => {
+  it("computes subtotal via calculateTieredPrice once a quantity reaches a wholesale tier", async () => {
     function TieredConsumer() {
       const { addItem, subtotalCop } = useCart();
       return (
@@ -139,8 +139,8 @@ describe("CartProvider / useCart", () => {
 
     await user.click(screen.getByText("add p2 x36"));
 
-    // 30 @ 3000 + 5 @ 3500 + 1 @ 4000, same split as pricing.test.ts's qty=36 case.
-    expect(screen.getByTestId("subtotal")).toHaveTextContent(String(30 * 3000 + 5 * 3500 + 1 * 4000));
+    // qty=36 >= pack1_qty (10), so all 36 units price at pack1's 3000 — same threshold as pricing.test.ts's qty=36 case.
+    expect(screen.getByTestId("subtotal")).toHaveTextContent(String(36 * 3000));
   });
 
   it("useCart throws outside a CartProvider", () => {

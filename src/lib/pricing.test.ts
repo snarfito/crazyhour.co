@@ -33,6 +33,16 @@ const fullTiers: ProductPricing = {
   pack2PriceCop: 3500,
 };
 
+// The client's own example: unit 100, media paca (pack2) 10 un. @ 90, paca
+// completa (pack1) 20 un. @ 80.
+const clientExample: ProductPricing = {
+  unitPriceCop: 100,
+  pack1Qty: 20,
+  pack1PriceCop: 80,
+  pack2Qty: 10,
+  pack2PriceCop: 90,
+};
+
 describe("resolveEffectiveTiers", () => {
   it("resolves pack1 to unit_price_cop when pack1_price_cop is null", () => {
     const tiers = resolveEffectiveTiers(pack1FallsBackToUnit);
@@ -68,55 +78,76 @@ describe("calculateTieredPrice", () => {
     const result = calculateTieredPrice(unitOnly, 7);
     expect(result.breakdown).toEqual([{ quantity: 7, unitPriceCop: 4000 }]);
     expect(result.totalCop).toBe(28000);
+    expect(result.appliedTier).toBe("unit");
   });
 
-  it("uses the fallback price for a pack1-only tier", () => {
+  it("uses the fallback price for a pack1-only tier once qty meets it", () => {
     const result = calculateTieredPrice(pack1FallsBackToUnit, 10);
     expect(result.breakdown).toEqual([{ quantity: 10, unitPriceCop: 4000 }]);
     expect(result.totalCop).toBe(40000);
+    expect(result.appliedTier).toBe("pack1");
   });
 
-  it("splits exactly on a qty that's a multiple of pack1_qty, no remainder lines", () => {
-    const result = calculateTieredPrice(fullTiers, 20);
-    expect(result.breakdown).toEqual([{ quantity: 20, unitPriceCop: 3000 }]);
-    expect(result.totalCop).toBe(60000);
+  it("prices the whole quantity at unit_price_cop below every threshold (client example, qty=9)", () => {
+    const result = calculateTieredPrice(clientExample, 9);
+    expect(result.breakdown).toEqual([{ quantity: 9, unitPriceCop: 100 }]);
+    expect(result.totalCop).toBe(900);
+    expect(result.appliedTier).toBe("unit");
   });
 
-  it("splits a remainder across all 3 tiers (qty=36, pack1_qty=10, pack2_qty=5)", () => {
+  it("prices the whole quantity at pack2's price once it reaches pack2_qty (client example, qty=10)", () => {
+    const result = calculateTieredPrice(clientExample, 10);
+    expect(result.breakdown).toEqual([{ quantity: 10, unitPriceCop: 90 }]);
+    expect(result.totalCop).toBe(900);
+    expect(result.appliedTier).toBe("pack2");
+  });
+
+  it("keeps pricing the whole quantity at pack2's price up to pack1_qty (client example, qty=19)", () => {
+    const result = calculateTieredPrice(clientExample, 19);
+    expect(result.breakdown).toEqual([{ quantity: 19, unitPriceCop: 90 }]);
+    expect(result.totalCop).toBe(1710);
+    expect(result.appliedTier).toBe("pack2");
+  });
+
+  it("prices the whole quantity at pack1's price once it reaches pack1_qty (client example, qty=20)", () => {
+    const result = calculateTieredPrice(clientExample, 20);
+    expect(result.breakdown).toEqual([{ quantity: 20, unitPriceCop: 80 }]);
+    expect(result.totalCop).toBe(1600);
+    expect(result.appliedTier).toBe("pack1");
+  });
+
+  it("keeps pricing the whole quantity at pack1's price well past pack1_qty (client example, qty=25)", () => {
+    const result = calculateTieredPrice(clientExample, 25);
+    expect(result.breakdown).toEqual([{ quantity: 25, unitPriceCop: 80 }]);
+    expect(result.totalCop).toBe(2000);
+    expect(result.appliedTier).toBe("pack1");
+  });
+
+  it("prices the whole quantity at pack1's price for a qty that used to split across all 3 tiers (qty=36)", () => {
     const result = calculateTieredPrice(fullTiers, 36);
-    expect(result.breakdown).toEqual([
-      { quantity: 30, unitPriceCop: 3000 },
-      { quantity: 5, unitPriceCop: 3500 },
-      { quantity: 1, unitPriceCop: 4000 },
-    ]);
-    expect(result.totalCop).toBe(30 * 3000 + 5 * 3500 + 1 * 4000);
+    expect(result.breakdown).toEqual([{ quantity: 36, unitPriceCop: 3000 }]);
+    expect(result.totalCop).toBe(36 * 3000);
+    expect(result.appliedTier).toBe("pack1");
   });
 
-  it("cascades pack2's price through pack1 when splitting a remainder", () => {
+  it("cascades pack2's price through pack1 for a qty between pack2_qty and pack1_qty", () => {
     const result = calculateTieredPrice(pack2FallsBackToPack1, 7);
-    // 0 packs of 10, 1 pack of 5 (falls back to pack1's 3000), 2 loose units at unit price.
-    expect(result.breakdown).toEqual([
-      { quantity: 5, unitPriceCop: 3000 },
-      { quantity: 2, unitPriceCop: 4000 },
-    ]);
-    expect(result.totalCop).toBe(5 * 3000 + 2 * 4000);
-  });
-
-  it("reports how many pacas/medias pacas/loose units the quantity splits into", () => {
-    const result = calculateTieredPrice(fullTiers, 36);
-    expect(result.pack1Count).toBe(3);
-    expect(result.pack2Count).toBe(1);
-    expect(result.looseUnits).toBe(1);
+    expect(result.breakdown).toEqual([{ quantity: 7, unitPriceCop: 3000 }]);
+    expect(result.totalCop).toBe(21000);
+    expect(result.appliedTier).toBe("pack2");
   });
 });
 
 describe("formatTierBreakdown", () => {
-  it("pluralizes each part and joins them with +", () => {
-    expect(formatTierBreakdown(3, 1, 1)).toBe("3 pacas + 1 media paca + 1 unidad");
-    expect(formatTierBreakdown(1, 0, 2)).toBe("1 paca + 2 unidades");
+  it("labels the paca completa tier", () => {
+    expect(formatTierBreakdown("pack1")).toBe("Precio por paca completa");
   });
 
-  it("omits parts that are zero", () => {
-    expect(formatTierBreakdown(0, 0, 5)).toBe("5 unidades");
+  it("labels the media paca tier", () => {
+    expect(formatTierBreakdown("pack2")).toBe("Precio por media paca");
+  });
+
+  it("has nothing to say when only the base unit price applies", () => {
+    expect(formatTierBreakdown("unit")).toBe("");
   });
 });

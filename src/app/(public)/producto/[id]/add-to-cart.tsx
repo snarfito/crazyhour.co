@@ -31,13 +31,13 @@ export function AddToCart({
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const { totalCop, pack1Count, pack2Count, looseUnits } = useMemo(
+  const { totalCop, appliedTier } = useMemo(
     () => calculateTieredPrice({ unitPriceCop, pack1Qty, pack1PriceCop, pack2Qty, pack2PriceCop }, quantity),
     [unitPriceCop, pack1Qty, pack1PriceCop, pack2Qty, pack2PriceCop, quantity]
   );
 
   const hasTiers = pack1Qty != null || pack2Qty != null;
-  const breakdownText = formatTierBreakdown(pack1Count, pack2Count, looseUnits);
+  const breakdownText = formatTierBreakdown(appliedTier);
 
   function handleAdd(button: HTMLElement) {
     addItem({ productId, name, unitPriceCop, pack1Qty, pack1PriceCop, pack2Qty, pack2PriceCop, imageUrl }, quantity);

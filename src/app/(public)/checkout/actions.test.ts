@@ -112,7 +112,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
       expect(items?.[0].unit_price_cop).toBe(45000);
     });
 
-    it("splits a quantity that crosses tiers into one order_items row per tier consumed", async () => {
+    it("prices a quantity that reaches a wholesale tier entirely at that tier's price", async () => {
       const { createWompiOrder } = await import("./actions");
 
       const result = await createWompiOrder(
@@ -122,7 +122,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
 
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      const expectedTotal = 30 * 3000 + 5 * 3500 + 1 * 4000;
+      const expectedTotal = 36 * 3000; // qty 36 >= pack1_qty (10) → whole qty at pack1's price
       expect(result.amountInCents).toBe(expectedTotal * 100);
 
       const { data: order } = await admin.from("orders").select("total_cop").eq("id", result.orderId).single();
@@ -133,11 +133,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
         .select("quantity, unit_price_cop")
         .eq("order_id", result.orderId)
         .order("unit_price_cop");
-      expect(items).toEqual([
-        { quantity: 30, unit_price_cop: 3000 },
-        { quantity: 5, unit_price_cop: 3500 },
-        { quantity: 1, unit_price_cop: 4000 },
-      ]);
+      expect(items).toEqual([{ quantity: 36, unit_price_cop: 3000 }]);
     });
 
     it("rejects and reports inactive products without creating an order", async () => {

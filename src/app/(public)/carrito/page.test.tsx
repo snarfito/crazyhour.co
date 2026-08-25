@@ -65,7 +65,7 @@ describe("CarritoPage", () => {
     expect(screen.getByTestId("cart-total")).toHaveTextContent("$ 90.000");
   });
 
-  it("shows the paca/media-paca/loose-unit breakdown for items with tiered pricing", async () => {
+  it("shows which wholesale tier applies for items with tiered pricing", async () => {
     seedCart([
       {
         productId: "p1",
@@ -85,7 +85,7 @@ describe("CarritoPage", () => {
       </CartProvider>
     );
 
-    expect(await screen.findByText("1 paca + 1 media paca + 1 unidad")).toBeInTheDocument();
+    expect(await screen.findByText("Precio por paca completa")).toBeInTheDocument();
   });
 
   it("omits the breakdown line for items priced only per unit", async () => {
