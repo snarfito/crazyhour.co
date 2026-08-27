@@ -6,6 +6,7 @@ import { resolveEffectiveTiers } from "@/lib/pricing";
 import { ImageGallery } from "./image-gallery";
 import { AddToCart } from "./add-to-cart";
 import { AttributeSelector } from "./attribute-selector";
+import { ShareButton } from "./share-button";
 import type { ProductAttributeWithOptions } from "./product-attributes-types";
 
 export function ProductPurchasePanel({
@@ -91,7 +92,10 @@ export function ProductPurchasePanel({
     <div className="animate-stagger-in mt-3 grid gap-6 md:grid-cols-2">
       <ImageGallery images={images} productName={name} selectedUrl={previewUrl} />
       <div>
-        <h1 className="font-heading text-2xl font-extrabold">{name}</h1>
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="font-heading text-2xl font-extrabold">{name}</h1>
+          <ShareButton name={name} />
+        </div>
         <div className="mt-2 flex flex-col gap-1">
           <p className="font-heading text-xl font-bold">{formatCOP(tiers.unitPriceCop)} c/u</p>
           {tiers.pack2 && (

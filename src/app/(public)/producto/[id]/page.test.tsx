@@ -76,7 +76,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Product page", () 
     render(<CartProvider>{ui}</CartProvider>);
 
     expect(screen.getByRole("heading", { name: `${TEST_PREFIX}Piñata estrella` })).toBeInTheDocument();
-    expect(screen.getByText(/\$ 45\.000/)).toBeInTheDocument();
+    expect(screen.getByText(/\$ 45\.000\s*c\/u/)).toBeInTheDocument();
     expect(screen.getByText("Piñata artesanal grande")).toBeInTheDocument();
     expect(screen.getByText("Agregar al carrito")).toBeInTheDocument();
   });

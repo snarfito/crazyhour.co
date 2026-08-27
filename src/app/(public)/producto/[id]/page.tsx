@@ -19,10 +19,35 @@ export async function generateMetadata({
   const supabase = await createClient();
   const { data } = await supabase
     .from("products")
-    .select("name")
+    .select("name, description, product_images(original_url, enhanced_url)")
     .eq("id", id)
     .maybeSingle();
-  return { title: data ? `${data.name} — Crazy Hour` : "Crazy Hour" };
+
+  if (!data) return { title: "Crazy Hour" };
+
+  const title = `${data.name} — Crazy Hour`;
+  const description = data.description ?? "Piñatería y artículos de fiesta";
+  const imageRows = (data.product_images ?? []) as { original_url: string; enhanced_url: string | null }[];
+  const image = imageRows.map((img) => img.enhanced_url || img.original_url).find(Boolean) ?? null;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: image ? [image] : undefined,
+      siteName: "Crazy Hour",
+      locale: "es_CO",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
 }
 
 export default async function ProductPage({
