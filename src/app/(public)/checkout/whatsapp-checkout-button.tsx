@@ -24,7 +24,7 @@ export function WhatsAppCheckoutButton({
   customerExtra?: string;
   disabled?: boolean;
 }) {
-  const { items, removeItem, clear } = useCart();
+  const { items, removeItemsByProductId, clear } = useCart();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -44,11 +44,15 @@ export function WhatsAppCheckoutButton({
           city: customerCity,
           extra: customerExtra,
         },
-        items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
+        items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          selectedOptionIds: i.selectedOptions.map((o) => o.optionId),
+        }))
       );
       if (!result.ok) {
         setError(result.error);
-        result.invalidProductIds.forEach((id) => removeItem(id));
+        result.invalidProductIds.forEach((id) => removeItemsByProductId(id));
         return;
       }
       clear();

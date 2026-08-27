@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
 function seedCart() {
   localStorage.setItem(
     "crazyhour_cart",
-    JSON.stringify([{ productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 1 }])
+    JSON.stringify([{ productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, selectedOptions: [], quantity: 1 }])
   );
 }
 
@@ -72,7 +72,7 @@ describe("WompiCheckoutButton", () => {
           city: "Bogotá",
           extra: "Apto 502",
         },
-        [{ productId: "p1", quantity: 1 }]
+        [{ productId: "p1", quantity: 1, selectedOptionIds: [] }]
       )
     );
     await waitFor(() => expect(window.WidgetCheckout).toHaveBeenCalled());

@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       const order = updated[0];
       const { data: orderItems } = await supabase
         .from("order_items")
-        .select("quantity, unit_price_cop, products(name)")
+        .select("quantity, unit_price_cop, selected_attribute_summary, products(name)")
         .eq("order_id", reference);
 
       try {
@@ -57,7 +57,9 @@ export async function POST(request: Request) {
             // embedded relation is many-to-one — it types `products` as an
             // array (same workaround as pedidos/queries.ts).
             const product = (Array.isArray(item.products) ? item.products[0] : item.products) as { name: string } | null;
-            return { name: product?.name ?? "Producto eliminado", quantity: item.quantity, unitPriceCop: item.unit_price_cop };
+            const baseName = product?.name ?? "Producto eliminado";
+            const name = item.selected_attribute_summary ? `${baseName} — ${item.selected_attribute_summary}` : baseName;
+            return { name, quantity: item.quantity, unitPriceCop: item.unit_price_cop };
           }),
           totalCop: order.total_cop,
           address: order.shipping_address,

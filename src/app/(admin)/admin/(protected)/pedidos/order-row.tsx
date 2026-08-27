@@ -204,6 +204,9 @@ export function OrderRow({
                 <li key={i} className="flex items-center justify-between py-1.5">
                   <span className="text-foreground">
                     {item.quantity}× {item.name}
+                    {item.variantSummary && (
+                      <span className="block text-xs text-muted-foreground">{item.variantSummary}</span>
+                    )}
                   </span>
                   <span className="text-muted-foreground">{formatCOP(item.unitPriceCop * item.quantity)}</span>
                 </li>

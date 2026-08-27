@@ -34,7 +34,9 @@ describe("AddToCart", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("items")).toHaveTextContent(
-        JSON.stringify([{ ...baseProps, imageUrl: "https://example.com/p1.jpg", quantity: 2 }])
+        JSON.stringify([
+          { ...baseProps, imageUrl: "https://example.com/p1.jpg", selectedOptions: [], cartItemId: "p1", quantity: 2 },
+        ])
       );
     });
   });

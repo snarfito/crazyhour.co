@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CartProvider, type CartItem } from "@/components/cart/cart-context";
+import { CartProvider, type StoredCartItem } from "@/components/cart/cart-context";
 import CarritoPage from "./page";
 
 vi.mock("@/lib/settings", () => ({
@@ -19,7 +19,9 @@ vi.mock("@/lib/theme-settings", () => ({
   }),
 }));
 
-function seedCart(items: CartItem[]) {
+// Old-shape entries (no cartItemId/selectedOptions) exercise the hydration
+// normalization in CartProvider — a real user's cart from before variants shipped.
+function seedCart(items: StoredCartItem[]) {
   localStorage.setItem("crazyhour_cart", JSON.stringify(items));
 }
 
@@ -98,6 +100,34 @@ describe("CarritoPage", () => {
 
     await screen.findByText("Piñata estrella");
     expect(screen.queryByText(/paca|unidad/)).not.toBeInTheDocument();
+  });
+
+  it("shows the chosen color/size under the product name for a variant line", async () => {
+    seedCart([
+      {
+        productId: "p1",
+        cartItemId: "p1::opt-gold,opt-18",
+        name: "Globo metalizado",
+        unitPriceCop: 3000,
+        pack1Qty: null,
+        pack1PriceCop: null,
+        pack2Qty: null,
+        pack2PriceCop: null,
+        imageUrl: null,
+        selectedOptions: [
+          { attributeId: "attr-color", optionId: "opt-gold", attributeDisplayName: "Color", optionDisplayName: "Chrome Gold" },
+          { attributeId: "attr-size", optionId: "opt-18", attributeDisplayName: "Talla", optionDisplayName: "18 pulgadas" },
+        ],
+        quantity: 1,
+      },
+    ]);
+    render(
+      <CartProvider>
+        {await CarritoPage()}
+      </CartProvider>
+    );
+
+    expect(await screen.findByText("Color: Chrome Gold · Talla: 18 pulgadas")).toBeInTheDocument();
   });
 
   it("Continuar links to /checkout", async () => {

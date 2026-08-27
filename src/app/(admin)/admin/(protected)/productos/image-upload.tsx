@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EnhanceButton } from "./enhance-button";
-import { createProductImagePlaceholder, setProductImageUrl, deleteProductImage } from "./actions";
+import { uploadProductImage } from "./upload-product-image";
 
 type ProductImage = { id: string; original_url: string; enhanced_url: string | null };
 
@@ -42,35 +41,13 @@ export function ImageUpload({
     setUploading(true);
     setError(null);
 
-    const supabase = createClient();
-    let inserted: { id: string };
     try {
-      inserted = await createProductImagePlaceholder(productId);
+      await uploadProductImage(productId, file);
     } catch {
-      setUploading(false);
-      setError("No se pudo registrar la imagen. Intenta de nuevo.");
-      return;
-    }
-
-    const ext = file.name.split(".").pop();
-    const path = `products/${productId}/${inserted.id}-original.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("catalog-images")
-      .upload(path, file, { upsert: true });
-
-    if (uploadError) {
-      await deleteProductImage(inserted.id);
       setUploading(false);
       setError("No se pudo subir la imagen. Intenta de nuevo.");
       return;
     }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("catalog-images").getPublicUrl(path);
-
-    await setProductImageUrl(inserted.id, publicUrl);
 
     setUploading(false);
     router.refresh();

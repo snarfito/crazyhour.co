@@ -143,6 +143,94 @@ describe("CartProvider / useCart", () => {
     expect(screen.getByTestId("subtotal")).toHaveTextContent(String(36 * 3000));
   });
 
+  it("keeps two variants of the same product as separate lines, but merges a repeat of the same variant", async () => {
+    function VariantConsumer() {
+      const { items, addItem } = useCart();
+      return (
+        <div>
+          <button
+            onClick={() =>
+              addItem(
+                {
+                  productId: "p3",
+                  name: "Globo",
+                  unitPriceCop: 3000,
+                  pack1Qty: null,
+                  pack1PriceCop: null,
+                  pack2Qty: null,
+                  pack2PriceCop: null,
+                  imageUrl: null,
+                  selectedOptions: [{ attributeId: "a1", optionId: "gold", attributeDisplayName: "Color", optionDisplayName: "Chrome Gold" }],
+                },
+                1
+              )
+            }
+          >
+            add gold
+          </button>
+          <button
+            onClick={() =>
+              addItem(
+                {
+                  productId: "p3",
+                  name: "Globo",
+                  unitPriceCop: 3000,
+                  pack1Qty: null,
+                  pack1PriceCop: null,
+                  pack2Qty: null,
+                  pack2PriceCop: null,
+                  imageUrl: null,
+                  selectedOptions: [{ attributeId: "a1", optionId: "silver", attributeDisplayName: "Color", optionDisplayName: "Chrome Silver" }],
+                },
+                1
+              )
+            }
+          >
+            add silver
+          </button>
+          <p data-testid="line-count">{items.length}</p>
+          <ul>
+            {items.map((item) => (
+              <li key={item.cartItemId}>{item.cartItemId}: {item.quantity}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+    const user = userEvent.setup();
+    render(
+      <CartProvider>
+        <VariantConsumer />
+      </CartProvider>
+    );
+
+    await user.click(screen.getByText("add gold"));
+    await user.click(screen.getByText("add silver"));
+    await user.click(screen.getByText("add gold"));
+
+    expect(screen.getByTestId("line-count")).toHaveTextContent("2");
+    expect(screen.getByText("p3::gold: 2")).toBeInTheDocument();
+    expect(screen.getByText("p3::silver: 1")).toBeInTheDocument();
+  });
+
+  it("normalizes a cart persisted before variants existed (no cartItemId/selectedOptions) on hydration", async () => {
+    localStorage.setItem(
+      "crazyhour_cart",
+      JSON.stringify([{ productId: "p1", name: "Piñata", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 2 }])
+    );
+
+    render(
+      <CartProvider>
+        <TestConsumer />
+      </CartProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText("Piñata: 2")).toBeInTheDocument());
+    // setQuantity/removeItem are keyed by cartItemId — for a no-variant item that's just the productId.
+    await userEvent.setup().click(screen.getByText("remove p1"));
+    expect(screen.queryByText(/Piñata:/)).not.toBeInTheDocument();
+  });
+
   it("useCart throws outside a CartProvider", () => {
     function Bare() {
       useCart();

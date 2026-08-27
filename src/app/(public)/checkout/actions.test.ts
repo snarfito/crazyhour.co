@@ -35,6 +35,11 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
   let activeProductId: string;
   let inactiveProductId: string;
   let tieredProductId: string;
+  let variantProductId: string;
+  let colorGoldOptionId: string;
+  let colorSilverOptionId: string;
+  let size18OptionId: string;
+  let size36OptionId: string;
 
   beforeEach(async () => {
     mockSendOrderReceivedEmail.mockReset();
@@ -74,6 +79,61 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
     tieredProductId = tiered!.id;
 
     await admin.from("settings").update({ whatsapp_number: "573000000000" }).eq("id", true);
+
+    const { data: variant } = await admin
+      .from("products")
+      .insert({
+        name: `${TEST_PREFIX}Globo metalizado`,
+        unit_price_cop: 1000,
+        // pack1/pack2 del producto quedan con precios "trampa" — deben
+        // ignorarse por completo en cuanto el producto tiene un grupo que
+        // afecta precio (solo pack1_qty/pack2_qty, la CANTIDAD, se usa).
+        pack1_qty: 10,
+        pack1_price_cop: 999999,
+        pack2_qty: 5,
+        pack2_price_cop: 999999,
+        is_active: true,
+      })
+      .select()
+      .single();
+    variantProductId = variant!.id;
+
+    const { data: colorAttr } = await admin
+      .from("product_attributes")
+      .insert({ product_id: variantProductId, kind: "color", display_name: "Color", affects_price: false })
+      .select()
+      .single();
+    const { data: sizeAttr } = await admin
+      .from("product_attributes")
+      .insert({ product_id: variantProductId, kind: "size", display_name: "Talla", affects_price: true })
+      .select()
+      .single();
+
+    const { data: colorOptions } = await admin
+      .from("attribute_options")
+      .insert([
+        { attribute_id: colorAttr!.id, display_name: "Chrome Gold" },
+        { attribute_id: colorAttr!.id, display_name: "Chrome Silver" },
+      ])
+      .select();
+    colorGoldOptionId = colorOptions!.find((o) => o.display_name === "Chrome Gold")!.id;
+    colorSilverOptionId = colorOptions!.find((o) => o.display_name === "Chrome Silver")!.id;
+
+    const { data: sizeOptions } = await admin
+      .from("attribute_options")
+      .insert([
+        {
+          attribute_id: sizeAttr!.id,
+          display_name: "18 pulgadas",
+          unit_price_cop: 3000,
+          pack1_price_cop: 2000,
+          pack2_price_cop: 2500,
+        },
+        { attribute_id: sizeAttr!.id, display_name: "36 pulgadas", unit_price_cop: 8000 },
+      ])
+      .select();
+    size18OptionId = sizeOptions!.find((o) => o.display_name === "18 pulgadas")!.id;
+    size36OptionId = sizeOptions!.find((o) => o.display_name === "36 pulgadas")!.id;
   });
 
   describe("createWompiOrder", () => {
@@ -270,6 +330,117 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
 
       const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
       expect(orders).toHaveLength(0);
+    });
+  });
+
+  describe("variant selections (color + talla)", () => {
+    it("prices from the size option (affects_price) and records the selections snapshot", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 2, selectedOptionIds: [colorGoldOptionId, size18OptionId] },
+      ]);
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.amountInCents).toBe(2 * 3000 * 100); // ignores unit_price_cop=1000, uses the size option's price
+
+      const { data: items } = await admin.from("order_items").select("*").eq("order_id", result.orderId);
+      expect(items).toHaveLength(1);
+      expect(items?.[0].unit_price_cop).toBe(3000);
+      expect(items?.[0].selected_attribute_summary).toBe("Color: Chrome Gold · Talla: 18 pulgadas");
+
+      const { data: selections } = await admin
+        .from("order_item_selections")
+        .select("attribute_display_name, option_display_name")
+        .eq("order_item_id", items![0].id)
+        .order("attribute_display_name");
+      expect(selections).toEqual([
+        { attribute_display_name: "Color", option_display_name: "Chrome Gold" },
+        { attribute_display_name: "Talla", option_display_name: "18 pulgadas" },
+      ]);
+    });
+
+    it("prices a different size option independently", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 1, selectedOptionIds: [colorSilverOptionId, size36OptionId] },
+      ]);
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.amountInCents).toBe(8000 * 100);
+    });
+
+    it("applies the OPTION's pack1/pack2 price at the product's quantity thresholds, never the product's own pack price", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      // pack1_qty=10 on the product → this quantity crosses it. Must use the
+      // 18" option's pack1_price_cop (2000), not the product's fake 999999.
+      const pack1Result = await createWompiOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 10, selectedOptionIds: [colorGoldOptionId, size18OptionId] },
+      ]);
+      expect(pack1Result.ok).toBe(true);
+      if (!pack1Result.ok) return;
+      expect(pack1Result.amountInCents).toBe(10 * 2000 * 100);
+
+      // pack2_qty=5, below pack1_qty=10 → the 18" option's pack2_price_cop (2500).
+      const pack2Result = await createWompiOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 5, selectedOptionIds: [colorGoldOptionId, size18OptionId] },
+      ]);
+      expect(pack2Result.ok).toBe(true);
+      if (!pack2Result.ok) return;
+      expect(pack2Result.amountInCents).toBe(5 * 2500 * 100);
+
+      // 36" has no pack price of its own → falls back to its own unit price
+      // (8000), never to the product's pack1_price_cop/pack2_price_cop.
+      const noPackPriceResult = await createWompiOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 10, selectedOptionIds: [colorGoldOptionId, size36OptionId] },
+      ]);
+      expect(noPackPriceResult.ok).toBe(true);
+      if (!noPackPriceResult.ok) return;
+      expect(noPackPriceResult.amountInCents).toBe(10 * 8000 * 100);
+    });
+
+    it("rejects when a required attribute has no selected option, without creating an order", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 1, selectedOptionIds: [colorGoldOptionId] },
+      ]);
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.invalidProductIds).toEqual([variantProductId]);
+
+      const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
+      expect(orders).toHaveLength(0);
+    });
+
+    it("rejects an inactive option even if the id is otherwise valid", async () => {
+      await admin.from("attribute_options").update({ is_active: false }).eq("id", size18OptionId);
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 1, selectedOptionIds: [colorGoldOptionId, size18OptionId] },
+      ]);
+
+      expect(result.ok).toBe(false);
+    });
+
+    it("includes the chosen color and size in the WhatsApp message", async () => {
+      const { createWhatsAppOrder } = await import("./actions");
+
+      const result = await createWhatsAppOrder(TEST_CUSTOMER, [
+        { productId: variantProductId, quantity: 1, selectedOptionIds: [colorGoldOptionId, size18OptionId] },
+      ]);
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(decodeURIComponent(result.whatsappUrl)).toContain(
+        `${TEST_PREFIX}Globo metalizado — Color: Chrome Gold · Talla: 18 pulgadas`
+      );
     });
   });
 });

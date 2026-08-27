@@ -2,14 +2,26 @@
 
 import { createServiceClient } from "@/lib/supabase/service";
 import { calculateTieredPrice } from "@/lib/pricing";
+import { resolveProductSelection, type AttributeForSelection, type OptionForSelection } from "@/lib/product-attributes";
 import { buildIntegritySignature } from "@/lib/wompi";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { getWhatsAppNumber } from "@/lib/settings";
 import { sendOrderReceivedEmail } from "@/lib/order-emails";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- this project has no generated Supabase types
+type AnySupabaseClient = any;
 
-export type CartItemInput = { productId: string; quantity: number };
+export type CartItemInput = { productId: string; quantity: number; selectedOptionIds?: string[] };
 
 type ValidationError = { ok: false; error: string; invalidProductIds: string[] };
+
+type PricedLine = {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPriceCop: number;
+  selectedAttributeSummary: string | null;
+  selections: { optionId: string; attributeDisplayName: string; optionDisplayName: string }[];
+};
 
 const INVALID_PRODUCTS_ERROR = "Uno o más productos ya no están disponibles y se quitaron de tu carrito.";
 const INVALID_EMAIL_ERROR = "El correo no tiene un formato válido.";
@@ -17,10 +29,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function validateAndPriceItems(
   cartItems: CartItemInput[]
-): Promise<
-  | { ok: true; lines: { productId: string; name: string; quantity: number; unitPriceCop: number }[]; totalCop: number }
-  | { ok: false; invalidProductIds: string[] }
-> {
+): Promise<{ ok: true; lines: PricedLine[]; totalCop: number } | { ok: false; invalidProductIds: string[] }> {
   if (cartItems.length === 0) return { ok: false, invalidProductIds: [] };
 
   const badQuantityIds = cartItems
@@ -45,30 +54,138 @@ async function validateAndPriceItems(
     return { ok: false, invalidProductIds };
   }
 
-  // A line whose quantity crosses tiers becomes multiple `lines` entries,
-  // one per tier consumed (design spec section 4/5) — all sharing the same
-  // productId, which order_items doesn't need a "tier" column to represent.
-  const lines = cartItems.flatMap((i) => {
-    const product = byId.get(i.productId)!;
+  // Grupos de variantes por producto (color, talla, ...) — un producto sin
+  // filas aquí se comporta exactamente como antes de esta funcionalidad.
+  const { data: attributeRows, error: attrError } = await supabase
+    .from("product_attributes")
+    .select(
+      "id, product_id, display_name, affects_price, attribute_options(id, display_name, unit_price_cop, pack1_price_cop, pack2_price_cop, is_active)"
+    )
+    .in("product_id", ids);
+  if (attrError) throw attrError;
+
+  const attributesByProduct = new Map<string, AttributeForSelection[]>();
+  const optionsByProduct = new Map<string, OptionForSelection[]>();
+  for (const row of attributeRows ?? []) {
+    const attributes = attributesByProduct.get(row.product_id) ?? [];
+    attributes.push({ id: row.id, displayName: row.display_name, affectsPrice: row.affects_price });
+    attributesByProduct.set(row.product_id, attributes);
+
+    const options = optionsByProduct.get(row.product_id) ?? [];
+    for (const opt of (row.attribute_options ?? []) as {
+      id: string;
+      display_name: string;
+      unit_price_cop: number | null;
+      pack1_price_cop: number | null;
+      pack2_price_cop: number | null;
+      is_active: boolean;
+    }[]) {
+      if (!opt.is_active) continue; // opción deshabilitada por el admin: no se puede seleccionar
+      options.push({
+        id: opt.id,
+        attributeId: row.id,
+        displayName: opt.display_name,
+        unitPriceCop: opt.unit_price_cop,
+        pack1PriceCop: opt.pack1_price_cop,
+        pack2PriceCop: opt.pack2_price_cop,
+      });
+    }
+    optionsByProduct.set(row.product_id, options);
+  }
+
+  const invalidSelectionIds: string[] = [];
+  const lines: PricedLine[] = [];
+
+  for (const item of cartItems) {
+    const product = byId.get(item.productId)!;
+    const attributes = attributesByProduct.get(item.productId) ?? [];
+    const options = optionsByProduct.get(item.productId) ?? [];
+    const resolved = resolveProductSelection(attributes, options, item.selectedOptionIds ?? []);
+    if (!resolved.ok) {
+      invalidSelectionIds.push(item.productId);
+      continue;
+    }
+
+    // La CANTIDAD de cada escalón (pack1_qty/pack2_qty) es siempre la del
+    // producto — es lo único compartido entre variantes (decisión
+    // confirmada con el usuario, 26 ago). Cuando hay un grupo que afecta
+    // precio, sus 3 precios (unidad/media paca/paca completa) reemplazan
+    // POR COMPLETO los del producto — nunca se mezclan.
+    const { unitPriceCop, pack1PriceCop, pack2PriceCop } = resolved.result.priceOverride ?? {
+      unitPriceCop: product.unit_price_cop,
+      pack1PriceCop: product.pack1_price_cop,
+      pack2PriceCop: product.pack2_price_cop,
+    };
     const { breakdown } = calculateTieredPrice(
       {
-        unitPriceCop: product.unit_price_cop,
+        unitPriceCop,
         pack1Qty: product.pack1_qty,
-        pack1PriceCop: product.pack1_price_cop,
+        pack1PriceCop,
         pack2Qty: product.pack2_qty,
-        pack2PriceCop: product.pack2_price_cop,
+        pack2PriceCop,
       },
-      i.quantity
+      item.quantity
     );
-    return breakdown.map((line) => ({
-      productId: i.productId,
-      name: product.name,
-      quantity: line.quantity,
-      unitPriceCop: line.unitPriceCop,
-    }));
-  });
+    const name = resolved.result.summary ? `${product.name} — ${resolved.result.summary}` : product.name;
+
+    for (const line of breakdown) {
+      lines.push({
+        productId: item.productId,
+        name,
+        quantity: line.quantity,
+        unitPriceCop: line.unitPriceCop,
+        selectedAttributeSummary: resolved.result.summary || null,
+        selections: resolved.result.selections.map((s) => ({
+          optionId: s.optionId,
+          attributeDisplayName: s.attributeDisplayName,
+          optionDisplayName: s.optionDisplayName,
+        })),
+      });
+    }
+  }
+
+  if (invalidSelectionIds.length > 0) {
+    return { ok: false, invalidProductIds: invalidSelectionIds };
+  }
+
   const totalCop = lines.reduce((sum, l) => sum + l.unitPriceCop * l.quantity, 0);
   return { ok: true, lines, totalCop };
+}
+
+/** Inserta order_items y, para las líneas con variantes, sus order_item_selections. */
+async function insertOrderItems(supabase: AnySupabaseClient, orderId: string, lines: PricedLine[]) {
+  const { data: insertedItems, error: itemsError } = await supabase
+    .from("order_items")
+    .insert(
+      lines.map((l) => ({
+        order_id: orderId,
+        product_id: l.productId,
+        quantity: l.quantity,
+        unit_price_cop: l.unitPriceCop,
+        selected_attribute_summary: l.selectedAttributeSummary,
+      }))
+    )
+    .select("id");
+  if (itemsError) throw itemsError;
+
+  const selectionRows = (insertedItems ?? []).flatMap(
+    (item: { id: string }, i: number) =>
+      lines[i].selections.map((s) => ({
+        order_item_id: item.id,
+        attribute_option_id: s.optionId,
+        attribute_display_name: s.attributeDisplayName,
+        option_display_name: s.optionDisplayName,
+      }))
+  );
+  if (selectionRows.length > 0) {
+    const { error: selectionsError } = await supabase.from("order_item_selections").insert(selectionRows);
+    if (selectionsError) throw selectionsError;
+  }
+}
+
+/** Forma minimal reusada por el email y el mensaje de WhatsApp — el nombre ya incluye el color/talla elegidos. */
+function toMessageItems(lines: PricedLine[]) {
+  return lines.map(({ productId, name, quantity, unitPriceCop }) => ({ productId, name, quantity, unitPriceCop }));
 }
 
 export type WompiOrderResult =
@@ -103,15 +220,7 @@ export async function createWompiOrder(
     .single();
   if (orderError || !order) throw orderError ?? new Error("No se pudo crear el pedido.");
 
-  const { error: itemsError } = await supabase.from("order_items").insert(
-    priced.lines.map((l) => ({
-      order_id: order.id,
-      product_id: l.productId,
-      quantity: l.quantity,
-      unit_price_cop: l.unitPriceCop,
-    }))
-  );
-  if (itemsError) throw itemsError;
+  await insertOrderItems(supabase, order.id, priced.lines);
 
   // No "order received" email here — a Wompi order isn't confirmed yet at
   // creation time (the widget hasn't even opened). The webhook sends it
@@ -163,22 +272,14 @@ export async function createWhatsAppOrder(
     .single();
   if (orderError || !order) throw orderError ?? new Error("No se pudo crear el pedido.");
 
-  const { error: itemsError } = await supabase.from("order_items").insert(
-    priced.lines.map((l) => ({
-      order_id: order.id,
-      product_id: l.productId,
-      quantity: l.quantity,
-      unit_price_cop: l.unitPriceCop,
-    }))
-  );
-  if (itemsError) throw itemsError;
+  await insertOrderItems(supabase, order.id, priced.lines);
 
   try {
     await sendOrderReceivedEmail({
       customerName: customer.name,
       customerEmail: customer.email,
       orderNumber: order.order_number,
-      items: priced.lines,
+      items: toMessageItems(priced.lines),
       totalCop: priced.totalCop,
       address: customer.address,
       neighborhood: customer.neighborhood,
@@ -193,7 +294,7 @@ export async function createWhatsAppOrder(
   const message = buildWhatsAppMessage({
     customerName: customer.name,
     orderNumber: order.order_number,
-    items: priced.lines,
+    items: toMessageItems(priced.lines),
     totalCop: priced.totalCop,
     address: customer.address,
     neighborhood: customer.neighborhood,

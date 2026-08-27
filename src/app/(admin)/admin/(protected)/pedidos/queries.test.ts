@@ -115,7 +115,24 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("pedidos queries (a
 
       const result = await fetchOrderItemsByOrderIds(admin, [order.id]);
 
-      expect(result[order.id]).toEqual([{ name: `${TEST_PREFIX}Piñata estrella`, quantity: 2, unitPriceCop: 45000 }]);
+      expect(result[order.id]).toEqual([
+        { name: `${TEST_PREFIX}Piñata estrella`, quantity: 2, unitPriceCop: 45000, variantSummary: null },
+      ]);
+    });
+
+    it("passes through the selected_attribute_summary snapshot when present", async () => {
+      const order = await insertOrder({ customer_name: `${TEST_PREFIX}ConVariante` });
+      await admin.from("order_items").insert({
+        order_id: order.id,
+        product_id: productId,
+        quantity: 1,
+        unit_price_cop: 3000,
+        selected_attribute_summary: "Color: Chrome Gold · Talla: 18 pulgadas",
+      });
+
+      const result = await fetchOrderItemsByOrderIds(admin, [order.id]);
+
+      expect(result[order.id][0].variantSummary).toBe("Color: Chrome Gold · Talla: 18 pulgadas");
     });
 
     it("returns an empty object for an empty order id list", async () => {

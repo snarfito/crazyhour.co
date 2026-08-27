@@ -13,6 +13,7 @@ export type OrderLineItem = {
   name: string;
   quantity: number;
   unitPriceCop: number;
+  variantSummary: string | null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- this project has no generated Supabase types
@@ -48,7 +49,7 @@ export async function fetchOrderItemsByOrderIds(
 
   const { data, error } = await supabase
     .from("order_items")
-    .select("order_id, quantity, unit_price_cop, products(name)")
+    .select("order_id, quantity, unit_price_cop, selected_attribute_summary, products(name)")
     .in("order_id", orderIds);
   if (error) throw error;
 
@@ -62,6 +63,7 @@ export async function fetchOrderItemsByOrderIds(
       name: product?.name ?? "Producto eliminado",
       quantity: row.quantity,
       unitPriceCop: row.unit_price_cop,
+      variantSummary: row.selected_attribute_summary,
     });
   }
   return grouped;

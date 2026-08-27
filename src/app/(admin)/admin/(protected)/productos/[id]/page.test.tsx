@@ -48,6 +48,10 @@ vi.mock("../image-upload", () => ({
   ImageUpload: () => null,
 }));
 
+vi.mock("../attributes-manager", () => ({
+  AttributesManager: () => null,
+}));
+
 describe("EditarProductoPage", () => {
   it("pre-checks the product's linked categories and pre-fills all price fields", async () => {
     const EditarProductoPage = (await import("./page")).default;

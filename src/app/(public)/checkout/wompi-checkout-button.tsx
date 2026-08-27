@@ -54,7 +54,7 @@ export function WompiCheckoutButton({
   customerExtra?: string;
   disabled?: boolean;
 }) {
-  const { items, removeItem, clear } = useCart();
+  const { items, removeItemsByProductId, clear } = useCart();
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,11 +73,15 @@ export function WompiCheckoutButton({
           city: customerCity,
           extra: customerExtra,
         },
-        items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
+        items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          selectedOptionIds: i.selectedOptions.map((o) => o.optionId),
+        }))
       );
       if (!result.ok) {
         setError(result.error);
-        result.invalidProductIds.forEach((id) => removeItem(id));
+        result.invalidProductIds.forEach((id) => removeItemsByProductId(id));
         return;
       }
       await loadWompiScript();

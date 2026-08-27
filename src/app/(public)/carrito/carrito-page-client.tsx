@@ -26,7 +26,7 @@ export function CarritoPageClient() {
           const breakdownText = formatTierBreakdown(appliedTier);
 
           return (
-            <li key={item.productId} className="flex gap-3 border-b border-border pb-4">
+            <li key={item.cartItemId} className="flex gap-3 border-b border-border pb-4">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {item.imageUrl && (
                   <Image src={item.imageUrl} alt={item.name} fill sizes="80px" className="object-cover" />
@@ -34,10 +34,17 @@ export function CarritoPageClient() {
               </div>
               <div className="flex flex-1 flex-col justify-between">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium">{item.name}</p>
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    {item.selectedOptions.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {item.selectedOptions.map((o) => `${o.attributeDisplayName}: ${o.optionDisplayName}`).join(" · ")}
+                      </p>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(item.cartItemId)}
                     className="text-sm text-destructive hover:underline"
                   >
                     Quitar
@@ -45,7 +52,7 @@ export function CarritoPageClient() {
                 </div>
                 {hasTiers && breakdownText && <p className="text-xs text-muted-foreground">{breakdownText}</p>}
                 <div className="flex items-center justify-between">
-                  <QuantityStepper quantity={item.quantity} onChange={(q) => setQuantity(item.productId, q)} />
+                  <QuantityStepper quantity={item.quantity} onChange={(q) => setQuantity(item.cartItemId, q)} />
                   <p className="font-heading font-bold">{formatCOP(totalCop)}</p>
                 </div>
               </div>

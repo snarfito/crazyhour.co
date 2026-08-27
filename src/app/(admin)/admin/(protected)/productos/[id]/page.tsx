@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "../image-upload";
+import { AttributesManager } from "../attributes-manager";
 
 export default async function EditarProductoPage({
   params,
@@ -15,11 +16,12 @@ export default async function EditarProductoPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: product }, { data: categories }, { data: images }, { data: links }] = await Promise.all([
+  const [{ data: product }, { data: categories }, { data: images }, { data: links }, { data: attributes }] = await Promise.all([
     supabase.from("products").select("*").eq("id", id).single(),
     supabase.from("categories").select("id, name").order("sort_order"),
     supabase.from("product_images").select("*").eq("product_id", id),
     supabase.from("product_categories").select("category_id").eq("product_id", id),
+    supabase.from("product_attributes").select("*, attribute_options(*)").eq("product_id", id),
   ]);
 
   if (!product) notFound();
@@ -119,6 +121,21 @@ export default async function EditarProductoPage({
         </CardHeader>
         <CardContent>
           <ImageUpload productId={product.id} images={images ?? []} />
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Variantes (color, talla, etc.)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AttributesManager
+            productId={product.id}
+            attributes={attributes ?? []}
+            images={(images ?? []).map((img) => ({ id: img.id, url: img.enhanced_url || img.original_url }))}
+            productPack1Qty={product.pack1_qty}
+            productPack2Qty={product.pack2_qty}
+          />
         </CardContent>
       </Card>
     </div>
