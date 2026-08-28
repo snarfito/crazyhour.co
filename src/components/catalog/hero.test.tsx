@@ -27,6 +27,12 @@ describe("Hero", () => {
     ornaments.forEach((el) => expect(el).toHaveAttribute("aria-hidden", "true"));
   });
 
+  it("renders the client-provided gorro and piñata neon PNGs as ornaments", () => {
+    const { container } = render(<Hero whatsappUrl={WHATSAPP_URL} />);
+    expect(container.querySelector('img[src*="neon-gorro"]')).toBeInTheDocument();
+    expect(container.querySelector('img[src*="neon-pinata"]')).toBeInTheDocument();
+  });
+
   it("gives the headline a neon glow, matching the client-approved neon direction", () => {
     render(<Hero whatsappUrl={WHATSAPP_URL} />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveClass("text-glow");
