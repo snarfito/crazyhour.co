@@ -20,11 +20,6 @@ export default async function PublicLayout({
       <CartProvider>
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4">
-            <div aria-hidden="true" className="flex w-6 shrink-0 flex-col gap-1.5">
-              <span className="h-[2.5px] rounded-full bg-white [box-shadow:0_0_8px_rgba(63,224,255,.9)]" />
-              <span className="h-[2.5px] rounded-full bg-white [box-shadow:0_0_8px_rgba(63,224,255,.9)]" />
-              <span className="h-[2.5px] rounded-full bg-white [box-shadow:0_0_8px_rgba(63,224,255,.9)]" />
-            </div>
             <Link href="/">
               <Image
                 src="/logo.png"
