@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { formatCOP } from "@/lib/format";
 import { resolveEffectiveTiers } from "@/lib/pricing";
 import { ImageGallery } from "./image-gallery";
@@ -20,6 +21,7 @@ export function ProductPurchasePanel({
   pack2Qty,
   pack2PriceCop,
   attributes,
+  whatsappUrl,
 }: {
   productId: string;
   name: string;
@@ -31,6 +33,7 @@ export function ProductPurchasePanel({
   pack2Qty: number | null;
   pack2PriceCop: number | null;
   attributes: ProductAttributeWithOptions[];
+  whatsappUrl: string;
 }) {
   // Preselecciona la primera opción de cada grupo para que nunca se pueda
   // agregar al carrito (ni pedir por WhatsApp) sin una variante concreta
@@ -97,7 +100,9 @@ export function ProductPurchasePanel({
           <ShareButton name={name} />
         </div>
         <div className="mt-2 flex flex-col gap-1">
-          <p className="font-heading text-xl font-bold">{formatCOP(tiers.unitPriceCop)} c/u</p>
+          <p className="text-glow font-heading text-xl font-bold text-brand-green">
+            {formatCOP(tiers.unitPriceCop)} c/u
+          </p>
           {tiers.pack2 && (
             <p className="text-sm text-muted-foreground">
               Media paca ({tiers.pack2.qty} un.): {formatCOP(tiers.pack2.unitPriceCop)} c/u
@@ -128,6 +133,15 @@ export function ProductPurchasePanel({
             Elige una opción de: {missingAttributes.map((a) => a.displayName).join(", ")}
           </p>
         )}
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 flex items-center justify-center gap-2 rounded-lg border-[1.5px] border-brand-whatsapp px-6 py-3 font-heading text-sm font-extrabold text-brand-whatsapp transition-transform duration-150 ease-out active:scale-[0.97]"
+        >
+          <MessageCircle aria-hidden="true" className="h-4 w-4" />
+          Preguntar por WhatsApp
+        </a>
       </div>
     </div>
   );

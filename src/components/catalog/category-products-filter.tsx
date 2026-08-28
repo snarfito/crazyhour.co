@@ -21,7 +21,11 @@ export function CategoryProductsFilter({ products }: { products: ProductListItem
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div role="radiogroup" aria-label="Filtrar productos" className="inline-flex rounded-full border border-border p-1">
+        <div
+          role="radiogroup"
+          aria-label="Filtrar productos"
+          className="neon-border inline-flex rounded-full border border-brand-cyan/45 p-1 text-brand-cyan"
+        >
           {OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -40,7 +44,7 @@ export function CategoryProductsFilter({ products }: { products: ProductListItem
         <div className="relative w-full sm:w-56">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-cyan"
           />
           <Input
             type="search"
@@ -48,7 +52,7 @@ export function CategoryProductsFilter({ products }: { products: ProductListItem
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Buscar en esta categoría"
-            className="h-9 pl-9"
+            className="search-glow neon-border h-9 pl-9 text-brand-cyan"
           />
         </div>
       </div>

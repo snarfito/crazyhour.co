@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/components/cart/cart-context";
 import { createWhatsAppOrder } from "./actions";
@@ -81,8 +82,9 @@ export function WhatsAppCheckoutButton({
         variant="outline"
         onClick={handleClick}
         disabled={disabled || pending || items.length === 0}
-        className="w-full"
+        className="w-full border-brand-whatsapp text-brand-whatsapp hover:bg-brand-whatsapp/10 [box-shadow:0_0_16px_rgba(37,211,102,.35)]"
       >
+        <MessageCircle aria-hidden="true" className="h-4 w-4" />
         {pending ? "Creando pedido..." : "Pedir por WhatsApp"}
       </Button>
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

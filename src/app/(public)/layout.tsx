@@ -20,8 +20,20 @@ export default async function PublicLayout({
       <CartProvider>
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4">
+            <div aria-hidden="true" className="flex w-6 shrink-0 flex-col gap-1.5">
+              <span className="h-[2.5px] rounded-full bg-white [box-shadow:0_0_8px_rgba(63,224,255,.9)]" />
+              <span className="h-[2.5px] rounded-full bg-white [box-shadow:0_0_8px_rgba(63,224,255,.9)]" />
+              <span className="h-[2.5px] rounded-full bg-white [box-shadow:0_0_8px_rgba(63,224,255,.9)]" />
+            </div>
             <Link href="/">
-              <Image src="/logo.png" alt="Crazy Hour" width={810} height={655} className="h-20 w-auto" priority />
+              <Image
+                src="/logo.png"
+                alt="Crazy Hour"
+                width={810}
+                height={655}
+                className="h-20 w-auto [filter:drop-shadow(0_0_14px_rgba(63,224,255,.55))]"
+                priority
+              />
             </Link>
             <div className="hidden max-w-sm flex-1 sm:block">
               <SiteSearch />

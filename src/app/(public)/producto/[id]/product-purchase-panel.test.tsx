@@ -45,6 +45,7 @@ const baseProps = {
   pack1PriceCop: null,
   pack2Qty: null,
   pack2PriceCop: null,
+  whatsappUrl: "https://wa.me/573000000000?text=Hola",
 };
 
 function CartDebug() {
@@ -147,6 +148,18 @@ describe("ProductPurchasePanel", () => {
         { attributeId: "attr-size", optionId: "opt-18", attributeDisplayName: "Talla", optionDisplayName: "18 pulgadas" },
       ]);
     });
+  });
+
+  it("shows a WhatsApp CTA linking to the pre-built chat URL", () => {
+    render(
+      <CartProvider>
+        <ProductPurchasePanel {...baseProps} attributes={[]} />
+      </CartProvider>
+    );
+
+    const link = screen.getByRole("link", { name: /preguntar por whatsapp/i });
+    expect(link).toHaveAttribute("href", baseProps.whatsappUrl);
+    expect(link).toHaveAttribute("target", "_blank");
   });
 
   it("renders no selectors and an enabled button for a product without attributes", () => {

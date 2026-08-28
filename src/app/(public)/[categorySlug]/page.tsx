@@ -81,7 +81,7 @@ export default async function CategoryPage({
 
         <div className="grid gap-6 sm:grid-cols-2 sm:items-center">
           <div>
-            <h1 className="font-heading text-2xl font-extrabold sm:text-3xl">{category.name}</h1>
+            <h1 className="text-glow font-heading text-2xl font-extrabold sm:text-3xl">{category.name}</h1>
             {category.description && (
               <p className="mt-2 text-muted-foreground">{category.description}</p>
             )}

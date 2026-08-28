@@ -49,7 +49,21 @@ export default async function HomePage() {
     <>
       <EventAnimation theme={theme} settings={settings} />
       <Hero whatsappUrl={whatsappUrl} />
+      {featured && (
+        <FeaturedCategoryStrip
+          name={featured.name}
+          slug={featured.slug}
+          description={featured.description}
+          coverImageUrl={featured.cover_image_url}
+        />
+      )}
       <div id="catalogo" className="p-4">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-glow font-heading text-xl font-black sm:text-2xl">Categorías</h2>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            {categories.length} {categories.length === 1 ? "temática" : "temáticas"}
+          </span>
+        </div>
         <CategoryGrid
           categories={categories.map((c) => ({
             id: c.id,
@@ -61,14 +75,6 @@ export default async function HomePage() {
         />
       </div>
       <HowItWorks />
-      {featured && (
-        <FeaturedCategoryStrip
-          name={featured.name}
-          slug={featured.slug}
-          description={featured.description}
-          coverImageUrl={featured.cover_image_url}
-        />
-      )}
     </>
   );
 }

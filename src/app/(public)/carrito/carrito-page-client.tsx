@@ -18,7 +18,7 @@ export function CarritoPageClient() {
 
   return (
     <div className="p-4">
-      <h1 className="font-heading text-2xl font-extrabold">Tu carrito</h1>
+      <h1 className="text-glow font-heading text-2xl font-extrabold">Tu carrito</h1>
       <ul className="mt-4 flex flex-col gap-4">
         {items.map((item) => {
           const { totalCop, appliedTier } = calculateTieredPrice(item, item.quantity);
@@ -53,16 +53,18 @@ export function CarritoPageClient() {
                 {hasTiers && breakdownText && <p className="text-xs text-muted-foreground">{breakdownText}</p>}
                 <div className="flex items-center justify-between">
                   <QuantityStepper quantity={item.quantity} onChange={(q) => setQuantity(item.cartItemId, q)} />
-                  <p className="font-heading font-bold">{formatCOP(totalCop)}</p>
+                  <p className="text-glow font-heading font-bold text-brand-green">{formatCOP(totalCop)}</p>
                 </div>
               </div>
             </li>
           );
         })}
       </ul>
-      <p className="mt-4 flex justify-between font-heading text-lg font-bold">
+      <p className="neon-border mt-4 flex justify-between rounded-2xl border border-brand-green/45 bg-card/55 px-4 py-3 font-heading text-lg font-bold">
         <span>Total</span>
-        <span data-testid="cart-total">{formatCOP(subtotalCop)}</span>
+        <span data-testid="cart-total" className="text-glow text-brand-green">
+          {formatCOP(subtotalCop)}
+        </span>
       </p>
       <Button
         render={<Link href="/checkout">Continuar</Link>}

@@ -14,26 +14,32 @@ export function FeaturedCategoryStrip({
   coverImageUrl: string | null;
 }) {
   return (
-    <section className="border-y border-border bg-card">
-      <div className="mx-auto grid max-w-5xl gap-6 px-4 py-10 sm:grid-cols-2 sm:items-center">
-        <div className="relative aspect-video overflow-hidden rounded-2xl">
+    <section className="px-4 py-4">
+      <Link
+        href={`/${slug}`}
+        className="neon-border mx-auto flex max-w-5xl items-center gap-4 rounded-2xl border border-brand-green/45 bg-card/55 p-4 text-brand-green transition-transform duration-150 ease-out active:scale-[0.99] sm:gap-6 sm:p-6"
+      >
+        <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-2xl sm:w-40">
           {coverImageUrl ? (
-            <Image src={coverImageUrl} alt="" fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
+            <Image src={coverImageUrl} alt="" fill sizes="(max-width: 640px) 96px, 160px" className="object-cover" />
           ) : (
             <BrandPlaceholder seed={slug} />
           )}
         </div>
-        <div>
-          <span className="block font-heading text-sm font-bold uppercase tracking-wide text-primary">{name}</span>
-          {description && <p className="mt-2 text-base text-muted-foreground">{description}</p>}
-          <Link
-            href={`/${slug}`}
-            className="mt-4 inline-block rounded-lg bg-primary px-6 py-3 font-heading text-sm font-extrabold text-primary-foreground transition-transform duration-150 ease-out active:scale-[0.97]"
+        <div className="min-w-0 text-foreground">
+          <span className="sr-only">Categoría destacada: </span>
+          <span
+            aria-hidden="true"
+            className="text-glow block font-mono text-[10px] font-medium uppercase tracking-widest text-brand-green"
           >
-            {`Ver ${name} →`}
-          </Link>
+            destacada
+          </span>
+          <span className="mt-1 block font-heading text-lg font-black sm:text-xl">{name}</span>
+          {description && (
+            <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{description}</p>
+          )}
         </div>
-      </div>
+      </Link>
     </section>
   );
 }

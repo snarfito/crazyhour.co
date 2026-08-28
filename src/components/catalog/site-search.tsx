@@ -73,7 +73,7 @@ export function SiteSearch() {
       <div className="relative">
         <Search
           aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-cyan"
         />
         <Input
           type="search"
@@ -85,7 +85,7 @@ export function SiteSearch() {
           }}
           onFocus={() => setOpen(true)}
           aria-label="Buscar productos"
-          className="h-10 pl-9"
+          className="search-glow neon-border h-10 pl-9 text-brand-cyan"
         />
       </div>
       {showDropdown && (

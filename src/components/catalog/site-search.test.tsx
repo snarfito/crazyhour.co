@@ -38,6 +38,11 @@ describe("SiteSearch", () => {
     }
   });
 
+  it("has a neon glow border, matching the client-approved neon direction", () => {
+    render(<SiteSearch />);
+    expect(screen.getByLabelText("Buscar productos")).toHaveClass("neon-border");
+  });
+
   it("hides on category pages, which use their own scoped search instead", () => {
     vi.mocked(usePathname).mockReturnValue("/halloween");
     render(<SiteSearch />);

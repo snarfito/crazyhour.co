@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getWhatsAppNumber } from "@/lib/settings";
+import { buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { isRecentlyCreated } from "@/lib/product-freshness";
 import { EventAnimation } from "@/components/event-animation/event-animation";
 import { getEffectiveEventTheme } from "@/components/event-animation/effective-theme";
@@ -87,6 +89,8 @@ export default async function ProductPage({
 
   const theme = await getEffectiveEventTheme();
   const settings = theme === "none" ? DEFAULT_MOTION_SETTINGS : await getThemeMotionSettings(theme);
+  const whatsappNumber = await getWhatsAppNumber();
+  const whatsappUrl = buildWhatsAppUrl(whatsappNumber, `Hola, tengo una pregunta sobre ${product.name}.`);
 
   const attributeRows = (product.product_attributes ?? []) as {
     id: string;
@@ -185,6 +189,7 @@ export default async function ProductPage({
           pack2Qty={product.pack2_qty}
           pack2PriceCop={product.pack2_price_cop}
           attributes={attributes}
+          whatsappUrl={whatsappUrl}
         />
         <RelatedProducts products={related} />
       </div>
