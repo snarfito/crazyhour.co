@@ -38,6 +38,43 @@ describe("EventAnimation", () => {
     expect(overlay).not.toHaveClass("fixed", "z-0");
   });
 
+  it("renders uploaded shape images instead of the theme's icons when shapeImageUrls is set", () => {
+    const { container } = render(
+      <EventAnimation
+        theme="navidad"
+        settings={{
+          ...DEFAULT_MOTION_SETTINGS,
+          particleCount: 4,
+          shapeImageUrls: ["https://example.com/a.png", "https://example.com/b.png"],
+        }}
+      />,
+    );
+
+    const particles = container.querySelectorAll(".event-particle");
+    expect(particles).toHaveLength(4);
+    for (const particle of particles) {
+      expect(particle.tagName).toBe("IMG");
+    }
+    expect((particles[0] as HTMLImageElement).src).toBe("https://example.com/a.png");
+    expect((particles[1] as HTMLImageElement).src).toBe("https://example.com/b.png");
+    expect((particles[2] as HTMLImageElement).src).toBe("https://example.com/a.png");
+  });
+
+  it("produces identical particle layout across renders, so SSR and client hydration never mismatch", () => {
+    const props = { theme: "navidad" as const, settings: { ...DEFAULT_MOTION_SETTINGS, particleCount: 6 } };
+    const first = render(<EventAnimation {...props} />);
+    const second = render(<EventAnimation {...props} />);
+
+    const firstStyles = Array.from(first.container.querySelectorAll(".event-particle")).map(
+      (el) => (el as HTMLElement).getAttribute("style")
+    );
+    const secondStyles = Array.from(second.container.querySelectorAll(".event-particle")).map(
+      (el) => (el as HTMLElement).getAttribute("style")
+    );
+
+    expect(firstStyles).toEqual(secondStyles);
+  });
+
   it("respects settings.maxOpacity", () => {
     const { container } = render(
       <EventAnimation theme="navidad" settings={{ ...DEFAULT_MOTION_SETTINGS, maxOpacity: 0.42 }} />,

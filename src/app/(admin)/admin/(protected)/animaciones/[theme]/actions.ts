@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/supabase/dal";
-import { updateThemeMotionSettings } from "@/lib/theme-settings";
+import { updateThemeMotionSettings, addThemeShapeImage, removeThemeShapeImage } from "@/lib/theme-settings";
 import type { EventTheme } from "@/lib/event-themes";
 
 function readNumber(formData: FormData, field: string, min: number, max: number): number {
@@ -34,5 +34,17 @@ export async function updateThemeSettingsAction(theme: Exclude<EventTheme, "none
     customCss,
   });
 
+  revalidatePath(`/admin/animaciones/${theme}`);
+}
+
+export async function addThemeShapeImageAction(theme: Exclude<EventTheme, "none">, url: string) {
+  await requirePermission("animaciones");
+  await addThemeShapeImage(theme, url);
+  revalidatePath(`/admin/animaciones/${theme}`);
+}
+
+export async function removeThemeShapeImageAction(theme: Exclude<EventTheme, "none">, url: string) {
+  await requirePermission("animaciones");
+  await removeThemeShapeImage(theme, url);
   revalidatePath(`/admin/animaciones/${theme}`);
 }

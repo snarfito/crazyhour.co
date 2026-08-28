@@ -98,4 +98,31 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("updateThemeSetting
     const { data } = await admin.from("theme_settings").select("custom_css").eq("theme", "baby_shower").single();
     expect(data?.custom_css).toBeNull();
   });
+
+  it("addThemeShapeImageAction appends the URL", async () => {
+    const { addThemeShapeImageAction } = await import("./actions");
+
+    await addThemeShapeImageAction("baby_shower", "https://example.com/shape.png");
+
+    const { data } = await admin
+      .from("theme_settings")
+      .select("shape_image_urls")
+      .eq("theme", "baby_shower")
+      .single();
+    expect(data?.shape_image_urls).toEqual(["https://example.com/shape.png"]);
+  });
+
+  it("removeThemeShapeImageAction drops the URL", async () => {
+    const { addThemeShapeImageAction, removeThemeShapeImageAction } = await import("./actions");
+
+    await addThemeShapeImageAction("baby_shower", "https://example.com/shape.png");
+    await removeThemeShapeImageAction("baby_shower", "https://example.com/shape.png");
+
+    const { data } = await admin
+      .from("theme_settings")
+      .select("shape_image_urls")
+      .eq("theme", "baby_shower")
+      .single();
+    expect(data?.shape_image_urls).toEqual([]);
+  });
 });
