@@ -83,7 +83,7 @@ export default async function CategoryPage({
           <div>
             <h1 className="text-glow font-heading text-2xl font-extrabold sm:text-3xl">{category.name}</h1>
             {category.description && (
-              <p className="mt-2 text-muted-foreground">{category.description}</p>
+              <p className="mt-2 whitespace-pre-line text-muted-foreground">{category.description}</p>
             )}
           </div>
           <div className="relative aspect-video max-h-[22.8rem] overflow-hidden rounded-2xl sm:max-h-[25.92rem]">
