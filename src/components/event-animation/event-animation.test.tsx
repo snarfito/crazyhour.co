@@ -60,6 +60,21 @@ describe("EventAnimation", () => {
     expect((particles[2] as HTMLImageElement).src).toBe("https://example.com/a.png");
   });
 
+  it("produces identical particle layout across renders, so SSR and client hydration never mismatch", () => {
+    const props = { theme: "navidad" as const, settings: { ...DEFAULT_MOTION_SETTINGS, particleCount: 6 } };
+    const first = render(<EventAnimation {...props} />);
+    const second = render(<EventAnimation {...props} />);
+
+    const firstStyles = Array.from(first.container.querySelectorAll(".event-particle")).map(
+      (el) => (el as HTMLElement).getAttribute("style")
+    );
+    const secondStyles = Array.from(second.container.querySelectorAll(".event-particle")).map(
+      (el) => (el as HTMLElement).getAttribute("style")
+    );
+
+    expect(firstStyles).toEqual(secondStyles);
+  });
+
   it("respects settings.maxOpacity", () => {
     const { container } = render(
       <EventAnimation theme="navidad" settings={{ ...DEFAULT_MOTION_SETTINGS, maxOpacity: 0.42 }} />,
