@@ -112,7 +112,12 @@ export function WompiCheckoutButton({
 
   return (
     <div>
-      <Button type="button" onClick={handleClick} disabled={disabled || pending || items.length === 0} className="w-full">
+      <Button
+        type="button"
+        onClick={handleClick}
+        disabled={disabled || pending || items.length === 0}
+        className="w-full [box-shadow:0_0_18px_rgba(255,46,136,.5)] disabled:shadow-none"
+      >
         {pending ? "Cargando..." : "Pagar con Wompi"}
       </Button>
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

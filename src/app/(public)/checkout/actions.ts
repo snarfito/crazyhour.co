@@ -7,6 +7,7 @@ import { buildIntegritySignature } from "@/lib/wompi";
 import { buildWhatsAppMessage, buildWhatsAppUrl } from "@/lib/whatsapp-message";
 import { getWhatsAppNumber } from "@/lib/settings";
 import { sendOrderReceivedEmail } from "@/lib/order-emails";
+import { isValidCOPhone } from "@/lib/phone";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- this project has no generated Supabase types
 type AnySupabaseClient = any;
 
@@ -26,6 +27,7 @@ type PricedLine = {
 const INVALID_PRODUCTS_ERROR = "Uno o más productos ya no están disponibles y se quitaron de tu carrito.";
 const INVALID_EMAIL_ERROR = "El correo no tiene un formato válido.";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INVALID_PHONE_ERROR = "El teléfono debe ser un celular colombiano válido (10 dígitos, empieza en 3).";
 
 async function validateAndPriceItems(
   cartItems: CartItemInput[]
@@ -197,6 +199,7 @@ export async function createWompiOrder(
   cartItems: CartItemInput[]
 ): Promise<WompiOrderResult> {
   if (!EMAIL_PATTERN.test(customer.email)) return { ok: false, error: INVALID_EMAIL_ERROR, invalidProductIds: [] };
+  if (!isValidCOPhone(customer.phone)) return { ok: false, error: INVALID_PHONE_ERROR, invalidProductIds: [] };
 
   const priced = await validateAndPriceItems(cartItems);
   if (!priced.ok) return { ok: false, error: INVALID_PRODUCTS_ERROR, invalidProductIds: priced.invalidProductIds };
@@ -249,6 +252,7 @@ export async function createWhatsAppOrder(
   cartItems: CartItemInput[]
 ): Promise<WhatsAppOrderResult> {
   if (!EMAIL_PATTERN.test(customer.email)) return { ok: false, error: INVALID_EMAIL_ERROR, invalidProductIds: [] };
+  if (!isValidCOPhone(customer.phone)) return { ok: false, error: INVALID_PHONE_ERROR, invalidProductIds: [] };
 
   const priced = await validateAndPriceItems(cartItems);
   if (!priced.ok) return { ok: false, error: INVALID_PRODUCTS_ERROR, invalidProductIds: priced.invalidProductIds };

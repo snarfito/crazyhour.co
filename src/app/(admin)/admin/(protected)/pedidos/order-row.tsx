@@ -11,6 +11,7 @@ import { SELECT_CLASSES } from "@/lib/admin-ui";
 import { formatCOP } from "@/lib/format";
 import { deleteOrder, markOrderPaid, markOrderPreparing, markOrderShipped, updateCustomerDetails } from "./actions";
 import type { OrderLineItem } from "./queries";
+import { isValidCOPhone } from "@/lib/phone";
 
 const CARRIER_OPTIONS = ["Inter Rapidísimo", "Coordinadora", "Servientrega", "Envía", "TCC"];
 
@@ -46,6 +47,8 @@ export function OrderRow({
   items: OrderLineItem[];
 }) {
   const [carrier, setCarrier] = useState(CARRIER_OPTIONS[0]);
+  const [phone, setPhone] = useState(order.customer_phone);
+  const phoneError = phone.trim().length > 0 && !isValidCOPhone(phone);
 
   return (
     <Dialog>
@@ -111,7 +114,20 @@ export function OrderRow({
           </div>
           <div>
             <Label htmlFor={`customer_phone-${order.id}`}>Teléfono</Label>
-            <Input id={`customer_phone-${order.id}`} name="customer_phone" defaultValue={order.customer_phone} required />
+            <Input
+              id={`customer_phone-${order.id}`}
+              name="customer_phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              aria-invalid={phoneError}
+              required
+            />
+            {phoneError && (
+              <p className="mt-1 text-xs text-destructive">
+                El teléfono debe ser un celular colombiano válido (10 dígitos, empieza en 3).
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor={`customer_email-${order.id}`}>Correo</Label>
@@ -150,7 +166,7 @@ export function OrderRow({
             <Input id={`shipping_extra-${order.id}`} name="shipping_extra" defaultValue={order.shipping_extra ?? ""} />
           </div>
           <div className="col-span-2">
-            <SubmitButton variant="outline" size="sm">
+            <SubmitButton variant="outline" size="sm" disabled={phoneError}>
               Guardar cambios
             </SubmitButton>
           </div>

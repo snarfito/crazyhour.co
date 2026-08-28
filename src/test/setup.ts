@@ -20,4 +20,8 @@ vi.mock("next/font/google", () => ({
     variable: config.variable,
     className: "caveat",
   })),
+  JetBrains_Mono: vi.fn((config) => ({
+    variable: config.variable,
+    className: "jetbrains-mono",
+  })),
 }));

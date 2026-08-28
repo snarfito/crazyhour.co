@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fontHeading, fontBody, fontAccent } from "@/lib/fonts";
+import { fontHeading, fontBody, fontAccent, fontMono } from "@/lib/fonts";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${fontHeading.variable} ${fontBody.variable} ${fontAccent.variable} h-full antialiased`}
+      className={`${fontHeading.variable} ${fontBody.variable} ${fontAccent.variable} ${fontMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body">{children}</body>
     </html>

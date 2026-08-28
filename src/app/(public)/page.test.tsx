@@ -81,6 +81,19 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => 
     expect(prefixedLinks[1]).toHaveAttribute("href", `/${TEST_PREFIX}globos`);
   });
 
+  it("shows a Categorías heading with the category count as an eyebrow", async () => {
+    await admin.from("categories").insert([
+      { name: `${TEST_PREFIX}Globos`, slug: `${TEST_PREFIX}globos`, sort_order: 2 },
+      { name: `${TEST_PREFIX}Piñatas`, slug: `${TEST_PREFIX}pinatas`, sort_order: 1 },
+    ]);
+
+    const HomePage = (await import("./page")).default;
+    const ui = await HomePage();
+    render(ui);
+
+    expect(screen.getByRole("heading", { name: "Categorías" })).toBeInTheDocument();
+  });
+
   it("shows the empty state when there are no categories", async () => {
     forceEmpty = true;
 
@@ -143,10 +156,33 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("Home page", () => 
     const ui = await HomePage();
     render(ui);
 
-    expect(screen.getByRole("link", { name: /ver.*hora loca/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /categoría destacada.*hora loca/i })).toHaveAttribute(
       "href",
       `/${TEST_PREFIX}hora-loca`
     );
+  });
+
+  it("renders the featured category strip before the rest of the category grid", async () => {
+    await admin.from("categories").insert([
+      { name: `${TEST_PREFIX}Normal`, slug: `${TEST_PREFIX}normal`, sort_order: 1, is_featured: false, description: null },
+      {
+        name: `${TEST_PREFIX}Hora Loca`,
+        slug: `${TEST_PREFIX}hora-loca`,
+        sort_order: 2,
+        is_featured: true,
+        description: "La fiesta no para.",
+      },
+    ]);
+
+    const HomePage = (await import("./page")).default;
+    const ui = await HomePage();
+    const { container } = render(ui);
+
+    const featuredLink = screen.getByRole("link", { name: /categoría destacada.*hora loca/i });
+    const gridLink = container.querySelector(`a[href="/${TEST_PREFIX}normal"]`);
+    expect(gridLink).not.toBeNull();
+    // DOCUMENT_POSITION_FOLLOWING means gridLink comes after featuredLink.
+    expect(featuredLink.compareDocumentPosition(gridLink!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("omits the featured strip when no category is flagged", async () => {

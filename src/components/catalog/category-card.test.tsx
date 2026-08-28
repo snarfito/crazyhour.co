@@ -35,4 +35,16 @@ describe("CategoryCard", () => {
     );
     expect(screen.getByText("1 producto")).toBeInTheDocument();
   });
+
+  it("alternates the Nº badge between pink and green by index parity", () => {
+    const { rerender } = render(
+      <CategoryCard id="c1" name="Piñatas" slug="pinatas" coverImageUrl={null} wide={false} index={0} productCount={1} />
+    );
+    expect(screen.getByText("Nº 01")).toHaveClass("bg-brand-pink");
+
+    rerender(
+      <CategoryCard id="c1" name="Piñatas" slug="pinatas" coverImageUrl={null} wide={false} index={1} productCount={1} />
+    );
+    expect(screen.getByText("Nº 02")).toHaveClass("bg-brand-green");
+  });
 });

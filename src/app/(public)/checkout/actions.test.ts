@@ -333,6 +333,40 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("checkout actions (
     });
   });
 
+  describe("phone format validation", () => {
+    it("rejects createWompiOrder with a malformed phone, without creating an order", async () => {
+      const { createWompiOrder } = await import("./actions");
+
+      const result = await createWompiOrder(
+        { ...TEST_CUSTOMER, phone: "123" },
+        [{ productId: activeProductId, quantity: 1 }]
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toMatch(/teléfono/i);
+
+      const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
+      expect(orders).toHaveLength(0);
+    });
+
+    it("rejects createWhatsAppOrder with a malformed phone, without creating an order", async () => {
+      const { createWhatsAppOrder } = await import("./actions");
+
+      const result = await createWhatsAppOrder(
+        { ...TEST_CUSTOMER, phone: "123" },
+        [{ productId: activeProductId, quantity: 1 }]
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toMatch(/teléfono/i);
+
+      const { data: orders } = await admin.from("orders").select("*").like("customer_name", TEST_PREFIX_LIKE);
+      expect(orders).toHaveLength(0);
+    });
+  });
+
   describe("variant selections (color + talla)", () => {
     it("prices from the size option (affects_price) and records the selections snapshot", async () => {
       const { createWompiOrder } = await import("./actions");

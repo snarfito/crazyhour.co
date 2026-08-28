@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { CartProvider } from "@/components/cart/cart-context";
 import CheckoutPage from "./page";
 
@@ -65,5 +65,32 @@ describe("CheckoutPage", () => {
     expect(screen.getByLabelText("Barrio")).toBeInTheDocument();
     expect(screen.getByLabelText("Ciudad")).toBeInTheDocument();
     expect(screen.getByLabelText(/información adicional/i)).toBeInTheDocument();
+  });
+
+  it("disables the WhatsApp button and shows an error while the phone is malformed", async () => {
+    localStorage.setItem(
+      "crazyhour_cart",
+      JSON.stringify([{ productId: "p1", name: "Piñata estrella", unitPriceCop: 45000, pack1Qty: null, pack1PriceCop: null, pack2Qty: null, pack2PriceCop: null, imageUrl: null, quantity: 1 }])
+    );
+    render(
+      <CartProvider>
+        {await CheckoutPage()}
+      </CartProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Ana" } });
+    fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "123" } });
+    fireEvent.change(screen.getByLabelText("Correo"), { target: { value: "ana@example.com" } });
+    fireEvent.change(screen.getByLabelText("Dirección"), { target: { value: "Calle 1" } });
+    fireEvent.change(screen.getByLabelText("Barrio"), { target: { value: "Chapinero" } });
+    fireEvent.change(screen.getByLabelText("Ciudad"), { target: { value: "Bogotá" } });
+
+    expect(screen.getByText(/celular colombiano válido/i)).toBeInTheDocument();
+    expect(screen.getByText("Pedir por WhatsApp").closest("button")).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Teléfono"), { target: { value: "3001234567" } });
+
+    expect(screen.queryByText(/celular colombiano válido/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Pedir por WhatsApp").closest("button")).not.toBeDisabled();
   });
 });

@@ -1,4 +1,4 @@
-import { Nunito, Manrope, Caveat } from "next/font/google";
+import { Nunito, Manrope, Caveat, JetBrains_Mono } from "next/font/google";
 
 export const fontHeading = Nunito({
   subsets: ["latin"],
@@ -18,5 +18,14 @@ export const fontAccent = Caveat({
   subsets: ["latin"],
   weight: ["600", "700"],
   variable: "--font-caveat",
+  display: "swap",
+});
+
+// Eyebrow/label mono face for the neon reskin (uppercase micro-labels like
+// "12 temáticas", "destacada", field labels) — public site only.
+export const fontMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });
