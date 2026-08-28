@@ -2,9 +2,11 @@ import { EVENT_THEME_REGISTRY, type EventTheme, type ThemeConfig } from "@/lib/e
 import type { ThemeMotionSettings } from "@/lib/theme-motion-defaults";
 
 function buildParticles(config: ThemeConfig, settings: ThemeMotionSettings) {
+  const imageUrls = settings.shapeImageUrls;
   return Array.from({ length: settings.particleCount }, (_, i) => ({
     key: i,
-    Shape: config.shapes[i % config.shapes.length],
+    Shape: imageUrls.length > 0 ? null : config.shapes[i % config.shapes.length],
+    imageUrl: imageUrls.length > 0 ? imageUrls[i % imageUrls.length] : null,
     color: config.colors[i % config.colors.length],
     size: settings.minSize + Math.random() * (settings.maxSize - settings.minSize),
     left: `${Math.random() * 100}%`,
@@ -38,21 +40,24 @@ export function EventAnimation({
   return (
     <div aria-hidden="true" className={containerClass}>
       {settings.customCss && <style>{settings.customCss}</style>}
-      {particles.map(({ key, Shape, color, size, left, duration, delay }) => (
-        <Shape
-          key={key}
-          data-theme={theme}
-          className={hasCustomCss ? "event-particle" : `event-particle event-particle-${config.direction}`}
-          style={{
-            left,
-            width: size,
-            height: size,
-            color,
-            opacity: settings.maxOpacity,
-            ...(hasCustomCss ? {} : { animationDuration: `${duration}s`, animationDelay: `${delay}s` }),
-          }}
-        />
-      ))}
+      {particles.map(({ key, Shape, imageUrl, color, size, left, duration, delay }) => {
+        const className = hasCustomCss ? "event-particle" : `event-particle event-particle-${config.direction}`;
+        const style = {
+          left,
+          width: size,
+          height: size,
+          opacity: settings.maxOpacity,
+          ...(hasCustomCss ? {} : { animationDuration: `${duration}s`, animationDelay: `${delay}s` }),
+        };
+        if (imageUrl) {
+          return (
+            // eslint-disable-next-line @next/next/no-img-element -- tiny decorative particle, not worth Next's image optimizer
+            <img key={key} src={imageUrl} alt="" data-theme={theme} className={className} style={style} />
+          );
+        }
+        const Icon = Shape!;
+        return <Icon key={key} data-theme={theme} className={className} style={{ ...style, color }} />;
+      })}
     </div>
   );
 }

@@ -6,6 +6,7 @@ export type ThemeMotionSettings = {
   maxSize: number;
   maxOpacity: number;
   customCss: string | null;
+  shapeImageUrls: string[];
 };
 
 export const DEFAULT_MOTION_SETTINGS: ThemeMotionSettings = {
@@ -16,4 +17,5 @@ export const DEFAULT_MOTION_SETTINGS: ThemeMotionSettings = {
   maxSize: 28,
   maxOpacity: 0.18,
   customCss: null,
+  shapeImageUrls: [],
 };

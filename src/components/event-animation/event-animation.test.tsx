@@ -38,6 +38,28 @@ describe("EventAnimation", () => {
     expect(overlay).not.toHaveClass("fixed", "z-0");
   });
 
+  it("renders uploaded shape images instead of the theme's icons when shapeImageUrls is set", () => {
+    const { container } = render(
+      <EventAnimation
+        theme="navidad"
+        settings={{
+          ...DEFAULT_MOTION_SETTINGS,
+          particleCount: 4,
+          shapeImageUrls: ["https://example.com/a.png", "https://example.com/b.png"],
+        }}
+      />,
+    );
+
+    const particles = container.querySelectorAll(".event-particle");
+    expect(particles).toHaveLength(4);
+    for (const particle of particles) {
+      expect(particle.tagName).toBe("IMG");
+    }
+    expect((particles[0] as HTMLImageElement).src).toBe("https://example.com/a.png");
+    expect((particles[1] as HTMLImageElement).src).toBe("https://example.com/b.png");
+    expect((particles[2] as HTMLImageElement).src).toBe("https://example.com/a.png");
+  });
+
   it("respects settings.maxOpacity", () => {
     const { container } = render(
       <EventAnimation theme="navidad" settings={{ ...DEFAULT_MOTION_SETTINGS, maxOpacity: 0.42 }} />,

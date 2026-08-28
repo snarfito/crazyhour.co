@@ -8,6 +8,7 @@ import { SubmitButton } from "@/components/admin/submit-button";
 import type { ThemeMotionSettings } from "@/lib/theme-settings";
 import type { EventTheme } from "@/lib/event-themes";
 import { updateThemeSettingsAction } from "./actions";
+import { ShapeImagesUpload } from "./shape-images-upload";
 
 const RANGE_CLASSES = "w-full";
 const INERT_CLASSES = "opacity-40 pointer-events-none";
@@ -30,7 +31,8 @@ export function ThemeEditorClient({
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
-      <form action={actionWithTheme} className="flex max-w-md flex-1 flex-col gap-4">
+      <div className="flex max-w-md flex-1 flex-col gap-6">
+      <form action={actionWithTheme} className="flex flex-col gap-4">
         <div>
           <Label htmlFor="particle_count">Cantidad de partículas</Label>
           <input
@@ -139,6 +141,13 @@ export function ThemeEditorClient({
 
         <SubmitButton>Guardar</SubmitButton>
       </form>
+
+      <ShapeImagesUpload
+        theme={theme}
+        urls={settings.shapeImageUrls}
+        onChange={(shapeImageUrls) => setField("shapeImageUrls", shapeImageUrls)}
+      />
+      </div>
 
       <div className="shrink-0 lg:w-80">
         <Label>Vista previa</Label>

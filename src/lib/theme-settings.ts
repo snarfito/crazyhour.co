@@ -14,6 +14,7 @@ type ThemeSettingsRow = {
   max_size: number | null;
   max_opacity: number | null;
   custom_css: string | null;
+  shape_image_urls: string[] | null;
 };
 
 function mergeRow(row: ThemeSettingsRow | null | undefined): ThemeMotionSettings {
@@ -26,6 +27,7 @@ function mergeRow(row: ThemeSettingsRow | null | undefined): ThemeMotionSettings
     maxSize: row.max_size ?? DEFAULT_MOTION_SETTINGS.maxSize,
     maxOpacity: row.max_opacity ?? DEFAULT_MOTION_SETTINGS.maxOpacity,
     customCss: row.custom_css ?? null,
+    shapeImageUrls: row.shape_image_urls ?? [],
   };
 }
 
@@ -69,6 +71,31 @@ export async function updateThemeMotionSettings(
     ...(values.maxSize !== undefined && { max_size: values.maxSize }),
     ...(values.maxOpacity !== undefined && { max_opacity: values.maxOpacity }),
     ...(values.customCss !== undefined && { custom_css: values.customCss }),
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+// Read-modify-write rather than a Postgres array_append/array_remove RPC —
+// admin-only, single-user-at-a-time usage, so the race window doesn't
+// matter in practice, and this keeps the write path plain Supabase-js.
+export async function addThemeShapeImage(theme: Exclude<EventTheme, "none">, url: string): Promise<void> {
+  const current = await getThemeMotionSettings(theme);
+  const supabase = createServiceClient();
+  const { error } = await supabase.from("theme_settings").upsert({
+    theme,
+    shape_image_urls: [...current.shapeImageUrls, url],
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+export async function removeThemeShapeImage(theme: Exclude<EventTheme, "none">, url: string): Promise<void> {
+  const current = await getThemeMotionSettings(theme);
+  const supabase = createServiceClient();
+  const { error } = await supabase.from("theme_settings").upsert({
+    theme,
+    shape_image_urls: current.shapeImageUrls.filter((existing) => existing !== url),
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;

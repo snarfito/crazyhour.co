@@ -14,6 +14,7 @@ vi.mock("@/lib/supabase/dal", () => ({
 const mockSettings = {
   particleCount: 12, minDuration: 10, maxDuration: 20,
   minSize: 16, maxSize: 28, maxOpacity: 0.25, customCss: null,
+  shapeImageUrls: [],
 };
 
 vi.mock("@/lib/theme-settings", () => ({

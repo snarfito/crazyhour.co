@@ -10,6 +10,7 @@ vi.mock("./actions", () => ({
 const INITIAL = {
   particleCount: 8, minDuration: 14, maxDuration: 22,
   minSize: 16, maxSize: 28, maxOpacity: 0.18, customCss: null,
+  shapeImageUrls: [],
 };
 
 describe("ThemeEditorClient", () => {
