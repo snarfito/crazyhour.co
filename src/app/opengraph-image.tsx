@@ -18,7 +18,11 @@ export default async function OpengraphImage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #1C4170 0%, #102A49 100%)",
+          background: "#0d1030",
+          backgroundImage:
+            "radial-gradient(1100px 650px at 50% -80px, rgba(176, 97, 255, 0.45), transparent 60%), " +
+            "radial-gradient(900px 600px at 100% 280px, rgba(63, 224, 255, 0.28), transparent 62%), " +
+            "radial-gradient(800px 500px at -80px 560px, rgba(255, 46, 136, 0.24), transparent 60%)",
         }}
       >
         <img src={logoSrc} width={594} height={480} alt="Crazy Hour" />
