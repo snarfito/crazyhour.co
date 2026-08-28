@@ -18,10 +18,21 @@ function MercadoLibreIcon() {
   );
 }
 
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="3.8" />
+      <path d="M17.2 6.8h.01" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
   const whatsappUrl = buildWhatsAppUrl(whatsappNumber, "Hola, tengo una pregunta sobre sus productos.");
   const tiktokUrl = process.env.NEXT_PUBLIC_TIKTOK_URL;
   const mercadoLibreUrl = process.env.NEXT_PUBLIC_MERCADOLIBRE_URL;
+  const instagramUrl = process.env.NEXT_PUBLIC_INSTAGRAM_URL;
 
   return (
     <footer className="mt-10 border-t border-border px-4 py-8">
@@ -62,6 +73,14 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
                   <MercadoLibreIcon />
                 </span>
                 Mercado Libre
+              </a>
+            )}
+            {instagramUrl && (
+              <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5">
+                <span className="neon-border flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[1.5px] border-brand-orange text-brand-orange">
+                  <InstagramIcon />
+                </span>
+                Instagram
               </a>
             )}
           </div>
