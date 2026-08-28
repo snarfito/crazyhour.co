@@ -15,8 +15,8 @@ const CONFETTI = [
 ];
 
 // Neon balloon and sun outlines, echoing the client-approved neon mockup's
-// hand-drawn ornaments (real ornament PNGs aren't available yet — see the
-// two placeholder boxes below).
+// hand-drawn ornaments — no client-provided art for these two yet, unlike
+// the gorro/piñata PNGs below.
 function NeonBalloon({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 76 112" fill="none" aria-hidden="true" className={className} {...props}>
@@ -47,31 +47,44 @@ export function Hero({ whatsappUrl }: { whatsappUrl: string }) {
     <section className="relative overflow-hidden px-4 pb-10 pt-8 sm:px-6 sm:pb-14 sm:pt-12">
       <NeonBalloon
         data-hero-ornament
-        className="animate-float pointer-events-none absolute left-0 top-24 h-24 w-16 opacity-80 [filter:drop-shadow(0_0_7px_rgba(255,46,136,.85))] sm:h-28 sm:w-20"
+        className="animate-float pointer-events-none absolute left-0 top-24 z-0 h-24 w-16 opacity-80 [filter:drop-shadow(0_0_7px_rgba(255,46,136,.85))] sm:h-28 sm:w-20"
       />
       <NeonSun
         data-hero-ornament
-        className="animate-float-slow pointer-events-none absolute right-3 top-3 h-11 w-11 opacity-80 [filter:drop-shadow(0_0_7px_rgba(52,245,139,.85))] sm:h-14 sm:w-14"
+        className="animate-float-slow pointer-events-none absolute right-3 top-3 z-0 h-11 w-11 opacity-80 [filter:drop-shadow(0_0_7px_rgba(52,245,139,.85))] sm:h-14 sm:w-14"
       />
       {CONFETTI.map(({ className, glow }, i) => (
         <span
           key={i}
           data-hero-ornament
           aria-hidden="true"
-          className={`pointer-events-none absolute ${className}`}
+          className={`pointer-events-none absolute z-0 ${className}`}
           style={{ boxShadow: `0 0 10px ${glow}` }}
         />
       ))}
+      {/* Client-provided neon PNGs (gorro, piñata) — same opacity/glow
+          treatment as the balloon/sun outlines above, and behind the
+          content column (z-0 vs. the content's z-10) so they read as
+          background texture, not foreground elements. */}
       <div
         data-hero-ornament
         aria-hidden="true"
-        className="pointer-events-none absolute right-3 top-20 flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-brand-purple/55 bg-[repeating-linear-gradient(135deg,rgba(176,97,255,.1)_0_7px,transparent_7px_14px)] text-center font-mono text-[9px] leading-tight text-brand-purple/80 sm:h-20 sm:w-20"
+        className="animate-float pointer-events-none absolute right-3 top-20 z-0 h-16 w-16 opacity-80 [filter:drop-shadow(0_0_7px_rgba(63,224,255,.6))_brightness(1.2)] sm:h-20 sm:w-20"
       >
-        gorro
-        <br />
-        neon PNG
+        <div className="relative h-full w-full">
+          <Image src="/neon-gorro.png" alt="" fill sizes="80px" className="object-contain" />
+        </div>
       </div>
-      <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-8 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        data-hero-ornament
+        aria-hidden="true"
+        className="animate-float-slow pointer-events-none absolute bottom-2 left-1/2 z-0 h-24 w-28 -translate-x-1/2 opacity-80 [filter:drop-shadow(0_0_7px_rgba(255,46,136,.6))_brightness(1.2)] sm:bottom-10 sm:left-auto sm:right-8 sm:h-32 sm:w-36 sm:translate-x-0"
+      >
+        <div className="relative h-full w-full">
+          <Image src="/neon-pinata.png" alt="" fill sizes="144px" className="object-contain" />
+        </div>
+      </div>
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-8 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col items-center sm:order-2 sm:shrink-0">
           <div
             role="button"
@@ -111,17 +124,6 @@ export function Hero({ whatsappUrl }: { whatsappUrl: string }) {
           <p className="mt-4 text-base text-muted-foreground sm:text-lg">
             Piñatería y artículos de fiesta para tu próxima celebración.
           </p>
-          <div
-            data-hero-ornament
-            aria-hidden="true"
-            className="mt-3 flex justify-center sm:justify-end"
-          >
-            <div className="flex h-24 w-20 items-center justify-center rounded-2xl border border-dashed border-brand-pink/55 bg-[repeating-linear-gradient(135deg,rgba(255,46,136,.1)_0_7px,transparent_7px_14px)] text-center font-mono text-[9px] leading-tight text-brand-pink/80">
-              piñata
-              <br />
-              neon PNG
-            </div>
-          </div>
           <div className="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">
             <a
               href="#catalogo"

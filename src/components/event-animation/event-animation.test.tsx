@@ -9,13 +9,13 @@ describe("EventAnimation", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders settings.particleCount particles, in a pointer-events-none fixed overlay", () => {
+  it("renders settings.particleCount particles, in a pointer-events-none fixed overlay behind page content", () => {
     const { container } = render(
       <EventAnimation theme="navidad" settings={{ ...DEFAULT_MOTION_SETTINGS, particleCount: 5 }} />,
     );
 
     const overlay = container.firstChild as HTMLElement;
-    expect(overlay).toHaveClass("pointer-events-none", "fixed", "inset-0", "z-10");
+    expect(overlay).toHaveClass("pointer-events-none", "fixed", "inset-0", "z-0");
     expect(overlay.querySelectorAll(".event-particle")).toHaveLength(5);
   });
 
@@ -35,7 +35,7 @@ describe("EventAnimation", () => {
 
     const overlay = container.firstChild as HTMLElement;
     expect(overlay).toHaveClass("absolute", "inset-0");
-    expect(overlay).not.toHaveClass("fixed", "z-10");
+    expect(overlay).not.toHaveClass("fixed", "z-0");
   });
 
   it("respects settings.maxOpacity", () => {

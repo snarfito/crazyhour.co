@@ -27,9 +27,13 @@ export function EventAnimation({
   const particles = buildParticles(config, settings);
   const hasCustomCss = Boolean(settings.customCss);
 
+  // z-0 (not the previous z-10) so the overlay sits behind page content —
+  // every non-contained usage renders this first, and page content that
+  // follows in the DOM paints on top of it at the same implicit stacking
+  // level, while still sitting above the page background.
   const containerClass = contained
     ? "pointer-events-none absolute inset-0 overflow-hidden"
-    : "pointer-events-none fixed inset-0 z-10 overflow-hidden";
+    : "pointer-events-none fixed inset-0 z-0 overflow-hidden";
 
   return (
     <div aria-hidden="true" className={containerClass}>
