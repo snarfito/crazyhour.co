@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Upload, Trash2 } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EnhanceButton } from "./enhance-button";
 import { uploadProductImage } from "./upload-product-image";
+import { deleteProductImage } from "./actions";
 
 type ProductImage = { id: string; original_url: string; enhanced_url: string | null };
 
@@ -22,6 +23,7 @@ export function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -54,6 +56,22 @@ export function ImageUpload({
     onChange?.();
   }
 
+  async function removeImage(imageId: string) {
+    if (!window.confirm("¿Eliminar esta foto? No se podrá deshacer.")) return;
+
+    setError(null);
+    setDeletingId(imageId);
+    try {
+      await deleteProductImage(imageId);
+      router.refresh();
+      onChange?.();
+    } catch {
+      setError("No se pudo eliminar la foto. Intenta de nuevo.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="mt-2">
       <div className="flex flex-col gap-4">
@@ -81,8 +99,19 @@ export function ImageUpload({
                 </div>
               )}
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex items-center gap-2">
               <EnhanceButton imageId={img.id} onEnhanced={onChange} />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                disabled={deletingId === img.id}
+                onClick={() => removeImage(img.id)}
+              >
+                <Trash2 />
+                {deletingId === img.id ? "Eliminando..." : "Eliminar"}
+              </Button>
             </div>
           </div>
         ))}

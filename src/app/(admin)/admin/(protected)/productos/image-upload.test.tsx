@@ -107,4 +107,32 @@ describe("ImageUpload", () => {
     expect(mockSetProductImageUrl).not.toHaveBeenCalled();
     expect(await screen.findByText(/no se pudo subir la imagen/i)).toBeInTheDocument();
   });
+
+  it("deletes an image after confirming, so unwanted photos stop showing on the site", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(
+      <ImageUpload
+        productId="p-1"
+        images={[{ id: "img-1", original_url: "https://example.com/a.jpg", enhanced_url: null }]}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /eliminar/i }));
+
+    expect(mockDeleteProductImage).toHaveBeenCalledWith("img-1");
+  });
+
+  it("keeps the image when deletion is not confirmed", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <ImageUpload
+        productId="p-1"
+        images={[{ id: "img-1", original_url: "https://example.com/a.jpg", enhanced_url: null }]}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /eliminar/i }));
+
+    expect(mockDeleteProductImage).not.toHaveBeenCalled();
+  });
 });
