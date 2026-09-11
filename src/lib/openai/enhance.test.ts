@@ -41,6 +41,7 @@ describe("enhanceImage", () => {
       image: "mock-file",
       prompt: "un prompt de prueba",
       model: "gpt-image-1",
+      quality: "medium",
     });
     expect(result.mimeType).toBe("image/png");
     expect(result.imageBytes.toString()).toBe("edited-bytes");
@@ -92,6 +93,7 @@ describe("generateCoverImage", () => {
     expect(mockGenerate).toHaveBeenCalledWith({
       prompt: "una portada de prueba",
       model: "gpt-image-1",
+      quality: "medium",
     });
     expect(result.mimeType).toBe("image/png");
     expect(result.imageBytes.toString()).toBe("cover-bytes");

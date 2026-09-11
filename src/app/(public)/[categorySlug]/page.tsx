@@ -23,10 +23,22 @@ export async function generateMetadata({
   const supabase = await createClient();
   const { data } = await supabase
     .from("categories")
-    .select("name")
+    .select("name, description, cover_image_url")
     .eq("slug", categorySlug)
     .maybeSingle();
-  return { title: data ? `${data.name} — Crazy Hour` : "Crazy Hour" };
+
+  if (!data) return { title: "Crazy Hour" };
+
+  const title = `${data.name} — Crazy Hour`;
+  const description = data.description || `${data.name} para tu fiesta — piñatería y artículos de fiesta en Crazy Hour.`;
+  const images = data.cover_image_url ? [data.cover_image_url] : [];
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, images },
+    twitter: { title, description, images },
+  };
 }
 
 export default async function CategoryPage({
