@@ -112,14 +112,14 @@ export async function createProductImagePlaceholder(productId: string): Promise<
   return { id: data.id };
 }
 
-export async function setProductImageUrl(imageId: string, url: string) {
+export async function setProductImageUrl(imageId: string, url: string, opts?: { clearEnhanced?: boolean }) {
   await requirePermission("productos");
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("product_images")
-    .update({ original_url: url })
-    .eq("id", imageId);
+  const update: { original_url: string; enhanced_url?: null } = { original_url: url };
+  if (opts?.clearEnhanced) update.enhanced_url = null;
+
+  const { error } = await supabase.from("product_images").update(update).eq("id", imageId);
   if (error) throw error;
 
   revalidatePath("/admin/productos");

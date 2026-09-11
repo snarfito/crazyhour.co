@@ -45,22 +45,85 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+// A real crop UI (drag/zoom canvas via react-easy-crop) can't run in jsdom.
+// The modal's own logic (crop math, canvas->File) is covered by
+// crop-image.test.ts; here we stub it down to its two outcomes so we can
+// test how ImageUpload reacts to each.
+vi.mock("./crop-modal", () => ({
+  CropModal: ({ onCropped, onCancel }: { onCropped: (file: File) => void; onCancel: () => void }) => (
+    <div>
+      <button onClick={() => onCropped(new File(["cropped-bytes"], "recortada.jpg", { type: "image/jpeg" }))}>
+        Confirmar recorte
+      </button>
+      <button onClick={onCancel}>Cancelar recorte</button>
+    </div>
+  ),
+}));
+
 describe("ImageUpload", () => {
   beforeEach(() => {
     mockUpload.mockReset().mockResolvedValue({ error: null });
     mockCreateProductImagePlaceholder.mockReset().mockResolvedValue({ id: "img-1" });
     mockSetProductImageUrl.mockReset().mockResolvedValue(undefined);
     mockDeleteProductImage.mockReset().mockResolvedValue(undefined);
+    // jsdom doesn't implement these; patch only the two static methods so
+    // `URL` stays the real constructor everywhere else (vi.stubGlobal("URL", ...)
+    // replaced the whole constructor and broke `new URL(...)` in every other
+    // test file sharing this worker).
+    URL.createObjectURL = vi.fn(() => "blob:mock");
+    URL.revokeObjectURL = vi.fn();
   });
 
-  it("uploads a new photo and shows it in the list", async () => {
+  it("opens a crop step before uploading, and only uploads once the crop is confirmed", async () => {
     render(<ImageUpload productId="p-1" images={[]} />);
     const file = new File(["fake-bytes"], "foto.jpg", { type: "image/jpeg" });
     const input = screen.getByLabelText(/subir foto/i);
 
     await userEvent.upload(input, file);
+    expect(mockUpload).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByText(/confirmar recorte/i));
 
     expect(mockUpload).toHaveBeenCalled();
+  });
+
+  it("does not upload when the crop step is cancelled", async () => {
+    render(<ImageUpload productId="p-1" images={[]} />);
+    const file = new File(["fake-bytes"], "foto.jpg", { type: "image/jpeg" });
+    const input = screen.getByLabelText(/subir foto/i);
+
+    await userEvent.upload(input, file);
+    await userEvent.click(screen.getByText(/cancelar recorte/i));
+
+    expect(mockUpload).not.toHaveBeenCalled();
+    expect(screen.queryByText(/confirmar recorte/i)).not.toBeInTheDocument();
+  });
+
+  it("re-crops an existing photo in place and clears its stale enhanced version", async () => {
+    render(
+      <ImageUpload
+        productId="p-1"
+        images={[
+          {
+            id: "img-1",
+            original_url: "https://example.com/products/p-1/img-1-original.jpg",
+            enhanced_url: "https://example.com/products/p-1/img-1-enhanced.png",
+          },
+        ]}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /recortar/i }));
+    await userEvent.click(screen.getByText(/confirmar recorte/i));
+
+    expect(mockUpload).toHaveBeenCalled();
+    expect(mockSetProductImageUrl).toHaveBeenCalledWith(
+      "img-1",
+      expect.any(String),
+      expect.objectContaining({ clearEnhanced: true })
+    );
+    // Re-cropping an existing photo reuses its row — no new placeholder row created.
+    expect(mockCreateProductImagePlaceholder).not.toHaveBeenCalled();
   });
 
   it("renders existing images with a 'Mejorar imagen' action each", () => {
@@ -101,6 +164,7 @@ describe("ImageUpload", () => {
     const input = screen.getByLabelText(/subir foto/i);
 
     await userEvent.upload(input, file);
+    await userEvent.click(screen.getByText(/confirmar recorte/i));
 
     expect(mockCreateProductImagePlaceholder).toHaveBeenCalledWith("p-1");
     expect(mockDeleteProductImage).toHaveBeenCalledWith("img-1");

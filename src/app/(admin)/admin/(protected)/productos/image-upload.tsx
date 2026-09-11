@@ -2,14 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Trash2 } from "lucide-react";
+import { Upload, Trash2, Crop } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EnhanceButton } from "./enhance-button";
-import { uploadProductImage } from "./upload-product-image";
+import { CropModal } from "./crop-modal";
+import { uploadProductImage, recropProductImage } from "./upload-product-image";
 import { deleteProductImage } from "./actions";
 
 type ProductImage = { id: string; original_url: string; enhanced_url: string | null };
+
+/** File picked for the crop step; `recropId` set means "re-crop this existing image" instead of uploading a new one. */
+type PendingCrop = { file: File; previewUrl: string; recropId?: string };
+
+function extensionOf(url: string): string {
+  const last = url.split("?")[0].split(".").pop();
+  return last && last.length <= 5 ? last : "jpg";
+}
 
 export function ImageUpload({
   productId,
@@ -24,6 +33,7 @@ export function ImageUpload({
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,12 +42,40 @@ export function ImageUpload({
       const file = Array.from(e.clipboardData?.items ?? [])
         .find((item) => item.type.startsWith("image/"))
         ?.getAsFile();
-      if (file) uploadFile(file);
+      if (file) startCrop(file);
     }
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId, uploading]);
+  }, [uploading]);
+
+  function startCrop(file: File) {
+    setPendingCrop({ file, previewUrl: URL.createObjectURL(file) });
+  }
+
+  function startRecrop(image: ProductImage) {
+    // Only the file's name/type are used (for output naming) — the pixels
+    // come from `image.original_url` directly, no need to fetch its bytes.
+    const ext = extensionOf(image.original_url);
+    const placeholderFile = new File([], `imagen.${ext}`, { type: `image/${ext === "jpg" ? "jpeg" : ext}` });
+    setPendingCrop({ file: placeholderFile, previewUrl: image.original_url, recropId: image.id });
+  }
+
+  function cancelCrop() {
+    if (pendingCrop?.recropId === undefined) URL.revokeObjectURL(pendingCrop!.previewUrl);
+    setPendingCrop(null);
+  }
+
+  async function handleCropped(file: File) {
+    const recropId = pendingCrop?.recropId;
+    if (pendingCrop && recropId === undefined) URL.revokeObjectURL(pendingCrop.previewUrl);
+    setPendingCrop(null);
+
+    if (recropId) {
+      await recrop(recropId, file);
+    } else {
+      await uploadFile(file);
+    }
+  }
 
   async function uploadFile(file: File) {
     setUploading(true);
@@ -48,6 +86,23 @@ export function ImageUpload({
     } catch {
       setUploading(false);
       setError("No se pudo subir la imagen. Intenta de nuevo.");
+      return;
+    }
+
+    setUploading(false);
+    router.refresh();
+    onChange?.();
+  }
+
+  async function recrop(imageId: string, file: File) {
+    setUploading(true);
+    setError(null);
+
+    try {
+      await recropProductImage(productId, imageId, file);
+    } catch {
+      setUploading(false);
+      setError("No se pudo recortar la imagen. Intenta de nuevo.");
       return;
     }
 
@@ -101,6 +156,10 @@ export function ImageUpload({
             </div>
             <div className="mt-3 flex items-center gap-2">
               <EnhanceButton imageId={img.id} onEnhanced={onChange} />
+              <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => startRecrop(img)}>
+                <Crop />
+                Recortar
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -126,7 +185,7 @@ export function ImageUpload({
           e.preventDefault();
           setDragOver(false);
           const file = e.dataTransfer.files?.[0];
-          if (file) uploadFile(file);
+          if (file) startCrop(file);
         }}
         className={cn(
           "mt-3 flex flex-col items-start gap-2 rounded-lg border-2 border-dashed border-transparent p-2",
@@ -151,12 +210,20 @@ export function ImageUpload({
         className="sr-only"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) uploadFile(file);
+          if (file) startCrop(file);
           e.target.value = "";
         }}
         disabled={uploading}
       />
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      {pendingCrop && (
+        <CropModal
+          imageUrl={pendingCrop.previewUrl}
+          sourceFile={pendingCrop.file}
+          onCancel={cancelCrop}
+          onCropped={handleCropped}
+        />
+      )}
     </div>
   );
 }

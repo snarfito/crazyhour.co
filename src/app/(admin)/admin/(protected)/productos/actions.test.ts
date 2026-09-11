@@ -152,6 +152,37 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("product actions (a
     expect(links).toHaveLength(0);
   });
 
+  it("setProductImageUrl with clearEnhanced nulls out a stale enhanced version", async () => {
+    const { createProduct, setProductImageUrl } = await import("./actions");
+    const create = new FormData();
+    create.append("category_ids", categoryAId);
+    create.set("name", `${TEST_PREFIX}Producto con foto`);
+    create.set("description", "x");
+    create.set("unit_price_cop", "1000");
+    create.set("sku", "IMG-001");
+    await createProduct(create);
+    const { data: product } = await admin
+      .from("products")
+      .select("id")
+      .eq("name", `${TEST_PREFIX}Producto con foto`)
+      .single();
+    const { data: image } = await admin
+      .from("product_images")
+      .insert({ product_id: product!.id, original_url: "https://example.com/old.jpg", enhanced_url: "https://example.com/old-enhanced.png" })
+      .select()
+      .single();
+
+    await setProductImageUrl(image!.id, "https://example.com/recortada.jpg", { clearEnhanced: true });
+
+    const { data: updated } = await admin
+      .from("product_images")
+      .select("original_url, enhanced_url")
+      .eq("id", image!.id)
+      .single();
+    expect(updated?.original_url).toBe("https://example.com/recortada.jpg");
+    expect(updated?.enhanced_url).toBeNull();
+  });
+
   it("propagates rejection when the caller lacks the productos permission, without writing", async () => {
     mockRequirePermission.mockRejectedValueOnce(new Error("REDIRECT:/admin/pedidos"));
     const { createProduct } = await import("./actions");
