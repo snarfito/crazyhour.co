@@ -26,12 +26,17 @@ describe("recropProductImage", () => {
     mockSetProductImageUrl.mockClear();
   });
 
-  it("uploads to the existing image's original path and clears its enhanced version", async () => {
+  it("uploads to a fresh path (not the previous one), so the new photo isn't stuck behind a stale CDN/Image-Optimization cache for the old URL", async () => {
     const file = new File(["cropped-bytes"], "recortada.jpg", { type: "image/jpeg" });
 
     await recropProductImage("p-1", "img-1", file);
 
-    expect(mockUpload).toHaveBeenCalledWith("products/p-1/img-1-original.jpg", file, { upsert: true });
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.stringMatching(/^products\/p-1\/img-1-original-\d+\.jpg$/),
+      file,
+      { upsert: true }
+    );
+    expect(mockUpload.mock.calls[0][0]).not.toBe("products/p-1/img-1-original.jpg");
     expect(mockSetProductImageUrl).toHaveBeenCalledWith(
       "img-1",
       expect.any(String),
