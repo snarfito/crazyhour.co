@@ -2,18 +2,21 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isValidEventTheme, type EventTheme } from "@/lib/event-themes";
 
+export type ImageProvider = "gemini" | "openai";
+
 export type Settings = {
   whatsappNumber: string;
   contactEmail: string | null;
   contactPhone: string | null;
   activeEventTheme: EventTheme;
+  imageProvider: ImageProvider;
 };
 
 export async function getSettings(): Promise<Settings> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("settings")
-    .select("whatsapp_number, contact_email, contact_phone, active_event_theme")
+    .select("whatsapp_number, contact_email, contact_phone, active_event_theme, image_provider")
     .eq("id", true)
     .single();
   if (error || !data) throw error ?? new Error("No se encontró la configuración.");
@@ -23,6 +26,7 @@ export async function getSettings(): Promise<Settings> {
     contactEmail: data.contact_email,
     contactPhone: data.contact_phone,
     activeEventTheme: isValidEventTheme(data.active_event_theme) ? data.active_event_theme : "none",
+    imageProvider: data.image_provider === "openai" ? "openai" : "gemini",
   };
 }
 

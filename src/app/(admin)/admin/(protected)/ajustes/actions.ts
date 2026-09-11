@@ -15,6 +15,7 @@ export async function updateSettings(formData: FormData) {
       contact_email: String(formData.get("contact_email") ?? "").trim() || null,
       contact_phone: String(formData.get("contact_phone") ?? "").trim() || null,
       active_event_theme: String(formData.get("active_event_theme") ?? "none"),
+      image_provider: String(formData.get("image_provider") ?? "gemini"),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);

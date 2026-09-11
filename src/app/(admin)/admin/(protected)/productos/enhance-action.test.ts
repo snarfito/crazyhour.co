@@ -34,7 +34,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const mockEnhanceImage = vi.fn();
-vi.mock("@/lib/gemini/enhance", () => ({
+vi.mock("@/lib/image-provider", () => ({
   enhanceImage: (...args: unknown[]) => mockEnhanceImage(...args),
 }));
 

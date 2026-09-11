@@ -39,11 +39,11 @@ vi.mock("@/lib/supabase/server", () => ({
     createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY),
 }));
 
-// generateCategoryCoverImage calls out to the real Gemini API — mocked here
-// so this suite stays a pure Storage/DB integration test, same reasoning as
-// the dal/server mocks above.
+// generateCategoryCoverImage calls out to the real image provider (Gemini or
+// OpenAI) — mocked here so this suite stays a pure Storage/DB integration
+// test, same reasoning as the dal/server mocks above.
 const mockGenerateCoverImage = vi.fn();
-vi.mock("@/lib/gemini/enhance", () => ({
+vi.mock("@/lib/image-provider", () => ({
   generateCoverImage: (...args: unknown[]) => mockGenerateCoverImage(...args),
 }));
 

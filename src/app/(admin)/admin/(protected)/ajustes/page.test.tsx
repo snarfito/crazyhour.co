@@ -13,6 +13,7 @@ vi.mock("@/lib/settings", () => ({
     contactEmail: "hola@crazyhour.co",
     contactPhone: "3000000000",
     activeEventTheme: "halloween",
+    imageProvider: "gemini",
   }),
 }));
 
@@ -64,11 +65,22 @@ describe("AjustesPage", () => {
       contactEmail: "hola@crazyhour.co",
       contactPhone: "3000000000",
       activeEventTheme: "hora_loca",
+      imageProvider: "gemini",
     });
     rerender(await AjustesPage());
 
     const select = screen.getByLabelText(/tema de animación/i) as HTMLSelectElement;
     expect(select.value).toBe("hora_loca");
+  });
+
+  it("lists Gemini and ChatGPT as image provider options, pre-selecting the current one", async () => {
+    const AjustesPage = (await import("./page")).default;
+    render(await AjustesPage());
+
+    const select = screen.getByLabelText(/proveedor de generación de imágenes/i) as HTMLSelectElement;
+    const options = Array.from(select.querySelectorAll("option")).map((o) => o.textContent);
+    expect(options).toEqual(["Gemini", "ChatGPT (OpenAI)"]);
+    expect(select.value).toBe("gemini");
   });
 
   it("redirects when the caller lacks the ajustes permission", async () => {

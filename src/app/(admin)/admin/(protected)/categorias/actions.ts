@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/supabase/dal";
 import { slugify } from "@/lib/slug";
-import { generateCoverImage } from "@/lib/gemini/enhance";
+import { generateCoverImage } from "@/lib/image-provider";
 
 function readAnimationTheme(formData: FormData): string | null {
   const value = String(formData.get("animation_theme") ?? "");

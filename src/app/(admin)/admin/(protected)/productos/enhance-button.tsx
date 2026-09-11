@@ -44,7 +44,7 @@ export function EnhanceButton({ imageId, onEnhanced }: { imageId: string; onEnha
           }
         >
           <Sparkles />
-          {pending ? "Procesando..." : "Procesar con Gemini"}
+          {pending ? "Procesando..." : "Procesar imagen"}
         </Button>
         <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
           Cancelar

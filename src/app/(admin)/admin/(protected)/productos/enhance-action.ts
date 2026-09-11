@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/supabase/dal";
-import { enhanceImage } from "@/lib/gemini/enhance";
+import { enhanceImage } from "@/lib/image-provider";
 
 // original_url is only ever set from getPublicUrl() on this bucket (see
 // image-upload.tsx) — enforcing that prefix before fetching it server-side

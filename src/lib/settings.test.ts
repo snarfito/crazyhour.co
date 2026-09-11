@@ -26,6 +26,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("settings (against 
         contact_email: "hola@crazyhour.co",
         contact_phone: "3000000000",
         active_event_theme: "none",
+        image_provider: "gemini",
       })
       .eq("id", true);
   });
@@ -40,7 +41,15 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("settings (against 
       contactEmail: "hola@crazyhour.co",
       contactPhone: "3000000000",
       activeEventTheme: "none",
+      imageProvider: "gemini",
     });
+  });
+
+  it("getSettings reflects a switch to the openai image provider", async () => {
+    await admin.from("settings").update({ image_provider: "openai" }).eq("id", true);
+    const { getSettings } = await import("./settings");
+
+    expect((await getSettings()).imageProvider).toBe("openai");
   });
 
   it("getWhatsAppNumber returns just the number", async () => {

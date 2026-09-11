@@ -64,6 +64,19 @@ export default async function AjustesPage() {
                 settingsMap={settingsMap}
               />
             </div>
+            <div>
+              <Label htmlFor="image_provider">Proveedor de generación de imágenes</Label>
+              <select
+                key={settings.imageProvider}
+                id="image_provider"
+                name="image_provider"
+                defaultValue={settings.imageProvider}
+                className={SELECT_CLASSES}
+              >
+                <option value="gemini">Gemini</option>
+                <option value="openai">ChatGPT (OpenAI)</option>
+              </select>
+            </div>
             <SubmitButton className="self-start">Guardar</SubmitButton>
           </form>
         </CardContent>
