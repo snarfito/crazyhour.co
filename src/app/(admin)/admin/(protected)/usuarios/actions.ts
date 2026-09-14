@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requirePermission, type AdminPermissions } from "@/lib/supabase/dal";
 
@@ -51,7 +52,11 @@ export async function inviteAdmin(
     return { error: "Este correo ya tiene acceso al panel." };
   }
 
-  const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
+  const h = await headers();
+  const origin = h.get("origin") ?? `https://${h.get("host")}`;
+  const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${origin}/admin/restablecer-password`,
+  });
 
   let userId: string;
   let createdNewAuthUser: boolean;

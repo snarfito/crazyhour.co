@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { signIn } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,6 +41,11 @@ export default function LoginPage() {
               {pending ? "Entrando..." : "Entrar"}
             </Button>
           </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            <Link href="/admin/olvide-password" className="text-primary underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

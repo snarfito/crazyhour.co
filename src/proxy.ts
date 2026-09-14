@@ -30,8 +30,16 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginPage = request.nextUrl.pathname === "/admin/login";
+  // olvide-password and restablecer-password must stay reachable without a
+  // session: the invite/recovery link's token arrives as a URL hash (never
+  // sent to the server) or a one-time code that the page's client-side
+  // Supabase client exchanges for a session itself once it renders.
+  const isPublicPath =
+    isLoginPage ||
+    request.nextUrl.pathname === "/admin/olvide-password" ||
+    request.nextUrl.pathname === "/admin/restablecer-password";
 
-  if (!user && !isLoginPage) {
+  if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     return NextResponse.redirect(url);

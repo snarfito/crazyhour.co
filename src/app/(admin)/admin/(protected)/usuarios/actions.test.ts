@@ -18,6 +18,10 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
+vi.mock("next/headers", () => ({
+  headers: async () => ({ get: (key: string) => (key === "host" ? "crazyhour.co" : null) }),
+}));
+
 describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revokeAdmin / updatePermissions (against local Supabase)", () => {
   const admin = createServiceClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY);
   const createdUserIds: string[] = [];
