@@ -254,7 +254,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
     expect(row?.can_usuarios).toBe(true);
   });
 
-  it("resetToTemporaryPassword sets a real password and stores must_change_password when forceChange is true", async () => {
+  it("setTemporaryPassword sets the given password and stores must_change_password when forceChange is true", async () => {
     const email = `zzadminusuarios_temppw_${Date.now()}@crazyhour.test`;
     const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
     createdUserIds.push(created.user!.id);
@@ -264,18 +264,17 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
       can_ajustes: false, can_animaciones: false, can_usuarios: false,
     });
 
-    const { resetToTemporaryPassword } = await import("./actions");
-    const result = await resetToTemporaryPassword(created.user!.id, true);
+    const { setTemporaryPassword } = await import("./actions");
+    const result = await setTemporaryPassword(created.user!.id, "chosen-temp-pw-1", true);
 
     expect(mockRequirePermission).toHaveBeenCalledWith("usuarios");
-    if ("error" in result) throw new Error(`expected a tempPassword, got error: ${result.error}`);
-    expect(result.tempPassword).toHaveLength(12);
+    expect(result).toEqual({ success: true });
 
     const { data: row } = await admin.from("admin_users").select("must_change_password").eq("id", created.user!.id).single();
     expect(row?.must_change_password).toBe(true);
   });
 
-  it("resetToTemporaryPassword leaves must_change_password false when forceChange is false", async () => {
+  it("setTemporaryPassword leaves must_change_password false when forceChange is false", async () => {
     const email = `zzadminusuarios_temppw_noforce_${Date.now()}@crazyhour.test`;
     const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
     createdUserIds.push(created.user!.id);
@@ -286,11 +285,22 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
       must_change_password: true,
     });
 
-    const { resetToTemporaryPassword } = await import("./actions");
-    const result = await resetToTemporaryPassword(created.user!.id, false);
-    if ("error" in result) throw new Error(`expected a tempPassword, got error: ${result.error}`);
+    const { setTemporaryPassword } = await import("./actions");
+    const result = await setTemporaryPassword(created.user!.id, "chosen-temp-pw-2", false);
+    expect(result).toEqual({ success: true });
 
     const { data: row } = await admin.from("admin_users").select("must_change_password").eq("id", created.user!.id).single();
     expect(row?.must_change_password).toBe(false);
+  });
+
+  it("setTemporaryPassword rejects a password shorter than 8 characters without calling Supabase", async () => {
+    const email = `zzadminusuarios_temppw_short_${Date.now()}@crazyhour.test`;
+    const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
+    createdUserIds.push(created.user!.id);
+
+    const { setTemporaryPassword } = await import("./actions");
+    const result = await setTemporaryPassword(created.user!.id, "short", true);
+
+    expect(result).toEqual({ error: "La contraseña debe tener al menos 8 caracteres." });
   });
 });

@@ -2,29 +2,30 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { resetToTemporaryPassword } from "./actions";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { setTemporaryPassword } from "./actions";
 
 export function ResetTempPasswordButton({ id }: { id: string }) {
   const [expanded, setExpanded] = useState(false);
+  const [password, setPassword] = useState("");
   const [forceChange, setForceChange] = useState(true);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
-  if (tempPassword) {
+  function reset() {
+    setExpanded(false);
+    setPassword("");
+    setError(null);
+    setDone(false);
+  }
+
+  if (done) {
     return (
-      <div className="flex max-w-56 flex-col gap-1 text-sm">
-        <p className="text-xs text-muted-foreground">Cópiala ahora, no se volverá a mostrar:</p>
-        <code className="select-all rounded bg-muted px-2 py-1 font-mono text-sm">{tempPassword}</code>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setTempPassword(null);
-            setExpanded(false);
-          }}
-        >
+      <div className="flex flex-col gap-1 text-sm">
+        <p className="text-xs text-muted-foreground">Contraseña actualizada.</p>
+        <Button type="button" variant="outline" size="sm" onClick={reset}>
           Cerrar
         </Button>
       </div>
@@ -40,7 +41,19 @@ export function ResetTempPasswordButton({ id }: { id: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-56 flex-col gap-2">
+      <div>
+        <Label htmlFor={`temp_pw_${id}`}>Nueva contraseña</Label>
+        <Input
+          id={`temp_pw_${id}`}
+          type="text"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          minLength={8}
+          className="font-mono"
+          autoComplete="off"
+        />
+      </div>
       <label className="flex items-center gap-1.5 text-sm">
         <input
           type="checkbox"
@@ -55,22 +68,22 @@ export function ResetTempPasswordButton({ id }: { id: string }) {
         <Button
           type="button"
           size="sm"
-          disabled={pending}
+          disabled={pending || password.length < 8}
           onClick={() =>
             startTransition(async () => {
               setError(null);
-              const result = await resetToTemporaryPassword(id, forceChange);
+              const result = await setTemporaryPassword(id, password, forceChange);
               if ("error" in result) {
                 setError(result.error);
               } else {
-                setTempPassword(result.tempPassword);
+                setDone(true);
               }
             })
           }
         >
-          {pending ? "Generando..." : "Generar contraseña temporal"}
+          {pending ? "Guardando..." : "Guardar contraseña"}
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => setExpanded(false)} disabled={pending}>
+        <Button type="button" variant="outline" size="sm" onClick={reset} disabled={pending}>
           Cancelar
         </Button>
       </div>
