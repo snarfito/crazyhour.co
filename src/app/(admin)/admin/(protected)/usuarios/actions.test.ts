@@ -253,4 +253,14 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
     const { data: row } = await admin.from("admin_users").select("can_usuarios").eq("id", created.user!.id).single();
     expect(row?.can_usuarios).toBe(true);
   });
+
+  it("sendPasswordReset requires the usuarios permission and does not throw for a real user", async () => {
+    const email = `zzadminusuarios_reset_${Date.now()}@crazyhour.test`;
+    const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
+    createdUserIds.push(created.user!.id);
+
+    const { sendPasswordReset } = await import("./actions");
+    await expect(sendPasswordReset(email)).resolves.toBeUndefined();
+    expect(mockRequirePermission).toHaveBeenCalledWith("usuarios");
+  });
 });

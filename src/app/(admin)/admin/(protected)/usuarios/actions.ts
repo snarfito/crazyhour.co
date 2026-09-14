@@ -140,3 +140,16 @@ export async function updatePermissions(id: string, permissions: AdminPermission
 
   revalidatePath("/admin/usuarios");
 }
+
+// Lets a full admin unblock someone stuck without an invite/reset email —
+// same mechanism as the self-service /admin/olvide-password form.
+export async function sendPasswordReset(email: string) {
+  await requirePermission("usuarios");
+
+  const h = await headers();
+  const origin = h.get("origin") ?? `https://${h.get("host")}`;
+  const supabase = createServiceClient();
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/admin/restablecer-password`,
+  });
+}

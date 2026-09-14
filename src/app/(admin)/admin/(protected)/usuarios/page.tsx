@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DeleteForm } from "@/components/admin/delete-form";
 import { InviteAdminForm } from "./invite-admin-form";
 import { EditPermissionsRow } from "./edit-permissions-row";
+import { SendResetButton } from "./send-reset-button";
 import { PERMISSION_ITEMS } from "./permissions";
 import { revokeAdmin } from "./actions";
 
@@ -60,6 +61,7 @@ export default async function UsuariosPage() {
                   {u.id !== session.userId && (
                     <div className="flex flex-col items-start gap-2">
                       <EditPermissionsRow id={u.id} permissions={permissions} />
+                      <SendResetButton email={u.email} />
                       <DeleteForm
                         action={revokeAdmin.bind(null, u.id)}
                         confirmMessage={`¿Revocar el acceso de "${u.email}"? Esta acción no se puede deshacer.`}
