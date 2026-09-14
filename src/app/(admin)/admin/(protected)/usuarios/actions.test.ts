@@ -254,13 +254,43 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("inviteAdmin / revo
     expect(row?.can_usuarios).toBe(true);
   });
 
-  it("sendPasswordReset requires the usuarios permission and does not throw for a real user", async () => {
-    const email = `zzadminusuarios_reset_${Date.now()}@crazyhour.test`;
+  it("resetToTemporaryPassword sets a real password and stores must_change_password when forceChange is true", async () => {
+    const email = `zzadminusuarios_temppw_${Date.now()}@crazyhour.test`;
     const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
     createdUserIds.push(created.user!.id);
+    await admin.from("admin_users").insert({
+      id: created.user!.id, email, invited_by: inviterId,
+      can_pedidos: true, can_productos: false, can_categorias: false,
+      can_ajustes: false, can_animaciones: false, can_usuarios: false,
+    });
 
-    const { sendPasswordReset } = await import("./actions");
-    await expect(sendPasswordReset(email)).resolves.toBeUndefined();
+    const { resetToTemporaryPassword } = await import("./actions");
+    const result = await resetToTemporaryPassword(created.user!.id, true);
+
     expect(mockRequirePermission).toHaveBeenCalledWith("usuarios");
+    if ("error" in result) throw new Error(`expected a tempPassword, got error: ${result.error}`);
+    expect(result.tempPassword).toHaveLength(12);
+
+    const { data: row } = await admin.from("admin_users").select("must_change_password").eq("id", created.user!.id).single();
+    expect(row?.must_change_password).toBe(true);
+  });
+
+  it("resetToTemporaryPassword leaves must_change_password false when forceChange is false", async () => {
+    const email = `zzadminusuarios_temppw_noforce_${Date.now()}@crazyhour.test`;
+    const { data: created } = await admin.auth.admin.createUser({ email, email_confirm: true });
+    createdUserIds.push(created.user!.id);
+    await admin.from("admin_users").insert({
+      id: created.user!.id, email, invited_by: inviterId,
+      can_pedidos: true, can_productos: false, can_categorias: false,
+      can_ajustes: false, can_animaciones: false, can_usuarios: false,
+      must_change_password: true,
+    });
+
+    const { resetToTemporaryPassword } = await import("./actions");
+    const result = await resetToTemporaryPassword(created.user!.id, false);
+    if ("error" in result) throw new Error(`expected a tempPassword, got error: ${result.error}`);
+
+    const { data: row } = await admin.from("admin_users").select("must_change_password").eq("id", created.user!.id).single();
+    expect(row?.must_change_password).toBe(false);
   });
 });

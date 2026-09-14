@@ -46,12 +46,21 @@ export const verifySession = cache(async () => {
   const admin = createServiceClient();
   const { data: adminUser } = await admin
     .from("admin_users")
-    .select("can_pedidos, can_productos, can_categorias, can_ajustes, can_animaciones, can_usuarios")
+    .select(
+      "can_pedidos, can_productos, can_categorias, can_ajustes, can_animaciones, can_usuarios, must_change_password"
+    )
     .eq("id", user.id)
     .maybeSingle();
 
   if (!adminUser) {
     redirect("/admin/login");
+  }
+
+  // A temporary password set from /admin/usuarios can require the admin to
+  // pick their own before touching anything else. restablecer-password
+  // isn't behind verifySession, so this can't loop.
+  if (adminUser.must_change_password) {
+    redirect("/admin/restablecer-password");
   }
 
   return { userId: user.id, email: user.email ?? "", permissions: adminPermissionsFromRow(adminUser) };

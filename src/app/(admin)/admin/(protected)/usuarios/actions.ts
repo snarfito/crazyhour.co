@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { randomInt } from "node:crypto";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requirePermission, type AdminPermissions } from "@/lib/supabase/dal";
 
@@ -141,15 +142,47 @@ export async function updatePermissions(id: string, permissions: AdminPermission
   revalidatePath("/admin/usuarios");
 }
 
-// Lets a full admin unblock someone stuck without an invite/reset email —
-// same mechanism as the self-service /admin/olvide-password form.
-export async function sendPasswordReset(email: string) {
+// Excludes visually ambiguous characters (0/O, 1/l/I) since this is meant
+// to be read aloud or relayed over chat, not just pasted.
+const TEMP_PASSWORD_CHARSET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+
+function generateTempPassword(length = 12): string {
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += TEMP_PASSWORD_CHARSET[randomInt(TEMP_PASSWORD_CHARSET.length)];
+  }
+  return password;
+}
+
+export type ResetTempPasswordResult = { tempPassword: string } | { error: string };
+
+// Sets the password directly via the Admin API instead of emailing a link —
+// unblocks someone whose invite/reset email never arrived, with no
+// dependency on email delivery at all. forceChange controls whether they're
+// required to pick their own on next login (see dal.ts verifySession()).
+export async function resetToTemporaryPassword(
+  userId: string,
+  forceChange: boolean
+): Promise<ResetTempPasswordResult> {
   await requirePermission("usuarios");
 
-  const h = await headers();
-  const origin = h.get("origin") ?? `https://${h.get("host")}`;
+  const tempPassword = generateTempPassword();
   const supabase = createServiceClient();
-  await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/admin/restablecer-password`,
+
+  const { error: passwordError } = await supabase.auth.admin.updateUserById(userId, {
+    password: tempPassword,
   });
+  if (passwordError) {
+    return { error: "No se pudo restablecer la contraseña. Intenta de nuevo." };
+  }
+
+  const { error: flagError } = await supabase
+    .from("admin_users")
+    .update({ must_change_password: forceChange })
+    .eq("id", userId);
+  if (flagError) {
+    return { error: "Se cambió la contraseña, pero no se pudo guardar la preferencia de cambio forzado." };
+  }
+
+  return { tempPassword };
 }

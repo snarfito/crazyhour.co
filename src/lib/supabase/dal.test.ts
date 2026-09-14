@@ -83,6 +83,17 @@ describe("verifySession", () => {
 
     await expect(verifySession()).rejects.toThrow("REDIRECT:/admin/login");
   });
+
+  it("redirects to /admin/restablecer-password when must_change_password is set, before returning permissions", async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "admin@crazyhour.co" } },
+      error: null,
+    });
+    mockMaybeSingle.mockResolvedValue({ data: { ...ALL_GRANTED, must_change_password: true }, error: null });
+    const { verifySession } = await import("@/lib/supabase/dal");
+
+    await expect(verifySession()).rejects.toThrow("REDIRECT:/admin/restablecer-password");
+  });
 });
 
 describe("requirePermission", () => {
