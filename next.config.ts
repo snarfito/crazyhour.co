@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Catalog PNGs are 2-4 MB each and every uploaded/overwritten image already gets a
+    // fresh URL (?v= or new path), so cache optimized variants for 31 days. The default
+    // (4h) made Vercel re-download every original from Supabase — that was the cached-egress overage.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
     remotePatterns: [
       {
         protocol: "https",
