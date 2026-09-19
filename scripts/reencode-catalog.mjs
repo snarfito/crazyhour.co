@@ -18,7 +18,11 @@ let before = 0, after = 0;
 
 async function shrink(url, newPath) {
   if (!url?.startsWith(PREFIX) || url.split("?")[0].endsWith(".webp")) return null; // placeholders, foreign hosts, already done
-  const bytes = Buffer.from(await (await fetch(url)).arrayBuffer());
+  // Authenticated API download, not the public URL: public URLs are served via the CDN and count as
+  // *Cached* Egress (already over quota on the Free plan); this path counts as regular Egress instead.
+  const { data: blob, error: dlError } = await sb.storage.from("catalog-images").download(decodeURIComponent(url.slice(PREFIX.length).split("?")[0]));
+  if (dlError) throw dlError;
+  const bytes = Buffer.from(await blob.arrayBuffer());
   if (bytes.length < SKIP_BELOW) return null;
   const out = await sharp(bytes).resize({ width: MAX_EDGE, height: MAX_EDGE, fit: "inside", withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
   before += bytes.length; after += out.length;
