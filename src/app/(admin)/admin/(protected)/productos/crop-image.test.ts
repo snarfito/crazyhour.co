@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { cropToFile, drawCropToCanvas } from "./crop-image";
 
 describe("cropToFile", () => {
-  it("resolves a File with the source file's name and type from the canvas blob", async () => {
-    const fakeBlob = new Blob(["cropped-bytes"], { type: "image/jpeg" });
+  it("resolves a File named after the source but with the extension and type of the encoded blob", async () => {
+    const fakeBlob = new Blob(["cropped-bytes"], { type: "image/webp" });
     const canvas = {
       toBlob: (cb: BlobCallback) => cb(fakeBlob),
     } as unknown as HTMLCanvasElement;
@@ -11,8 +11,8 @@ describe("cropToFile", () => {
 
     const result = await cropToFile(canvas, sourceFile);
 
-    expect(result.name).toBe("sombrero.jpg");
-    expect(result.type).toBe("image/jpeg");
+    expect(result.name).toBe("sombrero.webp");
+    expect(result.type).toBe("image/webp");
   });
 
   it("rejects when the canvas cannot produce a blob", async () => {
@@ -56,6 +56,22 @@ describe("drawCropToCanvas", () => {
     const fillOrder = ctx.fillRect.mock.invocationCallOrder[0];
     const drawOrder = ctx.drawImage.mock.invocationCallOrder[0];
     expect(fillOrder).toBeLessThan(drawOrder);
+  });
+
+  it("downscales a large crop so its longest edge is 1600px, drawing the full source region into the smaller canvas", () => {
+    const drawImage = vi.fn();
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => ({ drawImage, fillRect: vi.fn(), fillStyle: "" }),
+    } as unknown as HTMLCanvasElement;
+    const image = {} as CanvasImageSource;
+
+    drawCropToCanvas(canvas, image, { x: 0, y: 0, width: 4000, height: 3000 });
+
+    expect(canvas.width).toBe(1600);
+    expect(canvas.height).toBe(1200);
+    expect(drawImage).toHaveBeenCalledWith(image, 0, 0, 4000, 3000, 0, 0, 1600, 1200);
   });
 
   it("throws when the canvas has no 2d context", () => {

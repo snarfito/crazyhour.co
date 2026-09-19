@@ -23,6 +23,11 @@ vi.mock("./actions", () => ({
   generateCategoryCoverImage: (...args: unknown[]) => mockGenerateCategoryCoverImage(...args),
 }));
 
+// jsdom has no createImageBitmap/canvas encoding — stand in for the real downscale + WebP re-encode.
+vi.mock("../productos/crop-image", () => ({
+  shrinkFile: async (f: File) => new File([f], f.name.replace(/\.[^.]+$/, ".webp"), { type: "image/webp" }),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     refresh: vi.fn(),
@@ -38,7 +43,7 @@ describe("CoverUpload", () => {
     await userEvent.upload(input, file);
 
     expect(mockUpload).toHaveBeenCalledWith(
-      "categories/cat-1/cover.jpg",
+      "categories/cat-1/cover.webp",
       file,
       { upsert: true }
     );

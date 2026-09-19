@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
+import sharp from "sharp";
+
+const tinyPng = () => sharp({ create: { width: 8, height: 8, channels: 3, background: "#fc6000" } }).png().toBuffer();
 
 const ORIGINAL_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://pqyunubwmchftefnqgvi.supabase.co";
@@ -44,12 +47,12 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 describe("enhanceProductImage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mockRequirePermission.mockReset().mockResolvedValue({ userId: "u1", email: "admin@crazyhour.co" });
     mockSingle.mockReset();
     mockUpload.mockReset().mockResolvedValue({ error: null });
     mockUpdate.mockReset().mockResolvedValue({ error: null });
-    mockEnhanceImage.mockReset().mockResolvedValue({ imageBytes: Buffer.from("fake"), mimeType: "image/png" });
+    mockEnhanceImage.mockReset().mockResolvedValue({ imageBytes: await tinyPng(), mimeType: "image/png" });
     mockFetch.mockReset().mockResolvedValue({
       arrayBuffer: async () => new ArrayBuffer(4),
       headers: new Headers({ "content-type": "image/jpeg" }),

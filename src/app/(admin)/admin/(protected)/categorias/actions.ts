@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/supabase/dal";
 import { slugify } from "@/lib/slug";
 import { generateCoverImage } from "@/lib/image-provider";
+import { toWebp } from "@/lib/optimize-image";
 
 function readAnimationTheme(formData: FormData): string | null {
   const value = String(formData.get("animation_theme") ?? "");
@@ -163,14 +164,14 @@ export async function generateCategoryCoverImage(categoryId: string, prompt: str
   await requirePermission("categorias");
   const supabase = await createClient();
 
-  const { imageBytes, mimeType } = await generateCoverImage({ prompt });
+  const { imageBytes: rawBytes } = await generateCoverImage({ prompt });
+  const imageBytes = await toWebp(rawBytes);
 
-  const ext = mimeType.split("/")[1] ?? "png";
-  const path = `categories/${categoryId}/cover.${ext}`;
+  const path = `categories/${categoryId}/cover.webp`;
 
   const { error: uploadError } = await supabase.storage
     .from("catalog-images")
-    .upload(path, imageBytes, { contentType: mimeType, upsert: true });
+    .upload(path, imageBytes, { contentType: "image/webp", upsert: true });
   if (uploadError) throw uploadError;
 
   const {

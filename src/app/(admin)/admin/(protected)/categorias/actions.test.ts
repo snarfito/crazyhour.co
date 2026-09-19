@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
+import sharp from "sharp";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { slugify } from "@/lib/slug";
 import { likePattern } from "@/test/db-prefix";
@@ -355,7 +356,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
   it("generateCategoryCoverImage uploads the generated image and sets it as the cover", async () => {
     mockGenerateCoverImage.mockReset();
     mockGenerateCoverImage.mockResolvedValue({
-      imageBytes: Buffer.from("generated-cover-bytes"),
+      imageBytes: await sharp({ create: { width: 8, height: 8, channels: 3, background: "#fc6000" } }).png().toBuffer(),
       mimeType: "image/png",
     });
 
@@ -377,7 +378,7 @@ describe.skipIf(!process.env.SUPABASE_TEST_SERVICE_ROLE_KEY)("category actions (
       .select("cover_image_url")
       .eq("id", created!.id)
       .single();
-    expect(updated?.cover_image_url).toContain(`categories/${created!.id}/cover.png`);
+    expect(updated?.cover_image_url).toContain(`categories/${created!.id}/cover.webp`);
   });
 
   it("propagates rejection when the caller lacks the categorias permission, without writing", async () => {

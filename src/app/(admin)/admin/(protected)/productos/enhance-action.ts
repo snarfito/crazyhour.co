@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/supabase/dal";
 import { enhanceImage } from "@/lib/image-provider";
+import { toWebp } from "@/lib/optimize-image";
 
 // original_url is only ever set from getPublicUrl() on this bucket (see
 // image-upload.tsx) — enforcing that prefix before fetching it server-side
@@ -29,18 +30,18 @@ export async function enhanceProductImage(imageId: string, prompt: string) {
   const originalBytes = Buffer.from(await originalResponse.arrayBuffer());
   const mimeType = originalResponse.headers.get("content-type") ?? "image/jpeg";
 
-  const { imageBytes, mimeType: enhancedMimeType } = await enhanceImage({
+  const { imageBytes: rawBytes } = await enhanceImage({
     imageBytes: originalBytes,
     mimeType,
     prompt,
   });
+  const imageBytes = await toWebp(rawBytes);
 
-  const ext = enhancedMimeType.split("/")[1] ?? "png";
-  const path = `products/${image.product_id}/${imageId}-enhanced.${ext}`;
+  const path = `products/${image.product_id}/${imageId}-enhanced.webp`;
 
   const { error: uploadError } = await supabase.storage
     .from("catalog-images")
-    .upload(path, imageBytes, { contentType: enhancedMimeType, upsert: true });
+    .upload(path, imageBytes, { contentType: "image/webp", upsert: true });
   if (uploadError) throw uploadError;
 
   const {

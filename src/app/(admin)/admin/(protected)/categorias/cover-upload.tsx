@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { buildCoverPrompt } from "@/lib/gemini/prompt";
+import { shrinkFile } from "../productos/crop-image";
 import { setCategoryCoverImage, generateCategoryCoverImage } from "./actions";
 
 function GenerateCoverButton({
@@ -95,9 +96,18 @@ export function CoverUpload({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId, uploading]);
 
-  async function uploadFile(file: File) {
+  async function uploadFile(original: File) {
     setUploading(true);
     setError(null);
+
+    let file: File;
+    try {
+      file = await shrinkFile(original);
+    } catch {
+      setUploading(false);
+      setError("No se pudo procesar la imagen. Prueba con otra.");
+      return;
+    }
 
     const ext = file.name.split(".").pop();
     const path = `categories/${categoryId}/cover.${ext}`;
