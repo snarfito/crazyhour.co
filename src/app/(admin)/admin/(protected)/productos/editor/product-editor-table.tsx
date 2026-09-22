@@ -14,6 +14,8 @@ import { createQuickProduct } from "./actions";
 import { deleteProduct } from "../actions";
 
 const HEAD_CLASS = "sticky top-0 z-10 bg-muted font-semibold text-foreground uppercase tracking-wide text-xs";
+const NUM_HEAD_CLASS = cn(HEAD_CLASS, "w-24 whitespace-normal");
+const NUM_CELL_CLASS = "w-24";
 
 export type EditorProduct = {
   id: string;
@@ -80,7 +82,7 @@ export function ProductEditorTable({
           </button>
         </div>
       )}
-      <div className="mt-4 max-h-[75vh] overflow-y-auto rounded-lg border border-border">
+      <div className="mt-4 max-h-[75vh] overflow-auto rounded-lg border border-border [&>[data-slot=table-container]]:overflow-visible">
       <Table>
         <TableHeader>
           <TableRow>
@@ -88,17 +90,17 @@ export function ProductEditorTable({
             <TableHead className={cn(HEAD_CLASS, "min-w-48")}>Nombre</TableHead>
             <TableHead className={HEAD_CLASS}>Descripción</TableHead>
             <TableHead className={HEAD_CLASS}>Categorías</TableHead>
-            <TableHead className={cn(HEAD_CLASS, "min-w-32")}>Unidad ($)</TableHead>
-            <TableHead className={HEAD_CLASS}>Media paca (cant.)</TableHead>
-            <TableHead className={HEAD_CLASS}>Media paca ($)</TableHead>
-            <TableHead className={HEAD_CLASS}>Paca completa (cant.)</TableHead>
-            <TableHead className={HEAD_CLASS}>Paca completa ($)</TableHead>
+            <TableHead className={NUM_HEAD_CLASS}>Unidad ($)</TableHead>
+            <TableHead className={NUM_HEAD_CLASS}>Media paca (cant.)</TableHead>
+            <TableHead className={NUM_HEAD_CLASS}>Media paca ($)</TableHead>
+            <TableHead className={NUM_HEAD_CLASS}>Paca completa (cant.)</TableHead>
+            <TableHead className={NUM_HEAD_CLASS}>Paca completa ($)</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((p) => (
             <TableRow key={p.id}>
-              <TableCell className="sticky left-0 z-10 flex gap-1 bg-background">
+              <TableCell className="sticky left-0 z-10 flex flex-col items-start gap-1 bg-background">
                 <ProductImageModal productId={p.id} productName={p.name} />
                 <DeleteForm
                   action={async () => {
@@ -132,7 +134,7 @@ export function ProductEditorTable({
                   onSaveError={setGlobalError}
                 />
               </TableCell>
-              <TableCell className="min-w-32">
+              <TableCell className={NUM_CELL_CLASS}>
                 <EditableCell
                   productId={p.id}
                   field="unit_price_cop"
@@ -142,7 +144,7 @@ export function ProductEditorTable({
                   onSaveError={setGlobalError}
                 />
               </TableCell>
-              <TableCell>
+              <TableCell className={NUM_CELL_CLASS}>
                 <EditableCell
                   productId={p.id}
                   field="pack2_qty"
@@ -152,7 +154,7 @@ export function ProductEditorTable({
                   onSaveError={setGlobalError}
                 />
               </TableCell>
-              <TableCell>
+              <TableCell className={NUM_CELL_CLASS}>
                 <EditableCell
                   productId={p.id}
                   field="pack2_price_cop"
@@ -161,7 +163,7 @@ export function ProductEditorTable({
                   onSaveError={setGlobalError}
                 />
               </TableCell>
-              <TableCell>
+              <TableCell className={NUM_CELL_CLASS}>
                 <EditableCell
                   productId={p.id}
                   field="pack1_qty"
@@ -171,7 +173,7 @@ export function ProductEditorTable({
                   onSaveError={setGlobalError}
                 />
               </TableCell>
-              <TableCell>
+              <TableCell className={NUM_CELL_CLASS}>
                 <EditableCell
                   productId={p.id}
                   field="pack1_price_cop"

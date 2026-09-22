@@ -10,6 +10,7 @@ import { deleteProduct, toggleProductActive } from "./actions";
 import { CategoryFilter } from "./category-filter";
 
 const NO_MATCH_ID = "00000000-0000-0000-0000-000000000000";
+const HEAD_CLASS = "sticky top-0 z-10 bg-card";
 
 export default async function ProductosPage({
   searchParams,
@@ -68,15 +69,15 @@ export default async function ProductosPage({
       <div className="mt-4">
         <CategoryFilter categories={categories ?? []} selectedCategoryId={categoria} />
       </div>
-      <Card className="mt-4 overflow-x-auto py-0">
+      <Card className="mt-4 max-h-[70vh] overflow-auto py-0 [&>[data-slot=table-container]]:overflow-visible">
         <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Categorías</TableHead>
-            <TableHead>Precio</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="sticky right-0 bg-card"></TableHead>
+            <TableHead className={HEAD_CLASS}>Nombre</TableHead>
+            <TableHead className={HEAD_CLASS}>Categorías</TableHead>
+            <TableHead className={HEAD_CLASS}>Precio</TableHead>
+            <TableHead className={HEAD_CLASS}>Estado</TableHead>
+            <TableHead className={cn(HEAD_CLASS, "right-0 z-20")}></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
