@@ -84,6 +84,7 @@ export function ProductEditorTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className={cn(HEAD_CLASS, "sticky left-0 z-20")}>Acciones</TableHead>
             <TableHead className={cn(HEAD_CLASS, "min-w-48")}>Nombre</TableHead>
             <TableHead className={HEAD_CLASS}>Descripción</TableHead>
             <TableHead className={HEAD_CLASS}>Categorías</TableHead>
@@ -92,12 +93,25 @@ export function ProductEditorTable({
             <TableHead className={HEAD_CLASS}>Media paca ($)</TableHead>
             <TableHead className={HEAD_CLASS}>Paca completa (cant.)</TableHead>
             <TableHead className={HEAD_CLASS}>Paca completa ($)</TableHead>
-            <TableHead className={HEAD_CLASS}>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((p) => (
             <TableRow key={p.id}>
+              <TableCell className="sticky left-0 z-10 flex gap-1 bg-background">
+                <ProductImageModal productId={p.id} productName={p.name} />
+                <DeleteForm
+                  action={async () => {
+                    try {
+                      await deleteProduct(p.id);
+                      setProducts((prev) => prev.filter((row) => row.id !== p.id));
+                    } catch (err) {
+                      setGlobalError(err instanceof Error ? err.message : "No se pudo eliminar el producto.");
+                    }
+                  }}
+                  confirmMessage={`¿Eliminar el producto "${p.name}"? Esta acción no se puede deshacer.`}
+                />
+              </TableCell>
               <TableCell className="min-w-48">
                 <EditableCell productId={p.id} field="name" value={p.name} required onSaveError={setGlobalError} />
               </TableCell>
@@ -164,20 +178,6 @@ export function ProductEditorTable({
                   value={p.pack1_price_cop ?? ""}
                   type="number"
                   onSaveError={setGlobalError}
-                />
-              </TableCell>
-              <TableCell className="flex gap-1">
-                <ProductImageModal productId={p.id} productName={p.name} />
-                <DeleteForm
-                  action={async () => {
-                    try {
-                      await deleteProduct(p.id);
-                      setProducts((prev) => prev.filter((row) => row.id !== p.id));
-                    } catch (err) {
-                      setGlobalError(err instanceof Error ? err.message : "No se pudo eliminar el producto.");
-                    }
-                  }}
-                  confirmMessage={`¿Eliminar el producto "${p.name}"? Esta acción no se puede deshacer.`}
                 />
               </TableCell>
             </TableRow>

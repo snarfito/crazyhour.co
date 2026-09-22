@@ -76,7 +76,7 @@ export default async function ProductosPage({
             <TableHead>Categorías</TableHead>
             <TableHead>Precio</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead></TableHead>
+            <TableHead className="sticky right-0 bg-card"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,8 +87,18 @@ export default async function ProductosPage({
             return (
               <TableRow key={p.id}>
                 <TableCell className="font-medium text-foreground">{p.name}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {categoryNames.length > 0 ? categoryNames.join(", ") : "—"}
+                <TableCell className="max-w-3xs whitespace-normal text-muted-foreground">
+                  {categoryNames.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {categoryNames.map((name) => (
+                        <span key={name} className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs">
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell>${p.unit_price_cop.toLocaleString("es-CO")}</TableCell>
                 <TableCell>
@@ -109,7 +119,7 @@ export default async function ProductosPage({
                     </button>
                   </form>
                 </TableCell>
-                <TableCell className="flex gap-1">
+                <TableCell className="sticky right-0 flex gap-1 bg-card">
                   <Button
                     variant="ghost"
                     size="sm"
